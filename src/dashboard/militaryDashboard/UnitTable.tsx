@@ -16,7 +16,7 @@ export function UnitTable({ units }: UnitTableProps) {
             <th>Type</th>
             <th>ID</th>
             <th>Health</th>
-            <th>Nation ID</th>
+            <th>Nation</th>
           </tr>
         </thead>
         <tbody>
