@@ -1,0 +1,113 @@
+===
+Using this file as an easily accessible notepad to create column constraints, then paste into Supabase. Is never referenced in code.
+===
+
+
+unit_type = ANY (ARRAY[
+    'Troops'::text, 
+    'Tank'::text, 
+    'Launcher'::text, 
+    'Tank'::text, 
+    'Launcher'::text, 
+    'Convoy'::text, 
+    'Frigate'::text, 
+    'Battleship'::text,
+    'Space Fighter'::text,
+    'Bomber'::text,
+    'Corvette'::text,
+    'Command Ship'::text,
+    'Missile Satellite'::text,
+    'Cruise Missile'::text,
+    'ICBM'::text,
+    'Nuclear Warhead'::text,
+    'Defense Radar'::text,
+    'Cargo Truck'::text,
+    'Barge'::text,
+    'Transport'::text
+])
+
+facility_type = ANY (ARRAY[
+    'Fishing Boat'::text, 
+    'Farm'::text, 
+    'Crop Field'::text, 
+    'Food Processing Plant'::text, 
+    'Water Purification Plant'::text, 
+    'Oxygen Condenser'::text, 
+    'Oxygen Generator'::text, 
+    'Iron Mine'::text, 
+    'Iron Pit Mine'::text, 
+    'Aluminum Pit Mine'::text, 
+    'Copper Mine'::text, 
+    'Copper Pit Mine'::text, 
+    'Platinum Mine'::text, 
+    'Titanium Mine'::text, 
+    'Titanium Pit Mine'::text, 
+    'Gold Mine'::text, 
+    'Diamond Mine'::text, 
+    'Uranium Mine'::text, 
+    'Coal Mine'::text, 
+    'Coal Pit Mine'::text, 
+    'Oil Well'::text, 
+    'Oil Driller'::text, 
+    'Oil Refinery'::text, 
+    'Natural Gas Well'::text, 
+    'Natural Gas Driller'::text, 
+    'Natural Gas Refinery'::text,
+    'Factory'::text
+])
+
+output_type = ANY (ARRAY[
+    'Steel'::text, 
+    'Aluminum'::text, 
+    'Copper'::text, 
+    'Platinum'::text, 
+    'Titanium'::text, 
+    'Titanium Ore'::text, 
+    'Gold'::text, 
+    'Gold Ore'::text, 
+    'Diamond'::text, 
+    'Uranium'::text,
+    'Oxygen'::text,
+    'Unprocessed Food'::text,
+    'Food'::text,
+    'Water'::text,
+    'Fuel'::text,
+    'Coal'::text,
+    'Gas'::text,
+    'Energy'::text,
+    'Oil'::text,
+    'Iron'::text,
+    'Steel'::text,
+    'Methane'::text,
+    'Petroleum'::text
+])
+
+nation_id = ANY (ARRAY[
+    'A'::text,
+    'B'::text,
+    'C'::text,
+    'D'::text,
+    'E'::text,
+    'F'::text,
+    'G'::text,
+    'H'::text,
+    'I'::text,
+    'J'::text,
+    'K'::text,
+    'L'::text,
+    'M'::text,
+    'N'::text,
+    'O'::text,
+    'P'::text,
+    'Q'::text,
+    'R'::text,
+    'S'::text,
+    'T'::text,
+    'U'::text,
+    'V'::text
+])
+
+role = ANY (ARRAY[
+    'Admin'::text, 
+    'Player'::text
+])

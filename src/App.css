@@ -1,0 +1,186 @@
+:root {
+  --primary-color: #2563eb;
+  --bg-color: #1a1a1a;
+  --card-bg: #292929;
+  --text-main: #e7e7e7;
+  --text-muted: #a0a0a0; /* Darkened for better contrast */
+  --border-color: #444;   /* Subtle borders */
+  --radius: 6px;          /* Tighter corners */
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  font-size: 13px; /* Smaller base font */
+}
+
+.container {
+  max-width: 95%;          /* Allow the dashboard to use more screen real estate */
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;     /* Centers the content globally */
+}
+
+.dashboard-grid {
+  display: flex;
+  flex-wrap: wrap;         /* Allows tables to wrap if they run out of space */
+  gap: 15px;
+  justify-content: center; /* Centers the tables side-by-side */
+  width: 100%;
+}
+
+section {
+  flex: 1;
+  min-width: 450px;        /* Prevents tables from getting squashed */
+  background: var(--card-bg);
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  box-sizing: border-box;  /* Ensures padding doesn't add to width */
+  overflow-x: auto;        /* Adds a scrollbar inside the section if a table is too wide */
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 1rem 0; }
+h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+
+/* Compact Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border-color);
+  background: #222;
+}
+
+td {
+  padding: 8px 10px; /* Tighter cell padding */
+  border-bottom: 1px solid var(--border-color);
+}
+
+tr:hover { background-color: #333; }
+
+/* Stack tables on mobile */
+@media (max-width: 800px) {
+  .dashboard-grid { flex-direction: column; }
+}
+
+/* app.css */
+
+:root {
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary: #38bdf8;
+  --primary-hover: #0ea5e9;
+  --error: #ef4444;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-card {
+  background-color: var(--card-bg);
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 380px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+
+.login-header p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.input-group {
+  margin-bottom: 1.25rem;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.75rem;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: white;
+  box-sizing: border-box; /* Ensures padding doesn't break width */
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.error-message {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--error);
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.login-button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--primary);
+  color: #0f172a;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-button:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+.login-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
