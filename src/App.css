@@ -8,7 +8,16 @@
   --radius: 6px;          /* Tighter corners */
 }
 
+html, body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevents unwanted horizontal scrolling */
+  display: block;      /* Ensures the body isn't acting as a centered flex item */
+}
+
 body {
+  width: 100%;
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: 'Inter', sans-serif;
@@ -17,34 +26,39 @@ body {
 }
 
 .container {
-  max-width: 95%;          /* Allow the dashboard to use more screen real estate */
+  max-width: 98%;          /* Increased from 95% for even more space */
   margin: 20px auto;
   display: flex;
   flex-direction: column;
-  align-items: center;     /* Centers the content globally */
+  align-items: stretch;    /* CHANGED from center to stretch */
 }
 
 .dashboard-grid {
   display: flex;
-  flex-wrap: wrap;         /* Allows tables to wrap if they run out of space */
+  flex-wrap: wrap;
   gap: 15px;
-  justify-content: center; /* Centers the tables side-by-side */
+  justify-content: flex-start; /* CHANGED to fill from the left */
   width: 100%;
 }
 
 section {
-  flex: 1;
-  min-width: 450px;        /* Prevents tables from getting squashed */
+  flex: 1 1 450px;        /* Grow, Shrink, and Base width */
+  width: 100%;            /* Ensure it tries to take full width when stacked */
   background: var(--card-bg);
   padding: 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border-color);
-  box-sizing: border-box;  /* Ensures padding doesn't add to width */
-  overflow-x: auto;        /* Adds a scrollbar inside the section if a table is too wide */
+  box-sizing: border-box;
+  overflow-x: auto;
 }
 
+
 h1 { font-size: 1.5rem; margin: 0 0 1rem 0; }
-h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+h2 { 
+  font-size: 1rem; 
+  margin-bottom: 0.75rem; 
+  text-align: center;
+}
 
 /* Compact Table Styling */
 table {
@@ -64,6 +78,7 @@ th {
 td {
   padding: 8px 10px; /* Tighter cell padding */
   border-bottom: 1px solid var(--border-color);
+  text-align: center;
 }
 
 tr:hover { background-color: #333; }
@@ -74,24 +89,6 @@ tr:hover { background-color: #333; }
 }
 
 /* app.css */
-
-:root {
-  --bg-color: #0f172a;
-  --card-bg: #1e293b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --primary: #38bdf8;
-  --primary-hover: #0ea5e9;
-  --error: #ef4444;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', -apple-system, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-main);
-}
 
 .login-container {
   display: flex;
@@ -141,7 +138,7 @@ body {
 .input-group input {
   width: 100%;
   padding: 0.75rem;
-  background: #0f172a;
+  background: #444444;
   border: 1px solid #334155;
   border-radius: 6px;
   color: white;
@@ -167,8 +164,8 @@ body {
 .login-button {
   width: 100%;
   padding: 0.75rem;
-  background-color: var(--primary);
-  color: #0f172a;
+  background-color: #3a47dd;
+  color: rgb(223, 225, 231);
   border: none;
   border-radius: 6px;
   font-weight: 700;

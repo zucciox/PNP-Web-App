@@ -11,7 +11,7 @@ export function UnitTable({ units }: UnitTableProps) {
     <section>
       <h2>Units</h2>
       <table>
-        <thead>q
+        <thead>
           <tr>
             <th>Type</th>
             <th>ID</th>

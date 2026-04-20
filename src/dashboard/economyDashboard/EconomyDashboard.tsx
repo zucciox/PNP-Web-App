@@ -2,73 +2,99 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { UnitTable } from '../militaryDashboard/UnitTable'; 
 import { FacilityTable } from './FacilityTable'; 
-import { FacilitySummaryTable } from './FacilitySummaryTable'; // New Import
+import { FacilitySummaryTable } from './FacilitySummaryTable'; 
 import { ResourceStockpileTable } from './ResourceStockpileTable'; 
+import { Unit, Facility, resourceStockpileData } from '../../types'; 
 import '../../App.css';
 
-import { Unit, Facility, resourceStockpileData } from '../../types'; 
+// Optimized Styling
+const DASHBOARD_CONTAINER: React.CSSProperties = { 
+  display: 'flex', 
+  flexWrap: 'wrap', // Allows columns to stack on smaller screens
+  gap: '20px',      // More reasonable gap
+  justifyContent: 'center', 
+  alignItems: 'flex-start',
+  width: '100%',
+  padding: '20px',
+  boxSizing: 'border-box'
+};
+
+const COLUMN_STYLE: React.CSSProperties = {
+  flex: '1 1 300px', // Grow and shrink, but base size is 300px
+  maxWidth: '500px', // Prevents tables from becoming comically wide on ultrawide monitors
+  minWidth: '300px'
+};
 
 function App() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [resourceStockpileData, setResources] = useState<resourceStockpileData[]>([]);
-  
-  // 1. Add state to toggle between Facility views
-  const [showFacilitySummary, setshowFacilitySummary] = useState<boolean>(false);
+  const [resources, setResources] = useState<resourceStockpileData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showFacilitySummary, setShowFacilitySummary] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      // Fetch Units
-      const { data: unitsData, error: unitsError } = await supabase
-        .from('Units')
-        .select('*');
-      if (unitsError) console.error('Error fetching units:', unitsError);
-      else if (unitsData) setUnits(unitsData as Unit[]);
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [unitsRes, facilitiesRes, resourcesRes] = await Promise.all([
+          supabase.from('Units').select('*'),
+          supabase.from('Facilities').select('*'),
+          supabase.from('Resource Stockpiles').select('*'),
+        ]);
 
-      // Fetch Facilities
-      const { data: facilitiesData, error: facilitiesError } = await supabase
-        .from('Facilities')
-        .select('*');
-      if (facilitiesError) console.error('Error fetching facilities:', facilitiesError);
-      else if (facilitiesData) setFacilities(facilitiesData as Facility[]);
+        if (unitsRes.error) throw unitsRes.error;
+        if (facilitiesRes.error) throw facilitiesRes.error;
+        if (resourcesRes.error) throw resourcesRes.error;
 
-      // Fetch Resource Data 
-      const { data: resourceStockpileData, error: resourceStockpileDataError } = await supabase
-        .from('Resource Stockpiles')
-        .select('*');
-      if (resourceStockpileDataError) console.error('Error fetching resources:', resourceStockpileDataError);
-      else if (resourceStockpileData) setResources(resourceStockpileData as resourceStockpileData[]);
+        setUnits(unitsRes.data || []);
+        setFacilities(facilitiesRes.data || []);
+        setResources(resourcesRes.data || []);
+      } catch (error) {
+        console.error('Critical Error loading dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchData();
+    fetchDashboardData();
   }, []);
+
+  if (loading) {
+    return <div className="loading-spinner">Loading Economic Data...</div>;
+  }
 
   return (
     <div className="container">
-      <h1>Economy</h1>
+      <header style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h1>Economy Dashboard</h1>
+      </header>
       
-      <ResourceStockpileTable resourceStockpileData={resourceStockpileData} />
+      <main style={DASHBOARD_CONTAINER}>
+        <section style={COLUMN_STYLE}>
+          <ResourceStockpileTable resourceStockpileData={resources} />
+        </section>
 
-      <br />
+        <section style={COLUMN_STYLE}>
+          <UnitTable units={units} />
+        </section>
 
-      <UnitTable units={units} />
+        <section style={COLUMN_STYLE}>
+          <div className="table-header-actions" style={{ marginBottom: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+            <button 
+              className="btn-toggle"
+              onClick={() => setShowFacilitySummary(prev => !prev)}
+            >
+              {showFacilitySummary ? "View Detailed List" : "View Summary Totals"}
+            </button>
+          </div>
 
-      <br />
-
-      {/* 2. Add the Toggle Button */}
-      <div className="table-header-actions">
-        <button onClick={() => setshowFacilitySummary(!showFacilitySummary)}>
-          Switch to {showFacilitySummary ? "All Facilities" : "Facility Totals"}
-        </button>
-      </div>
-
-      {/* 3. Conditional Rendering Logic */}
-      {showFacilitySummary ? (
-        <FacilitySummaryTable facilities={facilities} />
-      ) : (
-        <FacilityTable facilities={facilities} />
-      )}
-
+          {showFacilitySummary ? (
+            <FacilitySummaryTable facilities={facilities} />
+          ) : (
+            <FacilityTable facilities={facilities} />
+          )}
+        </section>
+      </main>
     </div>
   );
 }
