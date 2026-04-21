@@ -10,8 +10,8 @@ import '../../App.css';
 // Optimized Styling
 const DASHBOARD_CONTAINER: React.CSSProperties = { 
   display: 'flex', 
-  flexWrap: 'wrap', // Allows columns to stack on smaller screens
-  gap: '20px',      // More reasonable gap
+  flexWrap: 'wrap', 
+  gap: '10px',      
   justifyContent: 'center', 
   alignItems: 'flex-start',
   width: '100%',
@@ -22,13 +22,22 @@ const DASHBOARD_CONTAINER: React.CSSProperties = {
 const COLUMN_STYLE: React.CSSProperties = {
   flex: '1 1 300px', // Grow and shrink, but base size is 300px
   maxWidth: '500px', // Prevents tables from becoming comically wide on ultrawide monitors
-  minWidth: '300px'
+  minWidth: '100px'
+};
+
+const RESOURCETOTALS_STYLE: React.CSSProperties = {
+  flex: '1 1 300px', // Grow and shrink, but base size is 300px
+  maxWidth: '300px', // Prevents tables from becoming comically wide on ultrawide monitors
+  minWidth: '200px'
 };
 
 function App() {
+  // Get all tables | the type is in green
   const [units, setUnits] = useState<Unit[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [resources, setResources] = useState<resourceStockpileData[]>([]);
+  const [resources, setResources] = useState<resourceStockpileData | null>(null);
+
+  // Utilities
   const [loading, setLoading] = useState<boolean>(true);
   const [showFacilitySummary, setShowFacilitySummary] = useState<boolean>(false);
 
@@ -36,11 +45,27 @@ function App() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
+
+        const { data: profile, error: profileError } = await supabase
+          .from('Profiles')
+          .select('nation_id')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !profile) throw profileError || new Error("Profile not found");
+
+        const userNationId = profile.nation_id;
+        console.log(profile.nation_id);
+
         const [unitsRes, facilitiesRes, resourcesRes] = await Promise.all([
-          supabase.from('Units').select('*'),
-          supabase.from('Facilities').select('*'),
-          supabase.from('Resource Stockpiles').select('*'),
+          supabase.from('Units').select('*').eq('nation_id', userNationId),
+          supabase.from('Facilities').select('*').eq('owner_nation', userNationId),
+          supabase.from('Resource Stockpiles').select('*').eq('nation_id', userNationId).single(),
         ]);
+
 
         if (unitsRes.error) throw unitsRes.error;
         if (facilitiesRes.error) throw facilitiesRes.error;
@@ -48,7 +73,9 @@ function App() {
 
         setUnits(unitsRes.data || []);
         setFacilities(facilitiesRes.data || []);
-        setResources(resourcesRes.data || []);
+        // Explicitly set the data from the .single() response
+        setResources(resourcesRes.data as resourceStockpileData);
+        
       } catch (error) {
         console.error('Critical Error loading dashboard:', error);
       } finally {
@@ -65,13 +92,18 @@ function App() {
 
   return (
     <div className="container">
-      <header style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      <header style={{ textAlign: 'center'}}>
         <h1>Economy Dashboard</h1>
       </header>
       
       <main style={DASHBOARD_CONTAINER}>
-        <section style={COLUMN_STYLE}>
-          <ResourceStockpileTable resourceStockpileData={resources} />
+        <section style={RESOURCETOTALS_STYLE}>
+          <h2>Resource Production</h2>
+          {resources ? (
+            <ResourceStockpileTable resourceStockpileData={resources} />
+          ) : (
+            <p>No stockpile data found.</p>
+          )}
         </section>
 
         <section style={COLUMN_STYLE}>
