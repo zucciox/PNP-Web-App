@@ -1,12 +1,12 @@
 // Router
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "./Home"
-import EconomyDashboard from "./dashboard/economyDashboard/EconomyDashboard"
+import Dashboard from "./dashboard/Dashboard"
 import Login from "./login"
 
 const router = createBrowserRouter([
     {path : "/", element: <Home/>},
-    {path : "/dashboard/economy", element: <EconomyDashboard/>},
+    {path : "/dashboard", element: <Dashboard/>},
     {path : "/login", element: <Login/>},
 ])
 

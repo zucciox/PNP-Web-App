@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom'; // Added for routing
 import { supabase } from '../../supabaseClient';
 import { UnitTable } from '../militaryDashboard/UnitTable'; 
 import { FacilityTable } from './FacilityTable'; 
@@ -6,6 +7,7 @@ import { FacilitySummaryTable } from './FacilitySummaryTable';
 import { ResourceStockpileTable } from './ResourceStockpileTable'; 
 import { Unit, Facility, resourceStockpileData } from '../../types'; 
 import '../../App.css';
+
 
 // Optimized Styling
 const DASHBOARD_CONTAINER: React.CSSProperties = { 
@@ -31,72 +33,22 @@ const RESOURCETOTALS_STYLE: React.CSSProperties = {
   minWidth: '200px'
 };
 
-function App() {
-  // Get all tables | the type is in green
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [resources, setResources] = useState<resourceStockpileData | null>(null);
+interface EconomyDashboardProps {
+    facilities: Facility[];
+    units: Unit[];
+    resources: resourceStockpileData | null;
+}
 
-  // Utilities
-  const [loading, setLoading] = useState<boolean>(true);
+export default function EconomyDashboard({ facilities, units, resources }: EconomyDashboardProps) {
+
   const [showFacilitySummary, setShowFacilitySummary] = useState<boolean>(false);
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Not authenticated");
-
-        const { data: profile, error: profileError } = await supabase
-          .from('Profiles')
-          .select('nation_id')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError || !profile) throw profileError || new Error("Profile not found");
-
-        const userNationId = profile.nation_id;
-        console.log(profile.nation_id);
-
-        const [unitsRes, facilitiesRes, resourcesRes] = await Promise.all([
-          supabase.from('Units').select('*').eq('nation_id', userNationId),
-          supabase.from('Facilities').select('*').eq('owner_nation', userNationId),
-          supabase.from('Resource Stockpiles').select('*').eq('nation_id', userNationId).single(),
-        ]);
-
-
-        if (unitsRes.error) throw unitsRes.error;
-        if (facilitiesRes.error) throw facilitiesRes.error;
-        if (resourcesRes.error) throw resourcesRes.error;
-
-        setUnits(unitsRes.data || []);
-        setFacilities(facilitiesRes.data || []);
-        // Explicitly set the data from the .single() response
-        setResources(resourcesRes.data as resourceStockpileData);
-        
-      } catch (error) {
-        console.error('Critical Error loading dashboard:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  if (loading) {
-    return <div className="loading-spinner">Loading Economic Data...</div>;
-  }
-
   return (
-    <div className="container">
-      <header style={{ textAlign: 'center'}}>
-        <h1>Economy Dashboard</h1>
-      </header>
+    <div className="container" style={{ backgroundColor: '#121212', minHeight: '100vh', color: 'white' }}>
+      
       
       <main style={DASHBOARD_CONTAINER}>
+        {/* Note: In a full routing setup, you would likely move these 
+            sections into their own Page components and use <Routes> here */}
         <section style={RESOURCETOTALS_STYLE}>
           <h2>Resource Production</h2>
           {resources ? (
@@ -130,5 +82,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

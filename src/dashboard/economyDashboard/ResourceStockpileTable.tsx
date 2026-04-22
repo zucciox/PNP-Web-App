@@ -15,11 +15,11 @@ const resourceColors: Record<string, string> = {
   Platinum: '#2d74b3', Titanium: '#58b7e6', Gold: '#daa520',
   Diamond: '#74a1d3', Uranium: '#76a34d', Oxygen: '#4a7c36',
   Food: '#a0522d', Water: '#3d5a99', Fuel: '#e3242b',
-  Coal: '#444444', Gas: '#000000', Energy: '#000000',
+  Coal: '#444444', Gas: '#000000', Energy: '#000000', Treasury: '#daa520'
 };
 
 const RESOURCES = [
-  'Steel', 'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 
+  'Treasury', 'Steel', 'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 
   'Diamond', 'Uranium', 'Oxygen', 'Food', 'Water', 'Fuel', 
   'Coal', 'Gas', 'Energy'
 ];

@@ -26,8 +26,8 @@ body {
 }
 
 .container {
-  max-width: 98%;          /* Increased from 95% for even more space */
-  margin: 20px auto;
+  max-width: 100%;          /* Increased from 95% for even more space */
+  margin: 0px;
   display: flex;
   flex-direction: column;
   align-items: stretch;    /* CHANGED from center to stretch */
