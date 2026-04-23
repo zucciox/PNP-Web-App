@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { resourceStockpileData } from '../../types';
 
 interface ResourceStockpileTableProps {
@@ -25,40 +25,93 @@ const RESOURCES = [
 ];
 
 export function ResourceStockpileTable({ resourceStockpileData }: ResourceStockpileTableProps) {
+  // State to track active view: 'totals' or 'location'
+  const [activeTab, setActiveTab] = useState<'totals' | 'location'>('totals');
+
+  const tabButtonStyle = (isActive: boolean) => ({
+    padding: '0.5rem 1rem',
+    cursor: 'pointer',
+    backgroundColor: isActive ? '#333' : 'transparent',
+    color: isActive ? '#ffffff' : '#888',
+    border: 'none',
+    borderRadius: '4px 4px 0 0',
+    fontSize: '0.8rem',
+    fontWeight: 'bold' as const,
+    textTransform: 'uppercase' as const,
+    transition: '0.2s ease'
+  });
+
   return (
-    <section className="max-w-4xl mx-auto p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-      <header className="mb-6 border-b border-gray-100 pb-4">
-        <h2 className="text-xl font-bold text-gray-800 uppercase tracking-tight">
-          National Inventory
-        </h2>
-        <p className="text-xs text-gray-400 font-semibold tracking-widest uppercase">
-          Real-time Stockpile Management
-        </p>
+    <section style={{ 
+      backgroundColor: '#121212', 
+      color: '#e0e0e0', 
+      padding: '1.5rem',
+      borderRadius: '8px',
+      fontFamily: 'sans-serif',
+      maxHeight: '80vh',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      scrollbarWidth: 'thin',
+      scrollbarColor: '#444 #1e1e1e'
+    }}>
+      {/* Header with Switcher */}
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        borderBottom: '1px solid #333', 
+        marginBottom: '1rem' 
+      }}>
+        
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button 
+            onClick={() => setActiveTab('totals')}
+            style={tabButtonStyle(activeTab === 'totals')}
+          >
+            National Reserves
+          </button>
+          <button 
+            onClick={() => setActiveTab('location')}
+            style={tabButtonStyle(activeTab === 'location')}
+          >
+            By Location
+          </button>
+        </div>
       </header>
 
-      <div className="grid grid-cols-3 gap-y-6 gap-x-4">
-        {RESOURCES.map((res) => {
-          // Ensure these keys match your database/interface exactly
-          const dbKey = res as keyof resourceStockpileData;
-          const rawValue = (resourceStockpileData[dbKey] as number) ?? 0;
-          const labelColor = resourceColors[res] || '#333';
+      {/* Conditional Rendering based on state */}
+      {activeTab === 'totals' ? (
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '6px' 
+        }}>
+          {RESOURCES.map((res) => {
+            const dbKey = res as keyof resourceStockpileData;
+            const rawValue = (resourceStockpileData[dbKey] as number) ?? 0;
+            const labelColor = resourceColors[res] || '#333';
 
-          return (
-            <div 
-              key={res} 
-              className="flex flex-col border-l-2 pl-3 transition-all hover:bg-gray-50 py-1"
-              style={{ borderLeftColor: labelColor }}
-            >
-              <span className="text-xs font-black uppercase tracking-wider mb-1" style={{ color: labelColor }}>
-                {res}
-              </span>
-              <span className={`text-2xl font-mono font-bold leading-none ${rawValue > 0 ? 'text-gray-900' : 'text-gray-300'}`}>
-                {formatResourceValue(rawValue)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            return (
+              <div key={res} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                backgroundColor: '#252525',
+                padding: '4px 8px',
+                borderRadius: '3px',
+                fontSize: '0.8rem',
+                border: '1px solid #2a2a2a'
+              }}>
+                <span style={{ color: labelColor, marginRight: '4px' }}>{ res }</span>
+                <span style={{ color: '#03dac6', fontWeight: '500' }}>{rawValue}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#666', fontStyle: 'italic' }}>
+          Location breakdown coming soon...
+        </div>
+      )}
     </section>
   );
 }
