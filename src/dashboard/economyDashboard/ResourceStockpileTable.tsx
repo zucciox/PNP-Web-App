@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
-import { resourceStockpileData } from '../../types';
+import { useGameData } from '../../GameContext';
 
-interface ResourceStockpileTableProps {
-  resourceStockpileData: resourceStockpileData;
-}
-
-const formatResourceValue = (value: number): string | number => {
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
-  return value;
+const formatResourceValue = (value: number): string => {
+  return new Intl.NumberFormat('en-US').format(value);
 };
 
 const resourceColors: Record<string, string> = {
@@ -24,8 +19,8 @@ const RESOURCES = [
   'Coal', 'Gas', 'Energy'
 ];
 
-export function ResourceStockpileTable({ resourceStockpileData }: ResourceStockpileTableProps) {
-  // State to track active view: 'totals' or 'location'
+export function ResourceStockpileTable() {
+  const { resources, facilities, settlements, units, shipments } = useGameData();
   const [activeTab, setActiveTab] = useState<'totals' | 'location'>('totals');
 
   const tabButtonStyle = (isActive: boolean) => ({
@@ -54,7 +49,6 @@ export function ResourceStockpileTable({ resourceStockpileData }: ResourceStockp
       scrollbarWidth: 'thin',
       scrollbarColor: '#444 #1e1e1e'
     }}>
-      {/* Header with Switcher */}
       <header style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -62,7 +56,6 @@ export function ResourceStockpileTable({ resourceStockpileData }: ResourceStockp
         borderBottom: '1px solid #333', 
         marginBottom: '1rem' 
       }}>
-        
         <div style={{ display: 'flex', gap: '4px' }}>
           <button 
             onClick={() => setActiveTab('totals')}
@@ -74,12 +67,11 @@ export function ResourceStockpileTable({ resourceStockpileData }: ResourceStockp
             onClick={() => setActiveTab('location')}
             style={tabButtonStyle(activeTab === 'location')}
           >
-            By Location
+            Reserves By Location
           </button>
         </div>
       </header>
 
-      {/* Conditional Rendering based on state */}
       {activeTab === 'totals' ? (
         <div style={{ 
           display: 'grid', 
@@ -87,25 +79,15 @@ export function ResourceStockpileTable({ resourceStockpileData }: ResourceStockp
           gap: '6px' 
         }}>
           {RESOURCES.map((res) => {
-            const dbKey = res as keyof resourceStockpileData;
-            const rawValue = (resourceStockpileData[dbKey] as number) ?? 0;
-            const labelColor = resourceColors[res] || '#333';
-
-            return (
-              <div key={res} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                backgroundColor: '#252525',
-                padding: '4px 8px',
-                borderRadius: '3px',
-                fontSize: '0.8rem',
-                border: '1px solid #2a2a2a'
-              }}>
-                <span style={{ color: labelColor, marginRight: '4px' }}>{ res }</span>
-                <span style={{ color: '#03dac6', fontWeight: '500' }}>{rawValue}</span>
-              </div>
-            );
-          })}
+              const rawValue = (resources as any)[res] ?? 0;
+              
+              return (
+                <div key={res}>
+                  <span>{res}</span>
+                  <span>{formatResourceValue(rawValue)}</span>
+                </div>
+              );
+            })}
         </div>
       ) : (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#666', fontStyle: 'italic' }}>

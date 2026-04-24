@@ -7,6 +7,7 @@ export interface Unit {
 }
   
 export interface Facility {
+    global_id: number;
     facility_type: string;
     owner_nation: string;
     output_amount_interval: number;
@@ -30,6 +31,7 @@ export interface Settlement {
     Fuel: number;
     Water: number;
     Food: number;
+    Oxygen: number;
     Steel: number;
     Aluminum: number;
     Copper: number;
@@ -45,6 +47,7 @@ export interface Settlement {
     fuel_cr: number;
     water_cr: number;
     food_cr: number;
+    oxygen_cr: number;
     steel_cr: number;
     aluminum_cr: number;
     copper_cr: number;
@@ -91,4 +94,15 @@ export interface resourceStockpileData {
     Gold: number;
     Diamond: number;
     Uranium: number;
+}
+
+export interface Shipment {
+    shipment_id: number,
+    origin_nation: string,
+    unit_id: number,
+    unit_type: number,
+    resource: string,
+    destination: string,
+    amount: number,
+    notes: string;
 }

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FacilityTable } from './FacilityTable'; 
 import { FacilitySummaryTable } from './FacilitySummaryTable'; 
 import { ConsumptionRatesTable } from './ConsumptionRatesTable'; 
 import { ResourceStockpileTable } from './ResourceStockpileTable'; 
-import { Unit, Facility, resourceStockpileData, Settlement } from '../../types'; 
+import { Unit, Facility, resourceStockpileData, Settlement, Shipment } from '../../types'; 
 import '../../App.css';
 import { OperatingCostsTable } from './OperatingCostsTable';
+import { ShipmentsTable } from './ShipmentsTable';
+import { ManagementActions } from './ManagementActions';
+
+import { useGameData } from '../../GameContext';
 
 
 // Optimized Styling
@@ -38,11 +41,13 @@ interface EconomyDashboardProps {
     units: Unit[];
     resources: resourceStockpileData | null;
     settlements: Settlement[];
+    shipments: Shipment[];
 }
 
-export default function EconomyDashboard({ facilities, units, resources, settlements }: EconomyDashboardProps) {
+export default function EconomyDashboard() {
 
-  const [showFacilitySummary, setShowFacilitySummary] = useState<boolean>(false);
+  const { resources, facilities, settlements, units, shipments } = useGameData();
+
   return (
     <div className="container" style={{ backgroundColor: '#121212', minHeight: '100vh', color: 'white' }}>
       <main style={DASHBOARD_CONTAINER}>
@@ -78,24 +83,24 @@ export default function EconomyDashboard({ facilities, units, resources, settlem
 
             <br/>
 
-            <div className="table-header-actions" style={{ marginBottom: '10px', display: 'flex', justifyContent: 'flex-end' }}>
-                <button 
-                className="btn-toggle"
-                onClick={() => setShowFacilitySummary(prev => !prev)}
-                >
-                {showFacilitySummary ? "View Detailed List" : "View Summary Totals"}
-                </button>
-            </div>
-
-            {showFacilitySummary ? (
-                    <FacilitySummaryTable facilities={facilities} />
-                ) : (
-                    <FacilityTable facilities={facilities} />
-            )}
+            <FacilitySummaryTable facilities={facilities} />
         </section>
 
         <section style={COLUMN_STYLE}>
             <h2>Resource Management</h2>
+
+            {shipments ? (
+                <ShipmentsTable shipments={shipments} />
+                ) : (
+                <p>No shipment data found.</p>
+            )}
+
+            <br/>
+
+            <ManagementActions 
+              shipments={shipments}
+              units={units}
+              facilities={facilities} />
         </section>
       </main>
     </div>

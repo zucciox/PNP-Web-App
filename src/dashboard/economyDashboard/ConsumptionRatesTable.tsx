@@ -1,11 +1,11 @@
 import React from 'react';
 import { Settlement } from '../../types';
+import { useGameData } from '../../GameContext';
 
-interface ConsumptionRatesTableProps {
-  settlements: Settlement[];
-}
+export function ConsumptionRatesTable() {
 
-export function ConsumptionRatesTable({ settlements }: ConsumptionRatesTableProps) {
+  const {settlements } = useGameData();
+
   const resourceMap: { key: keyof Settlement; label: string }[] = [
     { key: 'treasury_cr', label: 'Money' },
     { key: 'energy_cr', label: 'Energy' },
@@ -14,11 +14,12 @@ export function ConsumptionRatesTable({ settlements }: ConsumptionRatesTableProp
     { key: 'fuel_cr', label: 'Fuel' },
     { key: 'water_cr', label: 'Water' },
     { key: 'food_cr', label: 'Food' },
+    { key: 'oxygen_cr', label: 'Oxygen' },
     { key: 'steel_cr', label: 'Steel' },
     { key: 'aluminum_cr', label: 'Aluminum' },
     { key: 'copper_cr', label: 'Copper' },
     { key: 'platinum_cr', label: 'Platinum' },
-    { key: 'titanium_cr', label: 'Titatnium' },
+    { key: 'titanium_cr', label: 'Titanium' },
     { key: 'gold_cr', label: 'Gold' },
     { key: 'diamond_cr', label: 'Diamond' },
     { key: 'uranium_cr', label: 'Uranium' },
@@ -83,7 +84,7 @@ export function ConsumptionRatesTable({ settlements }: ConsumptionRatesTableProp
                   border: '1px solid #2a2a2a'
                 }}>
                   <span style={{ color: '#999', marginRight: '4px' }}>{res.label}</span>
-                  <span style={{ color: '#03dac6', fontWeight: '500' }}>{String(s[res.key])}</span>
+                  <span style={{ color: '#da0303', fontWeight: '500' }}>{String(s[res.key])}</span>
                 </div>
               ))}
             </div>
