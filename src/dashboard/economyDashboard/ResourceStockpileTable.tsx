@@ -20,8 +20,18 @@ const RESOURCES = [
 ];
 
 export function ResourceStockpileTable() {
-  const { resources, facilities, settlements, units, shipments } = useGameData();
+  const { resources } = useGameData();
   const [activeTab, setActiveTab] = useState<'totals' | 'location'>('totals');
+
+  // 1. Guard Clause: This "narrows" the type so TypeScript knows 
+  // resources is NOT null for the rest of the component.
+  if (!resources) {
+    return (
+      <div style={{ padding: '2rem', color: '#888', textAlign: 'center' }}>
+        Loading National Reserves...
+      </div>
+    );
+  }
 
   const tabButtonStyle = (isActive: boolean) => ({
     padding: '0.5rem 1rem',
@@ -79,15 +89,30 @@ export function ResourceStockpileTable() {
           gap: '6px' 
         }}>
           {RESOURCES.map((res) => {
-              const rawValue = (resources as any)[res] ?? 0;
-              
-              return (
-                <div key={res}>
-                  <span>{res}</span>
-                  <span>{formatResourceValue(rawValue)}</span>
-                </div>
-              );
-            })}
+            
+            // Accessing data safely
+            const rawValue = (resources as any)[res] ?? 0;
+            
+            // Grabbing color from constants
+            const labelColor = resourceColors[res] || '#ffffff';
+
+            return (
+              <div key={res} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                backgroundColor: '#252525',
+                padding: '4px 10px',
+                borderRadius: '3px',
+                fontSize: '0.85rem',
+                border: '1px solid #2a2a2a'
+              }}>
+                <span style={{ color: labelColor, fontWeight: 'bold' }}>{res}</span>
+                <span style={{ color: '#03da3c', fontFamily: 'monospace' }}>
+                  {formatResourceValue(rawValue)}
+                </span>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#666', fontStyle: 'italic' }}>

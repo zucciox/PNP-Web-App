@@ -2,10 +2,6 @@ import React, { useState } from 'react';
 import { Shipment } from '../../types'; 
 import { useGameData } from '../../GameContext';
 
-interface ShipmentsTableProps {
-  shipments: Shipment[];
-}
-
 export function ShipmentsTable() {
   const {shipments } = useGameData();
   return (

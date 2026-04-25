@@ -55,7 +55,7 @@ export default function EconomyDashboard() {
         <section style={RESOURCE_CONSUMPTION_STYLE}>
             <h2>Resource Consumption</h2>
             {settlements ? (
-                <ConsumptionRatesTable settlements={settlements} />
+                <ConsumptionRatesTable />
                 ) : (
                 <p>No consumption data found.</p>
             )}
@@ -63,9 +63,7 @@ export default function EconomyDashboard() {
             <br/>
 
             {units && facilities ? (
-            <OperatingCostsTable 
-                units={units} 
-                facilities={facilities} 
+            <OperatingCostsTable  
             />
             ) : (
             <p>Loading unit and facility data...</p>
@@ -76,21 +74,21 @@ export default function EconomyDashboard() {
             <h2>Resource Production</h2>
             
             {resources ? (
-                <ResourceStockpileTable resourceStockpileData={resources} />
+                <ResourceStockpileTable />
                 ) : (
                 <p>No stockpile data found.</p>
             )}
 
             <br/>
 
-            <FacilitySummaryTable facilities={facilities} />
+            <FacilitySummaryTable  />
         </section>
 
         <section style={COLUMN_STYLE}>
             <h2>Resource Management</h2>
 
             {shipments ? (
-                <ShipmentsTable shipments={shipments} />
+                <ShipmentsTable  />
                 ) : (
                 <p>No shipment data found.</p>
             )}
@@ -98,9 +96,7 @@ export default function EconomyDashboard() {
             <br/>
 
             <ManagementActions 
-              shipments={shipments}
-              units={units}
-              facilities={facilities} />
+             />
         </section>
       </main>
     </div>
