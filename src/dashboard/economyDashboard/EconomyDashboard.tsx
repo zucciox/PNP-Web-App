@@ -30,8 +30,8 @@ const COLUMN_STYLE: React.CSSProperties = {
 };
 
 const RESOURCE_CONSUMPTION_STYLE: React.CSSProperties = {
-    flex: '1 1 400px', // Grow and shrink, but base size is 300px
-    maxWidth: '400px', // Prevents tables from becoming comically wide on ultrawide monitors
+    flex: '1 1 450px', // Grow and shrink, but base size is 300px
+    maxWidth: '450px', // Prevents tables from becoming comically wide on ultrawide monitors
     minWidth: '100px'
   };
 

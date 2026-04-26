@@ -19,6 +19,31 @@ export interface Facility {
     tier: string;
     oc_interval: number;
     type_id: number;
+    Energy: number;
+    Gas: number;
+    Coal: number;
+    Fuel: number;
+    Water: number;
+    Food: number;
+    Oxygen: number;
+    Steel: number;
+    Aluminum: number;
+    Copper: number;
+    Platinum: number;
+    Titanium: number;
+    Gold: number;
+    Diamond: number;
+    Uranium: number;
+    Oil: number; 
+    Methane: number; 
+    NaturalGas: number; 
+    CopperOre: number;
+    GoldOre: number;
+    IronOre: number;
+    AluminumOre: number;
+    TitaniumOre: number;
+    PlatinumOre: number;
+    UraniumOre: number;
 }
 
 export interface Settlement {

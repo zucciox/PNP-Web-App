@@ -90,7 +90,9 @@ export function FacilitySummaryTable() {
                 <div key={res} style={badgeStyle}>
                   <span style={{ color: labelColor, fontWeight: 'bold' }}>{res}</span>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#03da3c', fontWeight: '500' }}>+{amount.toLocaleString()}</div>
+                    <div style={{ color: '#03da3c', fontWeight: '500' }}>+{amount.toLocaleString()} 
+                      <small style={{ color: '#555', fontWeight: 'normal' }}> /int</small>
+                    </div>
                     <div style={{ color: '#666', fontSize: '0.65rem' }}>Cycle: {(amount * 10).toLocaleString()}</div>
                   </div>
                 </div>
@@ -113,7 +115,7 @@ export function FacilitySummaryTable() {
                       {f.output_type || 'NONE'}
                     </span>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ color: '#03dac6', fontSize: '0.85rem', fontWeight: '600' }}>
+                      <span style={{ color: '#03da3c', fontSize: '0.85rem', fontWeight: '600' }}>
                         +{intervalVal.toLocaleString()} <small style={{ color: '#555', fontWeight: 'normal' }}>/int</small>
                       </span>
                       <div style={{ color: '#777', fontSize: '0.7rem' }}>

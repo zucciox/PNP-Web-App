@@ -2,11 +2,17 @@ import React from 'react';
 import { Settlement } from '../../types';
 import { useGameData } from '../../GameContext';
 
+const formatResourceValue = (value: number): string => {
+  return new Intl.NumberFormat('en-US').format(value);
+};
+
+type KeysOfType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T];
+
 export function ConsumptionRatesTable() {
 
   const {settlements } = useGameData();
 
-  const resourceMap: { key: keyof Settlement; label: string }[] = [
+  const resourceMap: { key: KeysOfType<Settlement, number>; label: string }[] = [
     { key: 'treasury_cr', label: 'Money' },
     { key: 'energy_cr', label: 'Energy' },
     { key: 'gas_cr', label: 'Gas' },
@@ -84,7 +90,9 @@ export function ConsumptionRatesTable() {
                   border: '1px solid #2a2a2a'
                 }}>
                   <span style={{ color: '#999', marginRight: '4px' }}>{res.label}</span>
-                  <span style={{ color: '#da0303', fontWeight: '500' }}>{String(s[res.key])}</span>
+                  <span style={{ color: '#da0303', fontWeight: '500' }}>-{formatResourceValue(s[res.key])} 
+                    <small style={{ color: '#555', fontWeight: 'normal' }}> /cycle</small>
+                  </span>
                 </div>
               ))}
             </div>
