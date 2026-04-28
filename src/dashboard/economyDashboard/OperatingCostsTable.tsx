@@ -3,7 +3,7 @@ import { Unit, Facility } from '../../types';
 import { useGameData } from '../../GameContext';
 
 export function OperatingCostsTable() {
-  const { resources, facilities, settlements, units, shipments } = useGameData();
+  const { facilities, units } = useGameData();
   const [activeTab, setActiveTab] = useState<'units' | 'facilities'>('units');
 
   const totalInterval = [...units, ...facilities].reduce((acc, item) => acc + item.oc_interval, 0);
