@@ -53,7 +53,8 @@ facility_type = ANY (ARRAY[
     'Natural Gas Well'::text, 
     'Natural Gas Driller'::text, 
     'Natural Gas Refinery'::text,
-    'Factory'::text
+    'Factory'::text,
+    'Military Base'::text
 ])
 
 output_type = ANY (ARRAY[
@@ -72,15 +73,23 @@ output_type = ANY (ARRAY[
     'Coal'::text,
     'Gas'::text,
     'Energy'::text,
-    'Gold Ore'::text, 
-    'Titanium Ore'::text, 
-    'Unprocessed Food'::text,
-    'Oil'::text,
-    'Iron'::text,
-    'Steel'::text,
-    'Methane'::text,
-    'Petroleum'::text
+    'Oil'::text, 
+    'Methane'::text, 
+    'NaturalGas'::text, 
+    'CopperOre'::text,
+    'GoldOre'::text,
+    'IronOre'::text,
+    'AluminumOre'::text,
+    'TitaniumOre'::text,
+    'PlatinumOre'::text,
+    'UraniumOre'::text
 ])
+
+yeah the only resources that dont get refined/processed are water, 
+food, oxygen, and coal. oil and gas have their own refineries. then each 
+factory refines two resources and none of the others. T1 does copper and gold, 
+T2 iron and diamonds, T3 aluminum and titanium, T4 platinum and uranium. and again, 
+no backwards compatibility, so like T4 can't just refine anything.
 
 nation_id = ANY (ARRAY[
     'A'::text,

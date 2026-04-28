@@ -18,7 +18,7 @@ const resourceColors: Record<string, string> = {
 };
 
 export function FacilitySummaryTable() {
-  const { facilities} = useGameData();
+  const { facilities } = useGameData();
 
   const [activeTab, setActiveTab] = useState<'totals' | 'facilities'>('totals');
 
@@ -81,7 +81,7 @@ export function FacilitySummaryTable() {
 
       <div style={{ overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: '#444 #1e1e1e' }}>
         {activeTab === 'totals' ? (
-          /* VIEW: Aggregated Totals (Matching Component 2 Style) */
+          /* VIEW: Aggregated Totals */
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
             {RESOURCES.map((res) => {
               const amount = productionTotals[res] || 0;
@@ -100,26 +100,30 @@ export function FacilitySummaryTable() {
             })}
           </div>
         ) : (
-          /* VIEW: Individual Facility List */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          /* VIEW: Individual Facility GRID */
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+            gap: '8px' 
+          }}>
             {facilities.map((f, idx) => {
               const intervalVal = Number(f.output_amount_interval || 0);
               return (
                 <div key={f.global_id || idx} style={{ ...badgeStyle, flexDirection: 'column', padding: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '4px', marginBottom: '4px' }}>
-                    <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{f.facility_type}</span>
-                    <span style={{ color: '#999', fontSize: '0.7rem' }}>ID: {f.type_id || idx}</span>
+                    <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '0.75rem' }}>{f.facility_type}</span>
+                    <span style={{ color: '#666', fontSize: '0.6rem' }}>#{f.type_id || idx}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: resourceColors[f.output_type || ''] || '#888', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                    <span style={{ color: resourceColors[f.output_type || ''] || '#888', fontSize: '0.7rem', fontWeight: 'bold' }}>
                       {f.output_type || 'NONE'}
                     </span>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ color: '#03da3c', fontSize: '0.85rem', fontWeight: '600' }}>
-                        +{intervalVal.toLocaleString()} <small style={{ color: '#555', fontWeight: 'normal' }}>/int</small>
+                      <span style={{ color: '#03da3c', fontSize: '0.8rem', fontWeight: '600' }}>
+                        +{intervalVal.toLocaleString()}
                       </span>
-                      <div style={{ color: '#777', fontSize: '0.7rem' }}>
-                        {(intervalVal * 10).toLocaleString()} /cycle
+                      <div style={{ color: '#555', fontSize: '0.6rem' }}>
+                        int
                       </div>
                     </div>
                   </div>

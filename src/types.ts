@@ -1,9 +1,17 @@
 export interface Unit {
     unit_type: string;
-    type_id: number | string;
+    type_id: number;
+    max_health: number;
     health: number;
-    nation_id: number | string;
+    nation_id: string;
     oc_interval: number;
+    is_active: boolean;
+    damage: number;
+    speed: number;
+    num_attacks: number;
+    attack_range: number;
+    inactive_settlement: number;
+    inactive_facility: number;
 }
   
 export interface Facility {
@@ -47,6 +55,7 @@ export interface Facility {
 }
 
 export interface Settlement {
+    global_id: number;
     name: string;
     owner_nation: string;
     Treasury: number;

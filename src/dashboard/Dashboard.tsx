@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameProvider, useGameData } from '../GameContext';
 import EconomyDashboard from './economyDashboard/EconomyDashboard';
+import MilitaryDashboard from './militaryDashboard/MilitaryDashboard';
 
 // --- STYLES ---
 const LOADING_STYLE: React.CSSProperties = { textAlign: 'center', fontFamily: 'sans-serif', marginTop: '1rem' };
@@ -32,6 +33,7 @@ function DashboardContent() {
       
       <main style={DASHBOARD_CONTAINER}>
         {activeTab === 'Economy' && <EconomyDashboard />}
+        {activeTab === 'Military' && <MilitaryDashboard />}
         {/* Other dashboards no longer need props passed! */}
       </main>
     </div>
