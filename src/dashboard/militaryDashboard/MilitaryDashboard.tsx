@@ -6,7 +6,6 @@ import { ActiveUnitsTable } from './ActiveUnitTable';
 import { DormantUnitsTable } from './DormantUnitTable';
 
 
-// Optimized Styling
 const DASHBOARD_CONTAINER: React.CSSProperties = { 
   display: 'flex', 
   flexWrap: 'wrap', 
@@ -17,8 +16,6 @@ const DASHBOARD_CONTAINER: React.CSSProperties = {
   padding: '10px',
   boxSizing: 'border-box',
 };
-
-
 
 
 export default function MilitaryDashboard() {

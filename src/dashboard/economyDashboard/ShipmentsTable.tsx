@@ -46,7 +46,7 @@ function ShipmentCard({ shipment: s }: { shipment: Shipment }) {
         </div>
       </div>
 
-      {/* Hover Overlay for Notes */}
+      {/* hover overlay for notes */}
       {s.notes && isHovered && (
         <div style={styles.notesOverlay}>
           <small style={{ fontWeight: 'bold', display: 'block', marginBottom: 2 }}>Notes:</small>
@@ -87,7 +87,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #2a2a2a',
     borderRadius: 3,
     overflow: 'hidden',
-    minHeight: '64px', // Flexible height to prevent cutoff
+    minHeight: '64px',
   },
 
   cardContent: {

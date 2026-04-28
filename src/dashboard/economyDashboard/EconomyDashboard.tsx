@@ -24,25 +24,16 @@ const DASHBOARD_CONTAINER: React.CSSProperties = {
 };
 
 const COLUMN_STYLE: React.CSSProperties = {
-  flex: '1 1 450px', // Grow and shrink, but base size is 300px
-  maxWidth: '450px', // Prevents tables from becoming comically wide on ultrawide monitors
+  flex: '1 1 450px', 
+  maxWidth: '450px', 
   minWidth: '100px',
 };
 
 const RESOURCE_CONSUMPTION_STYLE: React.CSSProperties = {
-    flex: '1 1 450px', // Grow and shrink, but base size is 300px
-    maxWidth: '450px', // Prevents tables from becoming comically wide on ultrawide monitors
+    flex: '1 1 450px',
+    maxWidth: '450px',
     minWidth: '100px'
   };
-
-
-interface EconomyDashboardProps {
-    facilities: Facility[];
-    units: Unit[];
-    resources: resourceStockpileData | null;
-    settlements: Settlement[];
-    shipments: Shipment[];
-}
 
 export default function EconomyDashboard() {
 
@@ -59,9 +50,7 @@ export default function EconomyDashboard() {
                 ) : (
                 <p>No consumption data found.</p>
             )}
-
             <br/>
-
             {units && facilities ? (
             <OperatingCostsTable  
             />
@@ -78,9 +67,7 @@ export default function EconomyDashboard() {
                 ) : (
                 <p>No stockpile data found.</p>
             )}
-
             <br/>
-
             <FacilitySummaryTable  />
         </section>
 
@@ -92,9 +79,7 @@ export default function EconomyDashboard() {
                 ) : (
                 <p>No shipment data found.</p>
             )}
-
             <br/>
-
             <ManagementActions 
              />
         </section>

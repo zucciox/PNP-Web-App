@@ -55,7 +55,6 @@ export function ResourceStockpileTable() {
     marginBottom: '10px'
   };
 
-  // Reusable Grid Component for the inner card data
   const ResourceGrid = ({ items }: { items: { key: string, value: number }[] }) => (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginTop: '8px' }}>
       {items.map(res => (

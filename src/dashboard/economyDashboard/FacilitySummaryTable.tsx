@@ -22,7 +22,7 @@ export function FacilitySummaryTable() {
 
   const [activeTab, setActiveTab] = useState<'totals' | 'facilities'>('totals');
 
-  // --- LOGIC: AGGREGATE TOTAL PRODUCTION ---
+  // Sum production outputs
   const productionTotals = facilities.reduce((acc, f) => {
     const type = f.output_type || 'Unknown';
     const amount = Number(f.output_amount_interval) || 0; 
@@ -30,7 +30,7 @@ export function FacilitySummaryTable() {
     return acc;
   }, {} as Record<string, number>);
 
-  // --- STYLES ---
+  // Styles
   const containerStyle: React.CSSProperties = {
     backgroundColor: '#121212',
     color: '#e0e0e0',
@@ -78,10 +78,10 @@ export function FacilitySummaryTable() {
           Facility Breakdown
         </button>
       </div>
-
+      
       <div style={{ overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: '#444 #1e1e1e' }}>
-        {activeTab === 'totals' ? (
-          /* VIEW: Aggregated Totals */
+        {activeTab === 'totals' ? ( 
+          /* TOTAL VIEW */
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
             {RESOURCES.map((res) => {
               const amount = productionTotals[res] || 0;
@@ -100,7 +100,7 @@ export function FacilitySummaryTable() {
             })}
           </div>
         ) : (
-          /* VIEW: Individual Facility GRID */
+          /* FACILITIY VIEW */
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 

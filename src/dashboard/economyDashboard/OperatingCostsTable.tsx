@@ -16,17 +16,16 @@ export function OperatingCostsTable() {
     borderRadius: '8px',
     fontFamily: 'sans-serif',
     
-    // --- SCROLLING LOGIC ---
-    maxHeight: '90vh',           // Caps height at 90% of the screen
-    display: 'flex',             // Allows internal layout control
+    maxHeight: '90vh',          
+    display: 'flex',            
     flexDirection: 'column',
-    overflow: 'hidden',          // Prevents the outer container from leaking
+    overflow: 'hidden',       
     border: '1px solid #333'
   };
 
   const scrollAreaStyle: React.CSSProperties = {
-    overflowY: 'auto',           // Enables vertical scrolling
-    paddingRight: '8px',         // Space for the scrollbar
+    overflowY: 'auto',          
+    paddingRight: '8px',       
     scrollbarWidth: 'thin',
     scrollbarColor: '#444 #1e1e1e'
   };
@@ -65,7 +64,6 @@ export function OperatingCostsTable() {
 
   return (
     <section style={containerStyle}>
-      {/* Fixed Header */}
       <h3 style={{ 
         marginTop: 0, 
         color: '#ffffff', 
@@ -77,7 +75,7 @@ export function OperatingCostsTable() {
         Operating Costs
       </h3>
 
-      {/* Global Totals */}
+
       <div style={{ 
         ...cardStyle, 
         display: 'flex', 
@@ -85,7 +83,7 @@ export function OperatingCostsTable() {
         marginBottom: '1rem',
         borderColor: '#bb86fc', 
         background: 'linear-gradient(145deg, #1e1e1e, #252525)',
-        flexShrink: 0 // Prevents the banner from squishing
+        flexShrink: 0 
       }}>
         <div>
           <span style={{ color: '#999', fontSize: '0.7rem', display: 'block', textTransform: 'uppercase' }}>Total Per Interval</span>
@@ -98,7 +96,7 @@ export function OperatingCostsTable() {
         </div>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tab nav */}
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #333', flexShrink: 0 }}>
         <button onClick={() => setActiveTab('units')} style={tabButtonStyle(activeTab === 'units')}>
           Units ({units.length})
@@ -108,7 +106,6 @@ export function OperatingCostsTable() {
         </button>
       </div>
 
-      {/* Scrollable Content Area */}
       <div style={scrollAreaStyle}>
         <div style={{ ...cardStyle, borderTop: 'none', borderRadius: '0 0 6px 6px' }}>
           {activeTab === 'units' ? (

@@ -130,6 +130,14 @@ export interface resourceStockpileData {
     Uranium: number;
 }
 
+export interface gameStateData {
+    interval: number;
+    cycle: number;
+    next_interval_time: string;
+    is_paused: boolean;
+}
+
+
 export interface Shipment {
     shipment_id: number,
     origin_nation: string,

@@ -13,12 +13,12 @@ export function ManagementActions() {
       label: 'Create Shipment',
       count: shipments.length,
       tooltip: 'Create a new shipment of resources from one place to another',
-      onClick: () => {} // Logic for later
+      onClick: () => {} // UPDATE LATER
     },
     {
       id: 'reassign',
       label: 'Reassign Workers',
-      count: units.length, // Total units available for reassignment
+      count: units.length,
       tooltip: 'Detach workers from a facility or attach them to another',
       onClick: () => {}
     },
@@ -27,7 +27,7 @@ export function ManagementActions() {
       label: 'Make Payment',
       count: null, // Payments don't necessarily need a count display
       tooltip: 'Send money to another nation',
-      onClick: () => {}
+      onClick: () => {} // UPDATE LATER
     },
   ];
 
