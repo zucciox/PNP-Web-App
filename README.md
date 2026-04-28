@@ -5,3 +5,4 @@ A geopolitical simulation game with 5 minute live intervals, 10-100 players acro
 - The board represents a spatial truth, while this app records numerical truth.
 - Supabase Backend
 - React Frontend
+- Vite for build
