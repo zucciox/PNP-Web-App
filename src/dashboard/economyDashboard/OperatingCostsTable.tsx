@@ -1,132 +1,61 @@
 import React, { useState } from 'react';
-import { Unit, Facility } from '../../types';
 import { useGameData } from '../../GameContext';
+import '../../styles/economyStyles.css'; // Import the new styles
 
 export function OperatingCostsTable() {
   const { facilities, units } = useGameData();
   const [activeTab, setActiveTab] = useState<'units' | 'facilities'>('units');
 
   const totalInterval = [...units, ...facilities].reduce((acc, item) => acc + item.oc_interval, 0);
-  const totalCycle = totalInterval * 10; 
-
-  const containerStyle: React.CSSProperties = {
-    backgroundColor: '#121212',
-    color: '#e0e0e0',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    fontFamily: 'sans-serif',
-    
-    maxHeight: '90vh',          
-    display: 'flex',            
-    flexDirection: 'column',
-    overflow: 'hidden',       
-    border: '1px solid #333'
-  };
-
-  const scrollAreaStyle: React.CSSProperties = {
-    overflowY: 'auto',          
-    paddingRight: '8px',       
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#444 #1e1e1e'
-  };
-
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: '#1e1e1e',
-    border: '1px solid #333',
-    borderRadius: '6px',
-    padding: '0.75rem',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
-  };
-
-  const badgeStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    backgroundColor: '#252525',
-    padding: '6px 10px',
-    borderRadius: '3px',
-    fontSize: '0.85rem',
-    border: '1px solid #2a2a2a',
-    marginBottom: '6px'
-  };
-
-  const tabButtonStyle = (isActive: boolean): React.CSSProperties => ({
-    padding: '0.5rem 1rem',
-    cursor: 'pointer',
-    backgroundColor: isActive ? '#333' : 'transparent',
-    color: isActive ? '#ffffff' : '#888',
-    border: 'none',
-    borderRadius: '4px 4px 0 0',
-    fontSize: '0.75rem',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    borderBottom: isActive ? '2px solid #bb86fc' : '2px solid transparent'
-  });
+  const totalCycle = totalInterval * 10;
 
   return (
-    <section style={containerStyle}>
-      <h3 style={{ 
-        marginTop: 0, 
-        color: '#ffffff', 
-        borderBottom: '1px solid #333', 
-        paddingBottom: '0.75rem',
-        textTransform: 'uppercase',
-        letterSpacing: '1px'
-      }}>
+    <section className="summary-container">
+      <h3 className="consumption-header operating-header">
         Operating Costs
       </h3>
 
-
-      <div style={{ 
-        ...cardStyle, 
-        display: 'flex', 
-        justifyContent: 'space-around', 
-        marginBottom: '1rem',
-        borderColor: '#bb86fc', 
-        background: 'linear-gradient(145deg, #1e1e1e, #252525)',
-        flexShrink: 0 
-      }}>
+      {/* Summary Highlight Card */}
+      <div className="settlement-card costs-summary-card">
         <div>
-          <span style={{ color: '#999', fontSize: '0.7rem', display: 'block', textTransform: 'uppercase' }}>Total Per Interval</span>
-          <span style={{ color: '#da0303', fontSize: '1.2rem', fontWeight: 'bold' }}>${totalInterval.toLocaleString()}</span>
+          <span className="cost-label">Total Per Interval</span>
+          <span className="cost-value-large">${totalInterval.toLocaleString()}</span>
         </div>
-        <div style={{ borderLeft: '1px solid #333' }}></div>
+        <div className="divider-v"></div>
         <div>
-          <span style={{ color: '#999', fontSize: '0.7rem', display: 'block', textTransform: 'uppercase' }}>Total Per Cycle</span>
-          <span style={{ color: '#da0303', fontSize: '1.2rem', fontWeight: 'bold' }}>${totalCycle.toLocaleString()}</span>
+          <span className="cost-label">Total Per Cycle</span>
+          <span className="cost-value-large">${totalCycle.toLocaleString()}</span>
         </div>
       </div>
 
-      {/* Tab nav */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #333', flexShrink: 0 }}>
-        <button onClick={() => setActiveTab('units')} style={tabButtonStyle(activeTab === 'units')}>
+      {/* Tab Navigation */}
+      <div className="tab-nav">
+        <button 
+          onClick={() => setActiveTab('units')} 
+          className={`tab-button ${activeTab === 'units' ? 'active' : ''}`}
+        >
           Units ({units.length})
         </button>
-        <button onClick={() => setActiveTab('facilities')} style={tabButtonStyle(activeTab === 'facilities')}>
+        <button 
+          onClick={() => setActiveTab('facilities')} 
+          className={`tab-button ${activeTab === 'facilities' ? 'active' : ''}`}
+        >
           Facilities ({facilities.length})
         </button>
       </div>
 
-      <div style={scrollAreaStyle}>
-        <div style={{ ...cardStyle, borderTop: 'none', borderRadius: '0 0 6px 6px' }}>
-          {activeTab === 'units' ? (
-            units.map((u, i) => (
-              <div key={`unit-${i}`} style={badgeStyle}>
-                <span style={{ color: '#e0e0e0' }}>
-                  {u.unit_type} <small style={{ color: '#666', fontSize: '0.65rem' }}>ID:{u.type_id}</small>
-                </span>
-                <span style={{ color: '#da0303', fontWeight: '600' }}>${u.oc_interval.toLocaleString()}</span>
-              </div>
-            ))
-          ) : (
-            facilities.map((f, i) => (
-              <div key={`fac-${i}`} style={badgeStyle}>
-                <span style={{ color: '#e0e0e0' }}>
-                  {f.facility_type} <small style={{ color: '#666', fontSize: '0.65rem' }}>ID:{f.type_id}</small>
-                </span>
-                <span style={{ color: '#da0303', fontWeight: '600' }}>${f.oc_interval.toLocaleString()}</span>
-              </div>
-            ))
-          )}
+      {/* List Area */}
+      <div className="scroll-area">
+        <div className="settlement-card tab-content-area">
+          {(activeTab === 'units' ? units : facilities).map((item, i) => (
+            <div key={`${activeTab}-${i}`} className="resource-item" style={{ marginBottom: '6px' }}>
+              <span style={{ color: '#e0e0e0' }}>
+                {'unit_type' in item ? item.unit_type : item.facility_type} 
+                <small className="sub-text"> ID:{item.type_id}</small>
+              </span>
+              <span className="resource-value">${item.oc_interval.toLocaleString()}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

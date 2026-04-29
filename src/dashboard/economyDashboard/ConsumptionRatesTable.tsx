@@ -1,6 +1,7 @@
 import React from 'react';
 import { Settlement } from '../../types';
 import { useGameData } from '../../GameContext';
+import '../../styles/economyStyles.css'; // Import the new styles
 
 const formatResourceValue = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(value);
@@ -9,8 +10,7 @@ const formatResourceValue = (value: number): string => {
 type KeysOfType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T];
 
 export function ConsumptionRatesTable() {
-
-  const {settlements } = useGameData();
+  const { settlements } = useGameData();
 
   const resourceMap: { key: KeysOfType<Settlement, number>; label: string }[] = [
     { key: 'treasury_cr', label: 'Money' },
@@ -32,66 +32,26 @@ export function ConsumptionRatesTable() {
   ];
 
   return (
-    <section style={{ 
-      backgroundColor: '#121212', 
-      color: '#e0e0e0', 
-      padding: '1.5rem',
-      borderRadius: '8px',
-      fontFamily: 'sans-serif',
-
-      maxHeight: '80vh',      // Limits height so it actually scrolls
-      overflowY: 'scroll',    // Forces the vertical scroll track
-      overflowX: 'hidden',    // Prevents accidental side-scrolling
-      scrollbarWidth: 'thin', // For Firefox
-      scrollbarColor: '#444 #1e1e1e' // Thumb and Track for Firefox
-    }}>
-      <h3 style={{ marginTop: 0, color: '#ffffff', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
+    <section className="consumption-container">
+      <h3 className="consumption-header">
         Settlement Consumption Rates
       </h3>
       
-      <div style={{ 
-        display: 'grid', 
-        gap: '1rem', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' 
-      }}>
+      <div className="settlement-grid">
         {settlements.map((s, index) => (
-          <div key={index} style={{
-            backgroundColor: '#1e1e1e',
-            border: '1px solid #333',
-            borderRadius: '6px',
-            padding: '0.75rem',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{ 
-              fontWeight: 'bold', 
-              color: '#bb86fc', 
-              marginBottom: '0.75rem',
-              fontSize: '1.1rem',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
+          <div key={index} className="settlement-card">
+            <div className="settlement-title">
               <span>{s.name}</span>
-              <span style={{ fontSize: '0.7rem', color: '#666', alignSelf: 'center' }}>ID: {index}</span>
+              <span className="settlement-id">ID: {index}</span>
             </div>
 
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
-              gap: '6px' 
-            }}>
+            <div className="resource-grid">
               {resourceMap.map((res) => (
-                <div key={res.key} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  backgroundColor: '#252525',
-                  padding: '4px 8px',
-                  borderRadius: '3px',
-                  fontSize: '0.8rem',
-                  border: '1px solid #2a2a2a'
-                }}>
-                  <span style={{ color: '#999', marginRight: '4px' }}>{res.label}</span>
-                  <span style={{ color: '#da0303', fontWeight: '500' }}>-{formatResourceValue(s[res.key])} 
-                    <small style={{ color: '#555', fontWeight: 'normal' }}> /cycle</small>
+                <div key={res.key} className="resource-item">
+                  <span className="resource-label">{res.label}</span>
+                  <span className="resource-value">
+                    -{formatResourceValue(s[res.key])} 
+                    <small className="resource-unit"> /cycle</small>
                   </span>
                 </div>
               ))}

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Facility } from '../../types';
 import { useGameData } from '../../GameContext';
+import '../../styles/economyStyles.css'; // Import the new styles
 
-// Synced from Component 2
 const RESOURCES = [
   'Treasury', 'Steel', 'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 
   'Diamond', 'Uranium', 'Oxygen', 'Food', 'Water', 'Fuel', 
@@ -19,10 +18,8 @@ const resourceColors: Record<string, string> = {
 
 export function FacilitySummaryTable() {
   const { facilities } = useGameData();
-
   const [activeTab, setActiveTab] = useState<'totals' | 'facilities'>('totals');
 
-  // Sum production outputs
   const productionTotals = facilities.reduce((acc, f) => {
     const type = f.output_type || 'Unknown';
     const amount = Number(f.output_amount_interval) || 0; 
@@ -30,101 +27,65 @@ export function FacilitySummaryTable() {
     return acc;
   }, {} as Record<string, number>);
 
-  // Styles
-  const containerStyle: React.CSSProperties = {
-    backgroundColor: '#121212',
-    color: '#e0e0e0',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    fontFamily: 'sans-serif',
-    maxHeight: '90vh',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    border: '1px solid #333'
-  };
-
-  const badgeStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    backgroundColor: '#252525',
-    padding: '4px 8px',
-    borderRadius: '3px',
-    fontSize: '0.8rem',
-    border: '1px solid #2a2a2a',
-  };
-
-  const tabButtonStyle = (isActive: boolean): React.CSSProperties => ({
-    padding: '0.5rem 1rem',
-    cursor: 'pointer',
-    backgroundColor: isActive ? '#333' : 'transparent',
-    color: isActive ? '#ffffff' : '#888',
-    border: 'none',
-    borderRadius: '4px 4px 0 0',
-    fontSize: '0.75rem',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    borderBottom: isActive ? '2px solid #bb86fc' : '2px solid transparent'
-  });
-
   return (
-    <section style={containerStyle}>
-
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #333', flexShrink: 0, marginBottom: '1rem' }}>
-        <button onClick={() => setActiveTab('totals')} style={tabButtonStyle(activeTab === 'totals')}>
+    <section className="summary-container">
+      {/* Tab Navigation */}
+      <div className="tab-nav">
+        <button 
+          onClick={() => setActiveTab('totals')} 
+          className={`tab-button ${activeTab === 'totals' ? 'active' : ''}`}
+        >
           Total Production
         </button>
-        <button onClick={() => setActiveTab('facilities')} style={tabButtonStyle(activeTab === 'facilities')}>
+        <button 
+          onClick={() => setActiveTab('facilities')} 
+          className={`tab-button ${activeTab === 'facilities' ? 'active' : ''}`}
+        >
           Facility Breakdown
         </button>
       </div>
       
-      <div style={{ overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: '#444 #1e1e1e' }}>
+      <div className="scroll-area">
         {activeTab === 'totals' ? ( 
-          /* TOTAL VIEW */
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+          /* TOTAL VIEW - Reusing .resource-grid and .resource-item from stylesheet */
+          <div className="resource-grid">
             {RESOURCES.map((res) => {
               const amount = productionTotals[res] || 0;
               const labelColor = resourceColors[res] || '#bb86fc';
               return (
-                <div key={res} style={badgeStyle}>
+                <div key={res} className="resource-item">
                   <span style={{ color: labelColor, fontWeight: 'bold' }}>{res}</span>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#03da3c', fontWeight: '500' }}>+{amount.toLocaleString()} 
-                      <small style={{ color: '#555', fontWeight: 'normal' }}> /int</small>
+                    <div className="pos-value">
+                      +{amount.toLocaleString()} 
+                      <small className="resource-unit"> /int</small>
                     </div>
-                    <div style={{ color: '#666', fontSize: '0.65rem' }}>Cycle: {(amount * 10).toLocaleString()}</div>
+                    <div className="sub-text">Cycle: {(amount * 10).toLocaleString()}</div>
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          /* FACILITIY VIEW */
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
-            gap: '8px' 
-          }}>
+          /* FACILITY BREAKDOWN VIEW */
+          <div className="facility-grid">
             {facilities.map((f, idx) => {
               const intervalVal = Number(f.output_amount_interval || 0);
               return (
-                <div key={f.global_id || idx} style={{ ...badgeStyle, flexDirection: 'column', padding: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '4px', marginBottom: '4px' }}>
+                <div key={f.global_id || idx} className="resource-item" style={{ flexDirection: 'column', height: 'auto' }}>
+                  <div className="facility-card-header">
                     <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '0.75rem' }}>{f.facility_type}</span>
-                    <span style={{ color: '#666', fontSize: '0.6rem' }}>#{f.type_id || idx}</span>
+                    <span className="sub-text">#{f.type_id || idx}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: resourceColors[f.output_type || ''] || '#888', fontSize: '0.7rem', fontWeight: 'bold' }}>
                       {f.output_type || 'NONE'}
                     </span>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ color: '#03da3c', fontSize: '0.8rem', fontWeight: '600' }}>
+                      <span className="pos-value" style={{ fontSize: '0.8rem' }}>
                         +{intervalVal.toLocaleString()}
                       </span>
-                      <div style={{ color: '#555', fontSize: '0.6rem' }}>
-                        int
-                      </div>
+                      <div className="resource-unit" style={{ fontSize: '0.6rem' }}>int</div>
                     </div>
                   </div>
                 </div>

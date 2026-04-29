@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGameData } from '../../GameContext';
 import { Facility, Settlement } from '../../types';
+import '../../styles/economyStyles.css'; // Import the new styles
 
 const formatResourceValue = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(value);
@@ -26,7 +27,7 @@ export function ResourceStockpileTable() {
   const { resources, facilities, settlements } = useGameData();
   const [activeTab, setActiveTab] = useState<'totals' | 'location'>('totals');
 
-  if (!resources) return <div style={{ padding: '2rem', color: '#888', textAlign: 'center' }}>Loading...</div>;
+  if (!resources) return <div className="scroll-area" style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
 
   const getInventory = (item: any) => {
     return ALL_RESOURCE_KEYS
@@ -34,75 +35,53 @@ export function ResourceStockpileTable() {
       .filter(res => res.value > 0);
   };
 
-  const tabButtonStyle = (isActive: boolean) => ({
-    padding: '0.5rem 1rem',
-    cursor: 'pointer',
-    backgroundColor: isActive ? '#333' : 'transparent',
-    color: isActive ? '#ffffff' : '#888',
-    border: 'none',
-    borderRadius: '4px 4px 0 0',
-    fontSize: '0.8rem',
-    fontWeight: 'bold' as const,
-    textTransform: 'uppercase' as const,
-    borderBottom: isActive ? '2px solid #bb86fc' : '2px solid transparent'
-  });
-
-  const locationCardStyle: React.CSSProperties = {
-    backgroundColor: '#1e1e1e',
-    border: '1px solid #333',
-    borderRadius: '6px',
-    padding: '10px',
-    marginBottom: '10px'
-  };
-
-  const ResourceGrid = ({ items }: { items: { key: string, value: number }[] }) => (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginTop: '8px' }}>
+  const ResourceGrid = ({ items, isGlobal = false }: { items: { key: string, value: number }[], isGlobal?: boolean }) => (
+    <div className="resource-grid" style={{ marginTop: '8px' }}>
       {items.map(res => (
-        <div key={res.key} style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          backgroundColor: '#252525',
-          padding: '3px 8px',
-          borderRadius: '3px',
-          fontSize: '0.75rem',
-          border: '1px solid #2a2a2a'
-        }}>
-          <span style={{ color: resourceColors[res.key] || '#aaa', fontWeight: '500' }}>{res.key}</span>
-          <span style={{ color: '#eee', fontFamily: 'monospace' }}>{formatResourceValue(res.value)}</span>
+        <div key={res.key} className="resource-item">
+          <span style={{ color: resourceColors[res.key] || '#bb86fc', fontWeight: 'bold' }}>{res.key}</span>
+          <span className={isGlobal ? "pos-value" : "resource-value-neutral"}>
+            {formatResourceValue(res.value)}
+          </span>
         </div>
       ))}
     </div>
   );
 
   return (
-    <section style={{ 
-      backgroundColor: '#121212', color: '#e0e0e0', padding: '1.5rem', borderRadius: '8px',
-      fontFamily: 'sans-serif', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #333'
-    }}>
-      <header style={{ display: 'flex', borderBottom: '1px solid #333', marginBottom: '1rem', flexShrink: 0 }}>
-        <button onClick={() => setActiveTab('totals')} style={tabButtonStyle(activeTab === 'totals')}>National Reserves</button>
-        <button onClick={() => setActiveTab('location')} style={tabButtonStyle(activeTab === 'location')}>By Location</button>
+    <section className="summary-container">
+      <header className="tab-nav">
+        <button 
+          onClick={() => setActiveTab('totals')} 
+          className={`tab-button ${activeTab === 'totals' ? 'active' : ''}`}
+        >
+          National Reserves
+        </button>
+        <button 
+          onClick={() => setActiveTab('location')} 
+          className={`tab-button ${activeTab === 'location' ? 'active' : ''}`}
+        >
+          By Location
+        </button>
       </header>
 
-      <div style={{ overflowY: 'auto', scrollbarWidth: 'thin' }}>
+      <div className="scroll-area">
         {activeTab === 'totals' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-            {ALL_RESOURCE_KEYS.filter(k => (resources as any)[k] !== undefined).map(res => (
-              <div key={res} style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#252525', padding: '6px 10px', borderRadius: '3px', fontSize: '0.85rem', border: '1px solid #2a2a2a' }}>
-                <span style={{ color: resourceColors[res] || '#bb86fc', fontWeight: 'bold' }}>{res}</span>
-                <span style={{ color: '#03da3c', fontFamily: 'monospace' }}>{formatResourceValue((resources as any)[res] || 0)}</span>
-              </div>
-            ))}
-          </div>
+          <ResourceGrid 
+            items={ALL_RESOURCE_KEYS.filter(k => (resources as any)[k] !== undefined).map(k => ({ key: k, value: (resources as any)[k] }))} 
+            isGlobal 
+          />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="action-list">
             {/* Settlements */}
             {settlements.map((s: Settlement) => {
               const inv = getInventory(s);
               if (inv.length === 0) return null;
               return (
-                <div key={s.name} style={locationCardStyle}>
-                  <div style={{ color: '#bb86fc', fontWeight: 'bold', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.name}</div>
+                <div key={s.name} className="settlement-card">
+                  <div className="settlement-title" style={{ fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                    {s.name}
+                  </div>
                   <ResourceGrid items={inv} />
                 </div>
               );
@@ -113,8 +92,10 @@ export function ResourceStockpileTable() {
               const inv = getInventory(f);
               if (inv.length === 0) return null;
               return (
-                <div key={f.global_id} style={locationCardStyle}>
-                  <div style={{ color: '#03dac6', fontWeight: 'bold', fontSize: '0.8rem', textTransform: 'uppercase' }}>{f.facility_type} # {f.type_id}</div>
+                <div key={f.global_id} className="settlement-card">
+                  <div className="settlement-title" style={{ color: '#03dac6', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                    {f.facility_type} # {f.type_id}
+                  </div>
                   <ResourceGrid items={inv} />
                 </div>
               );
