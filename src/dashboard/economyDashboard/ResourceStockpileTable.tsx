@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useGameData } from '../../GameContext';
 import { Facility, Settlement } from '../../types';
-import '../../styles/economyStyles.css'; // Import the new styles
+import '../../styles/economyStyles.css'; 
 
 const formatResourceValue = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(value);

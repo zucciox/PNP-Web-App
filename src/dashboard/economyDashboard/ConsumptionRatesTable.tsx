@@ -1,7 +1,7 @@
 import React from 'react';
 import { Settlement } from '../../types';
 import { useGameData } from '../../GameContext';
-import '../../styles/economyStyles.css'; // Import the new styles
+import '../../styles/economyStyles.css'; 
 
 const formatResourceValue = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(value);
@@ -32,8 +32,8 @@ export function ConsumptionRatesTable() {
   ];
 
   return (
-    <section className="consumption-container">
-      <h3 className="consumption-header">
+    <section className="summary-container">
+      <h3>
         Settlement Consumption Rates
       </h3>
       

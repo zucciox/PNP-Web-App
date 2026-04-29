@@ -1,290 +1,309 @@
-/* ConsumptionRates.css */
+/* economyStyles.css */
 
-.consumption-container {
-    background-color: #121212;
-    color: #e0e0e0;
-    padding: 1.5rem;
-    border-radius: 8px;
-    font-family: sans-serif;
-    max-height: 80vh;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: #444 #1e1e1e;
-  }
-  
-  .consumption-header {
-    margin-top: 0;
-    color: #ffffff;
-    border-bottom: 1px solid #333;
-    padding-bottom: 0.5rem;
-  }
-  
-  .settlement-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-  
-  .settlement-card {
-    background-color: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 6px;
-    padding: 0.75rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  }
-  
-  .settlement-title {
-    font-weight: bold;
-    color: #bb86fc;
-    margin-bottom: 0.75rem;
-    font-size: 1.1rem;
-    display: flex;
-    justify-content: space-between;
-  }
-  
-  .settlement-id {
-    font-size: 0.7rem;
-    color: #666;
-    align-self: center;
-  }
-  
-  .resource-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  
-  .resource-item {
-    display: flex;
-    justify-content: space-between;
-    background-color: #252525;
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 0.8rem;
-    border: 1px solid #2a2a2a;
-  }
-  
-  .resource-label {
-    color: #999;
-    margin-right: 4px;
-  }
-  
-  .resource-value {
-    color: #da0303;
-    font-weight: 500;
-  }
-  
-  .resource-unit {
-    color: #555;
-    font-weight: normal;
-  }
+:root {
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-round: 50%;
+}
 
-/* ... Existing styles ... */
+.consumption-header {
+  margin-top: 0;
+  color: #ffffff;
+  padding-bottom: 0.5rem;
+}
 
-/* New styles for FacilitySummaryTable */
+.settlement-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.settlement-card {
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: var(--radius-lg);
+  padding: 0.75rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.settlement-title {
+  font-weight: bold;
+  color: #bb86fc;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.settlement-id {
+  font-size: 0.7rem;
+  color: #666;
+  align-self: center;
+}
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.resource-item {
+  display: flex;
+  justify-content: space-between;
+  background-color: #252525;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  border: 1px solid #2a2a2a;
+}
+
+.resource-label {
+  color: #999;
+  margin-right: 4px;
+}
+
+.resource-value {
+  color: #da0303;
+  font-weight: 500;
+}
+
+.resource-unit {
+  color: #555;
+  font-weight: normal;
+}
+
+.economy-column-header {
+  padding: 0rem;
+}
+
 .summary-container {
-    background-color: #121212;
-    color: #e0e0e0;
-    padding: 1.5rem;
-    border-radius: 8px;
-    font-family: sans-serif;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid #333;
+  background-color: #1d1d1d;
+  color: #e0e0e0;
+  padding-top: auto;
+  border-radius: var(--radius-xl);
+  font-family: sans-serif;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #333;
 }
 
 .tab-nav {
-    display: flex;
-    gap: 8px;
-    border-bottom: 1px solid #333;
-    flex-shrink: 0;
-    margin-bottom: 1rem;
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
 }
 
 .tab-button {
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    background-color: transparent;
-    color: #888;
-    border: none;
-    border-radius: 4px 4px 0 0;
-    font-size: 0.75rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  background-color: transparent;
+  color: #888;
+  border: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .tab-button.active {
-    background-color: #333;
-    color: #ffffff;
-    border-bottom: 2px solid #bb86fc;
+  background-color: #333;
+  color: #ffffff;
+  border-bottom: 2px solid #bb86fc;
 }
 
 .scroll-area {
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #444 #1e1e1e;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1e1e1e;
 }
 
 .facility-grid {
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
-    gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .facility-card-header {
-    display: flex; 
-    justify-content: space-between; 
-    border-bottom: 1px solid #333; 
-    padding-bottom: 4px; 
-    margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
 }
 
 .pos-value {
-    color: #03da3c;
-    font-weight: 500;
+  color: #03da3c;
+  font-weight: 500;
 }
 
 .sub-text {
-    color: #666;
-    font-size: 0.65rem;
+  color: #666;
+  font-size: 0.65rem;
 }
 
-/* Unique additions for OperatingCostsTable */
 .costs-summary-card {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 1rem;
-    border-color: #bb86fc;
-    background: linear-gradient(145deg, #1e1e1e, #252525);
-    flex-shrink: 0;
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 1rem;
+  border-color: #bb86fc;
+  background: linear-gradient(145deg, #1e1e1e, #252525);
+  flex-shrink: 0;
 }
 
 .cost-label {
-    color: #999;
-    font-size: 0.7rem;
-    display: block;
-    text-transform: uppercase;
+  color: #999;
+  font-size: 0.7rem;
+  display: block;
+  text-transform: uppercase;
 }
 
 .cost-value-large {
-    color: #da0303;
-    font-size: 1.2rem;
-    font-weight: bold;
+  color: #da0303;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 .divider-v {
-    border-left: 1px solid #333;
+  border-left: 1px solid #333;
 }
 
-/* Override for the scroll area within the card */
 .tab-content-area {
-    border-top: none;
-    border-radius: 0 0 6px 6px;
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-/* ManagementActions Unique Styles */
 .action-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .action-button {
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    outline: none;
-  }
-  
-  .action-button:hover {
-    background-color: #2a2a2a;
-  }
-  
-  .info-icon {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: #333;
-    color: #daa520;
-    font-size: 0.7rem;
-    font-weight: bold;
-    cursor: help;
-  }
-  
-  .tooltip {
-    position: absolute;
-    right: 120%;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: #000;
-    color: #e0e0e0;
-    padding: 8px 12px;
-    border-radius: 4px;
-    width: 180px;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    z-index: 10;
-    border: 1px solid #444;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-    pointer-events: none;
-    text-transform: none; /* Reset uppercase if inherited */
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-/* Unique additions for ResourceStockpileTable */
+.action-button {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  outline: none;
+}
+
+.action-button:hover {
+  background-color: #2a2a2a;
+}
+
+.info-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-round);
+  background-color: #333;
+  color: #daa520;
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: help;
+}
+
+.tooltip {
+  position: absolute;
+  right: 120%;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #000;
+  color: #e0e0e0;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  width: 180px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  z-index: 10;
+  border: 1px solid #444;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  text-transform: none;
+}
+
 .resource-value-neutral {
-    color: #eee;
-    font-family: monospace;
+  color: #eee;
+  font-family: monospace;
 }
 
-/* Ensure list items in the location tab have proper spacing */
 .scroll-area .action-list {
-    padding-right: 4px; /* Prevent scrollbar overlap */
+  padding-right: 4px;
 }
 
-/* Adjusting card spacing for this specific view */
 .summary-container .settlement-card {
-    margin-bottom: 8px;
-    box-shadow: none; /* Flattening for internal list feel */
+  margin-bottom: 8px;
+  box-shadow: none;
 }
-
-/* Unique additions for ShipmentsTable */
 
 .shipment-card-root {
-    transition: border-color 0.2s ease;
-    cursor: default;
+  transition: border-color 0.2s ease;
+  cursor: default;
 }
 
 .shipment-card-root:hover {
-    border-color: #bb86fc;
+  border-color: #bb86fc;
 }
 
 .shipment-truncate {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
 }
 
 .shipment-notes-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #121212;
-    padding: 6px;
-    font-size: 10px;
-    line-height: 1.3;
-    z-index: 2;
-    overflow-y: auto;
-    border: 1px solid #bb86fc;
-    color: #e0e0e0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #121212;
+  padding: 6px;
+  font-size: 10px;
+  line-height: 1.3;
+  z-index: 2;
+  overflow-y: auto;
+  border: 1px solid #bb86fc;
+  color: #e0e0e0;
+}
+
+.dashboard-root {
+  background-color: #121212;
+  min-height: 100vh;
+  color: white;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.dashboard-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.dashboard-column {
+  flex: 1 1 450px;
+  max-width: 450px;
+  min-width: 300px;
+}
+
+.spacer-v {
+  margin-top: 1.5rem;
+}
+
+.dashboard-column > div {
+  width: 100%;
 }

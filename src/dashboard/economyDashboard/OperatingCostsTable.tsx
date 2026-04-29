@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGameData } from '../../GameContext';
-import '../../styles/economyStyles.css'; // Import the new styles
+import '../../styles/economyStyles.css'; 
 
 export function OperatingCostsTable() {
   const { facilities, units } = useGameData();
@@ -11,7 +11,7 @@ export function OperatingCostsTable() {
 
   return (
     <section className="summary-container">
-      <h3 className="consumption-header operating-header">
+      <h3>
         Operating Costs
       </h3>
 

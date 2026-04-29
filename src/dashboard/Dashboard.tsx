@@ -4,7 +4,7 @@ import EconomyDashboard from './economyDashboard/EconomyDashboard';
 import MilitaryDashboard from './militaryDashboard/MilitaryDashboard';
 
 const LOADING_STYLE: React.CSSProperties = { textAlign: 'center', fontFamily: 'sans-serif', marginTop: '1rem' };
-const BANNER_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', backgroundColor: '#1a1a1a', padding: '10px 20px', color: 'white', fontFamily: 'sans-serif', borderBottom: '1px solid #333' };
+const BANNER_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', backgroundColor: '#1a1a1a', padding: '10px 20px', color: 'white', fontFamily: 'sans-serif' };
 const COUNTDOWN_STYLE: React.CSSProperties = { backgroundColor: '#262626', padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 'bold', marginRight: 'auto' };
 const NATION_CARD_STYLE: React.CSSProperties = { backgroundColor: '#262626', padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 'bold', marginRight: '20px' };
 const TAB_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', gap: '30px', alignItems: 'center', marginRight: '40px', marginTop: '5px' };

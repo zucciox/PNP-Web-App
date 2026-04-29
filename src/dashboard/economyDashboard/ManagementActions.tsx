@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGameData } from '../../GameContext';
-import '../../styles/economyStyles.css'; // Import the new styles
+import '../../styles/economyStyles.css'; 
 
 export function ManagementActions() {
   const { units, shipments } = useGameData();
