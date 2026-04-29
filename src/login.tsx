@@ -25,7 +25,7 @@ export const LoginPage = () => {
       setError("Access denied. Check your Player ID and Access Key.");
       setLoading(false);
     } else {
-      window.location.href = '/dashboard/economy'; 
+      window.location.href = '/dashboard'; 
     }
   };
 
