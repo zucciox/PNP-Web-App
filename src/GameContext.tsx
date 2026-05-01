@@ -27,12 +27,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   
     // Helper to refresh data
     const fetchData = async (id: string) => {
-      // Note: Using .single() on GameState assumes there is only one row for the whole game
+
       const [u, f, r, g, set, ship] = await Promise.all([
         supabase.from('Units').select('*').eq('nation_id', id),
         supabase.from('Facilities').select('*').eq('owner_nation', id),
         supabase.from('ResourceStockpiles').select('*').eq('nation_id', id).maybeSingle(),
-        supabase.from('GameState').select('*').maybeSingle(), // Use maybeSingle to prevent errors if empty
+        supabase.from('GameState').select('*').maybeSingle(), 
         supabase.from('Settlements').select('*').eq('owner_nation', id),
         supabase.from('Shipments').select('*').eq('origin_nation', id),
       ]);
@@ -66,7 +66,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'ResourceStockpiles', filter: `nation_id=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Settlements', filter: `owner_nation=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipments', filter: `origin_nation=eq.${id}` }, () => fetchData(id))
-          // GLOBAL TABLE: No filter applied here
           .on('postgres_changes', { event: '*', schema: 'public', table: 'GameState' }, () => fetchData(id))
           .subscribe();
       };
@@ -87,10 +86,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   
         const id = profile.nation_id;
         setNationId(id);
-        await fetchData(id); // Initial Load
+        await fetchData(id); 
         setLoading(false);
   
-        // --- REALTIME SUBSCRIPTION ---
         channel = supabase.channel(`nation-updates-${id}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Units', filter: `nation_id=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Facilities', filter: `owner_nation=eq.${id}` }, () => fetchData(id))
@@ -115,7 +113,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-// Custom hook for easy access
+
 export const useGameData = () => {
   const context = useContext(GameContext);
   if (!context) throw new Error("useGameData must be used within GameProvider");

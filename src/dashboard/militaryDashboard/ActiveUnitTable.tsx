@@ -3,7 +3,7 @@ import { Unit } from '../../types';
 import { useGameData } from '../../GameContext';
 
 const TYPE_COLORS: Record<string, string> = {
-  Infantry: '#4caf50', Tank: '#e53935', Air: '#42a5f5', Naval: '#26a69a', Artillery: '#ff9800',
+  Troops: '#4caf50', Tank: '#e53935'
 };
 
 const getHealthColor = (pct: number) => pct >= 70 ? '#03da3c' : pct >= 35 ? '#ffb300' : '#cf6679';

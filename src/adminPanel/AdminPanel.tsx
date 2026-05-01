@@ -1,7 +1,7 @@
 import React from 'react';
 import { GameProvider, useGameData } from '../GameContext';
+import { supabase } from '../supabaseClient';
 
-// --- ADDITIONAL STYLES ---
 const ADMIN_PANEL_STYLE: React.CSSProperties = {
   backgroundColor: '#1a1a1a',
   padding: '15px 20px',
@@ -41,13 +41,15 @@ const BUTTON_HOVER_STYLE: React.CSSProperties = {
 function AdminPanel() {
   const { gameState } = useGameData();
 
-  // Functionality left blank as requested
   const handlePause = () => {
     console.log("Pause interval triggered");
   };
 
-  const handleAdvance = () => {
+  const handleAdvance = async () => {
     console.log("Advance interval triggered");
+    const { data, error } = await supabase.functions.invoke('increment-game-state-interval', {
+      body: { foo: 'bar' }, // The JSON payload to send
+    })
   };
 
   if (!gameState) return null;
@@ -62,7 +64,7 @@ function AdminPanel() {
         onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#444')}
         onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#333')}
       >
-        Pause Interval
+        Pause Interval  
       </button>
 
       <button 

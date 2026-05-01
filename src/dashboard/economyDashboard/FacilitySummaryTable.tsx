@@ -29,7 +29,7 @@ export function FacilitySummaryTable() {
 
   return (
     <section className="summary-container">
-      {/* Tab Navigation */}
+      {/* Tab nav */}
       <div className="tab-nav">
         <button 
           onClick={() => setActiveTab('totals')} 
@@ -47,7 +47,7 @@ export function FacilitySummaryTable() {
       
       <div className="scroll-area">
         {activeTab === 'totals' ? ( 
-          /* TOTAL VIEW - Reusing .resource-grid and .resource-item from stylesheet */
+          /* TOTAL VIEW */
           <div className="resource-grid">
             {RESOURCES.map((res) => {
               const amount = productionTotals[res] || 0;
@@ -67,7 +67,7 @@ export function FacilitySummaryTable() {
             })}
           </div>
         ) : (
-          /* FACILITY BREAKDOWN VIEW */
+          /* FACILITY VIEW */
           <div className="facility-grid">
             {facilities.map((f, idx) => {
               const intervalVal = Number(f.output_amount_interval || 0);
