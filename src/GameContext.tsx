@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from './supabaseClient';
-import { Unit, Facility, resourceStockpileData, Settlement, Shipment, gameStateData } from './types';
+import { Unit, Facility,Settlement, Shipment, gameStateData } from './types';
 
 interface GameContextType {
   units: Unit[];
   facilities: Facility[];
-  resources: resourceStockpileData | null;
   gameState: gameStateData | null;
   settlements: Settlement[];
   shipments: Shipment[];
@@ -18,7 +17,6 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 export const GameProvider = ({ children }: { children: ReactNode }) => {
     const [units, setUnits] = useState<Unit[]>([]);
     const [facilities, setFacilities] = useState<Facility[]>([]);
-    const [resources, setResources] = useState<resourceStockpileData | null>(null);
     const [gameState, setGameState] = useState<gameStateData | null>(null);
     const [settlements, setSettlements] = useState<Settlement[]>([]);
     const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -28,10 +26,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     // Helper to refresh data
     const fetchData = async (id: string) => {
 
-      const [u, f, r, g, set, ship] = await Promise.all([
+      const [u, f, g, set, ship] = await Promise.all([
         supabase.from('Units').select('*').eq('nation_id', id),
         supabase.from('Facilities').select('*').eq('owner_nation', id),
-        supabase.from('ResourceStockpiles').select('*').eq('nation_id', id).maybeSingle(),
         supabase.from('GameState').select('*').maybeSingle(), 
         supabase.from('Settlements').select('*').eq('owner_nation', id),
         supabase.from('Shipments').select('*').eq('origin_nation', id),
@@ -39,7 +36,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   
       setUnits(u.data || []);
       setFacilities(f.data || []);
-      setResources(r.data as resourceStockpileData);
       setGameState(g.data as gameStateData); 
       setSettlements(set.data || []);
       setShipments(ship.data || []);
@@ -63,7 +59,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         channel = supabase.channel(`game-updates-${id}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Units', filter: `nation_id=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Facilities', filter: `owner_nation=eq.${id}` }, () => fetchData(id))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'ResourceStockpiles', filter: `nation_id=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Settlements', filter: `owner_nation=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipments', filter: `origin_nation=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'GameState' }, () => fetchData(id))
@@ -92,7 +87,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         channel = supabase.channel(`nation-updates-${id}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Units', filter: `nation_id=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Facilities', filter: `owner_nation=eq.${id}` }, () => fetchData(id))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'ResourceStockpiles', filter: `nation_id=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'GameState'}, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Settlements', filter: `owner_nation=eq.${id}` }, () => fetchData(id))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipments', filter: `origin_nation=eq.${id}` }, () => fetchData(id))
@@ -107,7 +101,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }, []);
   
     return (
-      <GameContext.Provider value={{ units, facilities, resources, settlements, shipments, nationId, gameState, loading }}>
+      <GameContext.Provider value={{ units, facilities, settlements, shipments, nationId, gameState, loading }}>
         {children}
       </GameContext.Provider>
     );

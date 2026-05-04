@@ -9,7 +9,7 @@ import { useGameData } from '../../GameContext';
 import '../../styles/economyStyles.css'; 
 
 export default function EconomyDashboard() {
-  const { resources, facilities, settlements, units, shipments } = useGameData();
+  const { facilities, settlements, units, shipments } = useGameData();
 
   return (
     <div className="dashboard-root">
@@ -26,7 +26,7 @@ export default function EconomyDashboard() {
         {/* Resource Production Column */}
         <section className="dashboard-column">
           <h2 className="economy-column-header">Resource Production</h2>
-          {resources ? <ResourceStockpileTable /> : <p>No stockpile data found.</p>}
+          <ResourceStockpileTable />
           <div className="spacer-v" />
           <FacilitySummaryTable />
         </section>

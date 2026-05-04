@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useGameData } from '../../GameContext';
 import { Facility, Settlement } from '../../types';
 import '../../styles/economyStyles.css'; 
@@ -13,26 +13,44 @@ const resourceColors: Record<string, string> = {
   Diamond: '#74a1d3', Uranium: '#76a34d', Oxygen: '#4a7c36',
   Food: '#a0522d', Water: '#3d5a99', Fuel: '#e3242b',
   Coal: '#444444', Gas: '#000000', Energy: '#000000', Treasury: '#daa520',
-  Oil: '#222', Methane: '#ffeb3b', NaturalGas: '#00bcd4'
 };
 
 const ALL_RESOURCE_KEYS = [
   'Treasury', 'Steel', 'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 
   'Diamond', 'Uranium', 'Oxygen', 'Food', 'Water', 'Fuel', 
-  'Coal', 'Gas', 'Energy', 'Oil', 'Methane', 'NaturalGas',
-  'CopperOre', 'GoldOre', 'IronOre', 'AluminumOre', 'TitaniumOre', 'PlatinumOre', 'UraniumOre'
+  'Coal', 'Gas', 'Energy',
 ];
 
 export function ResourceStockpileTable() {
-  const { resources, facilities, settlements } = useGameData();
+  const { facilities, settlements } = useGameData();
   const [activeTab, setActiveTab] = useState<'totals' | 'location'>('totals');
 
-  if (!resources) return <div className="scroll-area" style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+  // Calculate the totals by indexing both tables
+  const calculatedTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    
+    // Initialize keys at 0
+    ALL_RESOURCE_KEYS.forEach(key => totals[key] = 0);
+
+    const accumulate = (source: any[]) => {
+      source.forEach(item => {
+        ALL_RESOURCE_KEYS.forEach(key => {
+          if (item[key]) {
+            totals[key] += (Number(item[key]) || 0);
+          }
+        });
+      });
+    };
+
+    accumulate(settlements);
+    accumulate(facilities);
+    
+    return totals;
+  }, [settlements, facilities]);
 
   const getInventory = (item: any) => {
     return ALL_RESOURCE_KEYS
       .map(key => ({ key, value: item[key] }))
-      .filter(res => res.value > 0);
   };
 
   const ResourceGrid = ({ items, isGlobal = false }: { items: { key: string, value: number }[], isGlobal?: boolean }) => (
@@ -68,7 +86,7 @@ export function ResourceStockpileTable() {
       <div className="scroll-area">
         {activeTab === 'totals' ? (
           <ResourceGrid 
-            items={ALL_RESOURCE_KEYS.filter(k => (resources as any)[k] !== undefined).map(k => ({ key: k, value: (resources as any)[k] }))} 
+            items={ALL_RESOURCE_KEYS.map(k => ({ key: k, value: calculatedTotals[k] }))} 
             isGlobal 
           />
         ) : (
