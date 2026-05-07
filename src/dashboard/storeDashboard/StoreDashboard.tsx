@@ -1,39 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { Unit, Facility, resourceStockpileData, Settlement, Shipment } from '../../types'; 
+import React from 'react';
 import '../../App.css';
 import { useGameData } from '../../GameContext';
-import { ActiveUnitsTable } from './ActiveUnitTable';
-import { DormantUnitsTable } from './DormantUnitTable';
+import { FactoryStore } from './Store';
+import { ActiveOrders } from './ActiveOrders';
 
-
+// Updated container to handle the sidebar layout
 const DASHBOARD_CONTAINER: React.CSSProperties = { 
-  display: 'flex', 
-  flexWrap: 'wrap', 
-  gap: '10px',      
-  justifyContent: 'left', 
-  alignItems: 'flex-start',
+  display: 'flex',
+  flexDirection: 'row', // Align side-by-side
+  gap: '20px',      
   width: '100%',
-  padding: '10px',
+  padding: '20px',
   boxSizing: 'border-box',
+  alignItems: 'flex-start',
 };
 
+// Wrapper for the Store to make it take up more space
+const STORE_SECTION: React.CSSProperties = {
+  flex: 3, // Takes up 3 parts of the available space
+  minWidth: '600px', // Prevents it from getting too squashed
+};
 
-export default function MilitaryDashboard() {
+// Wrapper for the Orders Sidebar
+const SIDEBAR_SECTION: React.CSSProperties = {
+  flex: 1, // Takes up 1 part of the available space
+  minWidth: '300px',
+  position: 'sticky', // Optional: keeps orders visible while scrolling store
+  top: '20px',
+};
 
-  const {facilities, settlements, units, shipments } = useGameData();
+export default function StoreDashboard() {
+  const { } = useGameData();
 
   return (
     <div className="container" style={{ backgroundColor: '#121212', minHeight: '100vh', color: 'white' }}>
       <main style={DASHBOARD_CONTAINER}>
-
-        {units ? ( <ActiveUnitsTable />  ) : (
-            <p>No units data found.</p>
-        )}
-
-        {units ? ( <DormantUnitsTable />  ) : (
-            <p>No dormant unit data found.</p>
-        )}
+        <div style={STORE_SECTION}>
+          <FactoryStore />
+        </div>
         
+        <aside style={SIDEBAR_SECTION}>
+          <ActiveOrders/>
+        </aside>
       </main>
     </div>
   );

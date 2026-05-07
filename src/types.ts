@@ -12,11 +12,35 @@ export interface Unit {
     attack_range: number;
     inactive_settlement: number;
     inactive_facility: number;
+    attacks_remaining: number;
+}
+
+export interface UnitType {
+    unit_type: string;
+    max_health: number;
+    oc_interval: number;
+    damage: number;
+    speed: number;
+    num_attacks: number;
+    attack_range: number;
+    TreasuryCost: number;
+    SteelCost: number;
+    AluminumCost: number;
+    CopperCost: number;
+    PlatinumCost: number;
+    TitaniumCost: number;
+    GoldCost: number;
+    DiamondCost: number;
+    UraniumCost: number;
+    build_time: number;
+    factory_lvl: number;
+    [key: string]: string | number;
 }
   
 export interface Facility {
     global_id: number;
     facility_type: string;
+    is_active: boolean;
     owner_nation: string;
     output_amount_interval: number;
     output_type: string;
@@ -52,6 +76,32 @@ export interface Facility {
     TitaniumOre: number;
     PlatinumOre: number;
     UraniumOre: number;
+    [key: string]: string | number | boolean;
+}
+
+
+export interface FacilityType {
+    facility_type: string;
+    mfg_level: number;
+    output_amount_interval: number;
+    output_type: string;
+    needs_workers: string;
+    mine_level: string;
+    input_type: string;
+    oc_interval: number;
+    TreasuryCost: number;
+    SteelCost: number;
+    AluminumCost: number;
+    CopperCost: number;
+    PlatinumCost: number;
+    TitaniumCost: number;
+    GoldCost: number;
+    DiamondCost: number;
+    UraniumCost: number;
+    build_time: number;
+    factory_lvl: number;
+    proprietary_nation: string;
+    [key: string]: string | number;
 }
 
 export interface Settlement {
@@ -90,26 +140,9 @@ export interface Settlement {
     gold_cr: number;
     diamond_cr: number;
     uranium_cr: number;
+    [key: string]: string | number;
 }
 
-export interface NationData {
-    id: string;
-    Treasury: number;
-    Energy: number;
-    Gas: number;
-    Coal: number;
-    Fuel: number;
-    Water: number;
-    Food: number;
-    Steel: number;
-    Aluminum: number;
-    Copper: number;
-    Platinum: number;
-    Titanium: number;
-    Gold: number;
-    Diamond: number;
-    Uranium: number;
-}
 
 export interface resourceStockpileData {
     nation_id: string;
@@ -147,4 +180,19 @@ export interface Shipment {
     destination: string,
     amount: number,
     notes: string;
+}
+
+
+export interface Nation {
+    id: string;
+    Treasury: number;
+    [key: string]: string | number;
+}
+
+
+export interface Order {
+    order_id: number;
+    target_interval: number;
+
+    [key: number]: string | number;
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { GameProvider, useGameData } from '../GameContext';
 import { supabase } from '../supabaseClient';
 
@@ -9,7 +9,8 @@ const ADMIN_PANEL_STYLE: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: '20px',
-  fontFamily: 'sans-serif'
+  fontFamily: 'sans-serif',
+  flexWrap: 'wrap'
 };
 
 const ADMIN_LABEL_STYLE: React.CSSProperties = {
@@ -31,25 +32,44 @@ const ADMIN_BUTTON_STYLE: React.CSSProperties = {
   fontSize: '13px',
   fontWeight: 'bold',
   textTransform: 'uppercase',
-  transition: 'background-color 0.2s'
+  transition: 'all 0.2s'
 };
 
-const BUTTON_HOVER_STYLE: React.CSSProperties = {
-  backgroundColor: '#444'
+const ERROR_STYLE: React.CSSProperties = {
+  color: '#ff4d4d',
+  fontSize: '12px',
+  marginLeft: '10px'
 };
 
 function AdminPanel() {
   const { gameState } = useGameData();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handlePause = () => {
+    // Implement pause logic here or via another RPC
     console.log("Pause interval triggered");
   };
 
   const handleAdvance = async () => {
-    console.log("Advance interval triggered");
-    const { data, error } = await supabase.functions.invoke('increment-game-state-interval', {
-      body: { foo: 'bar' }, // The JSON payload to send
-    })
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Calling the Postgres function via Supabase RPC
+      const { error: rpcError } = await supabase.rpc('interval_update');
+
+      if (rpcError) {
+        throw new Error(rpcError.message);
+      }
+      
+      console.log("Interval advanced successfully");
+    } catch (err: any) {
+      console.error("RPC Error:", err);
+      setError(err.message || "Failed to advance interval");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!gameState) return null;
@@ -59,34 +79,44 @@ function AdminPanel() {
       <div style={ADMIN_LABEL_STYLE}>Admin Controls</div>
       
       <button 
-        style={ADMIN_BUTTON_STYLE} 
+        style={{
+          ...ADMIN_BUTTON_STYLE,
+          opacity: loading ? 0.5 : 1,
+          cursor: loading ? 'not-allowed' : 'pointer'
+        }} 
         onClick={handlePause}
-        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#444')}
-        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#333')}
+        disabled={loading}
       >
         Pause Interval  
       </button>
 
       <button 
-        style={ADMIN_BUTTON_STYLE} 
+        style={{
+          ...ADMIN_BUTTON_STYLE,
+          opacity: loading ? 0.5 : 1,
+          cursor: loading ? 'not-allowed' : 'pointer'
+        }} 
         onClick={handleAdvance}
-        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#444')}
-        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#333')}
+        disabled={loading}
+        onMouseOver={(e) => !loading && (e.currentTarget.style.backgroundColor = '#444')}
+        onMouseOut={(e) => !loading && (e.currentTarget.style.backgroundColor = '#333')}
       >
-        Advance Interval
+        {loading ? 'Processing...' : 'Advance Interval'}
       </button>
 
+      {error && <div style={ERROR_STYLE}>⚠️ {error}</div>}
+
       <div style={{ marginLeft: 'auto', fontSize: '12px', color: '#666' }}>
-        Current Game State: {gameState.is_paused || 'Active'}
+        Current Game State: <strong>{gameState.is_paused ? 'Paused' : 'Active'}</strong>
       </div>
     </div>
   );
 }
 
 export default function App() {
-    return (
-      <GameProvider>
-        <AdminPanel />
-      </GameProvider>
-    );
-  }
+  return (
+    <GameProvider>
+      <AdminPanel />
+    </GameProvider>
+  );
+}

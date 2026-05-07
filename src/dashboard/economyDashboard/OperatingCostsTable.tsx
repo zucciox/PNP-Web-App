@@ -6,8 +6,16 @@ export function OperatingCostsTable() {
   const { facilities, units } = useGameData();
   const [activeTab, setActiveTab] = useState<'units' | 'facilities'>('units');
 
-  const totalInterval = [...units, ...facilities].reduce((acc, item) => acc + item.oc_interval, 0);
+  const totalInterval = [...units, ...facilities].reduce((acc, item) => {
+    const cost = Number(item?.oc_interval ?? 0);
+    return acc + cost;
+  }, 0);
   const totalCycle = totalInterval * 10;
+
+  const formatCurrency = (value: number | undefined | null) => {
+    return (value ?? 0).toLocaleString(undefined, {
+    });
+  };
 
   return (
     <section className="summary-container">
@@ -19,12 +27,12 @@ export function OperatingCostsTable() {
       <div className="settlement-card costs-summary-card">
         <div>
           <span className="cost-label">Total Per Interval</span>
-          <span className="cost-value-large">${totalInterval.toLocaleString()}</span>
+          <span className="cost-value-large">${formatCurrency(totalInterval)}</span>
         </div>
         <div className="divider-v"></div>
         <div>
           <span className="cost-label">Total Per Cycle</span>
-          <span className="cost-value-large">${totalCycle.toLocaleString()}</span>
+          <span className="cost-value-large">${formatCurrency(totalCycle)}</span>
         </div>
       </div>
 
@@ -53,7 +61,7 @@ export function OperatingCostsTable() {
                 {'unit_type' in item ? item.unit_type : item.facility_type} 
                 <small className="sub-text"> ID:{item.type_id}</small>
               </span>
-              <span className="resource-value">${item.oc_interval.toLocaleString()}</span>
+              <span className="resource-value">${(Number(item?.oc_interval) || 0).toLocaleString()}</span>
             </div>
           ))}
         </div>

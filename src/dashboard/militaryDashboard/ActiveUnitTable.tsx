@@ -1,16 +1,27 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Unit } from '../../types';
+import { Unit, UnitType } from '../../types'; 
 import { useGameData } from '../../GameContext';
 
 const TYPE_COLORS: Record<string, string> = {
-  Troops: '#4caf50', Tank: '#e53935'
+  Troops: '#4caf50', 
+  Tank: '#e53935'
 };
 
 const getHealthColor = (pct: number) => pct >= 70 ? '#03da3c' : pct >= 35 ? '#ffb300' : '#cf6679';
 
 export function ActiveUnitsTable() {
-  const { units } = useGameData() as { units: Unit[] };
+  const { units, unitTypes } = useGameData() as { units: Unit[], unitTypes: UnitType[] };
+  
   const activeUnits = useMemo(() => (units || []).filter(u => u.is_active), [units]);
+
+  // Maps unit_type names to their base stats for O(1) lookup
+  const typeStatsMap = useMemo(() => {
+    const map: Record<string, UnitType> = {};
+    (unitTypes || []).forEach(t => {
+      map[t.unit_type] = t;
+    });
+    return map;
+  }, [unitTypes]);
 
   return (
     <section style={s.container}>
@@ -19,13 +30,14 @@ export function ActiveUnitsTable() {
         .tooltip { 
           visibility: hidden; opacity: 0; position: absolute; 
           right: 30px; top: 50%; transform: translateY(-50%);
-          width: 120px; background: #1e1e1e; border: 1px solid #444; 
+          width: 140px; background: #1e1e1e; border: 1px solid #444; 
           padding: 8px; border-radius: 4px; z-index: 100;
           transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
         .info-wrap:hover .tooltip { visibility: visible; opacity: 1; }
         .menu-btn:hover { background: #333 !important; }
         .menu-item:hover { background: #3d3d3d !important; color: #fff !important; }
+        .attack-icon { margin-right: 2px; font-size: 14px; }
       `}</style>
       
       <div style={s.header}>
@@ -37,26 +49,59 @@ export function ActiveUnitsTable() {
         {activeUnits.length > 0 ? (
           <table style={s.table}>
             <thead>
-              <tr>{['Unit', 'ID', 'Health', 'Stats', 'Actions'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+              <tr>
+                {['Unit', 'ID', 'Health', 'Attacks', 'Stats', 'Actions'].map(h => (
+                  <th key={h} style={s.th}>{h}</th>
+                ))}
+              </tr>
             </thead>
             <tbody>
               {activeUnits.map((u, i) => {
-                const pct = Math.max(0, Math.min(100, (u.health / u.max_health) * 100));
+                const stats = typeStatsMap[u.unit_type];
+                
+                // Pulling Max Health from Unit Types table with fallbacks
+                const maxHealth = stats?.max_health || u.max_health || 100;
+                const pct = Math.max(0, Math.min(100, (u.health / maxHealth) * 100));
+                
                 const hColor = getHealthColor(pct);
+                const maxAtks = stats?.num_attacks || 1;
+                const remainingAtks = u.attacks_remaining ?? 0;
+
                 return (
                   <tr key={`${u.type_id}-${i}`}>
-                    <td style={s.td}><span style={{ ...s.badge, color: TYPE_COLORS[u.unit_type] || '#bb86fc' }}>{u.unit_type}</span></td>
+                    <td style={s.td}>
+                      <span style={{ ...s.badge, color: TYPE_COLORS[u.unit_type] || '#bb86fc' }}>
+                        {u.unit_type}
+                      </span>
+                    </td>
                     <td style={s.td}><span style={{ color: '#aaa' }}>#{u.type_id}</span></td>
                     <td style={s.td}>
                       <div style={{ width: '130px' }}>
                         <div style={s.hpLabel}>
-                          <span>{u.health} / {u.max_health}</span>
+                          <span>{u.health} / {maxHealth}</span>
                           <span style={{ color: hColor, fontWeight: 'bold' }}>{pct.toFixed(0)}%</span>
                         </div>
-                        <div style={s.barBg}><div style={{ ...s.barFill, width: `${pct}%`, background: hColor }} /></div>
+                        <div style={s.barBg}>
+                          <div style={{ ...s.barFill, width: `${pct}%`, background: hColor }} />
+                        </div>
                       </div>
                     </td>
-                    <td style={s.td}><InfoIcon unit={u} /></td>
+                    <td style={s.td}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {[...Array(maxAtks)].map((_, idx) => (
+                          <span 
+                            key={idx} 
+                            className="attack-icon" 
+                            style={{ color: idx < remainingAtks ? '#e53935' : '#333' }}
+                          >
+                            ⚔
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td style={s.td}>
+                      <InfoIcon stats={stats} />
+                    </td>
                     <td style={s.td}><ActionMenu unit={u} /></td>
                   </tr>
                 );
@@ -97,10 +142,15 @@ const ActionMenu = ({ unit }: { unit: Unit }) => {
         <div style={s.popover}>
           <div 
             className="menu-item" 
-            style={s.menuItem} 
+            style={{ 
+              ...s.menuItem, 
+              opacity: unit.attacks_remaining > 0 ? 1 : 0.5,
+              pointerEvents: unit.attacks_remaining > 0 ? 'auto' : 'none' 
+            }} 
             onClick={() => { console.log('Attack with', unit.type_id); setIsOpen(false); }}
           >
-            <span style={{ color: '#e53935', marginRight: '8px' }}>⚔</span> Attack
+            <span style={{ color: '#e53935', marginRight: '8px' }}>⚔</span> 
+            {unit.attacks_remaining > 0 ? 'Attack' : 'No Attacks'}
           </div>
           <div 
             className="menu-item" 
@@ -115,14 +165,22 @@ const ActionMenu = ({ unit }: { unit: Unit }) => {
   );
 };
 
-const InfoIcon = ({ unit }: { unit: Unit }) => (
+const InfoIcon = ({ stats }: { stats?: UnitType }) => (
   <div className="info-wrap">
     <div className="tooltip">
-      <div style={{ color: '#fff', borderBottom: '1px solid #333', marginBottom: '5px', paddingBottom: '2px', fontWeight: 'bold' }}>Unit Stats</div>
-      <div style={s.statRow}><span>Dmg:</span> <b>{unit.damage}</b></div>
-      <div style={s.statRow}><span>Atk:</span> <b>{unit.num_attacks}</b></div>
-      <div style={s.statRow}><span>Rng:</span> <b>{unit.attack_range}</b></div>
-      <div style={s.statRow}><span>Spd:</span> <b>{unit.speed}</b></div>
+      <div style={{ color: '#fff', borderBottom: '1px solid #333', marginBottom: '5px', paddingBottom: '2px', fontWeight: 'bold' }}>
+        Base Stats
+      </div>
+      {stats ? (
+        <>
+          <div style={s.statRow}><span>Dmg:</span> <b>{stats.damage}</b></div>
+          <div style={s.statRow}><span>Atk Cap:</span> <b>{stats.num_attacks}</b></div>
+          <div style={s.statRow}><span>Rng:</span> <b>{stats.attack_range}</b></div>
+          <div style={s.statRow}><span>Spd:</span> <b>{stats.speed}</b></div>
+        </>
+      ) : (
+        <div style={{ fontSize: '0.7rem', color: '#666' }}>No stat data</div>
+      )}
     </div>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>

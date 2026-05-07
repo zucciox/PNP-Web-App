@@ -307,3 +307,199 @@
 .dashboard-column > div {
   width: 100%;
 }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #1e1e1e;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid #333;
+  width: 320px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.modal-content h4 {
+  margin-top: 0;
+  color: #bb86fc;
+  margin-bottom: 1rem;
+}
+
+.input-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  font-size: 0.7rem;
+  color: #999;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.input-group input {
+  background: #121212;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.input-group input:focus {
+  border-color: #bb86fc;
+}
+
+.error-text {
+  color: #ff4444;
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #bb86fc;
+  color: #000;
+  font-weight: bold;
+}
+
+.btn-secondary {
+  background-color: #333;
+  color: #ccc;
+}
+
+.btn-primary:hover { background-color: #a370f7; }
+.btn-secondary:hover { background-color: #444; }
+
+.modal-large {
+  width: 450px; /* Wider for the grid layout */
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-content textarea {
+  background: #121212;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  resize: none;
+  font-family: inherit;
+}
+
+.modal-content textarea:focus {
+  border-color: #bb86fc;
+}
+
+/* Ensure number inputs don't show spinners for a cleaner look if desired */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Select dropdown styling */
+.modal-select {
+  background: #121212;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.modal-select:focus {
+  border-color: #bb86fc;
+}
+
+.modal-select option {
+  background: #1e1e1e;
+  color: #fff;
+}
+
+/* Ensure consistent spacing in the input group */
+.input-group select {
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* Additional Styles for Complete Shipment Logic */
+
+.modal-dynamic-height {
+  transition: height 0.3s ease;
+  min-height: 200px;
+}
+
+.conditional-fields {
+  animation: fadeIn 0.4s ease forwards;
+  border-left: 2px solid #bb86fc;
+  padding-left: 12px;
+  margin-top: 5px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Specific placeholder styling for the modal inputs */
+.modal-content input::placeholder {
+  color: #444;
+  font-size: 0.75rem;
+}
+
+/* economyStyles.css Additions */
+
+.input-group label {
+  transition: color 0.2s ease;
+}
+
+/* Give the dropdown a slightly distinct look to highlight it as a driver for the form logic */
+.modal-select {
+  border-left: 3px solid #bb86fc;
+}
+
+/* Ensure the Complete Shipment modal doesn't jump too much when switching labels */
+.modal-content {
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content h4 {
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.5rem;
+}

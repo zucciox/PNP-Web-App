@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GameProvider, useGameData } from '../GameContext';
 import EconomyDashboard from './economyDashboard/EconomyDashboard';
 import MilitaryDashboard from './militaryDashboard/MilitaryDashboard';
+import StoreDashboard from './storeDashboard/StoreDashboard';
 
 const LOADING_STYLE: React.CSSProperties = { textAlign: 'center', fontFamily: 'sans-serif', marginTop: '1rem' };
 const BANNER_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', backgroundColor: '#1a1a1a', padding: '10px 20px', color: 'white', fontFamily: 'sans-serif' };
@@ -77,6 +78,7 @@ function DashboardContent() {
       <main style={DASHBOARD_CONTAINER}>
         {activeTab === 'Economy' && <EconomyDashboard />}
         {activeTab === 'Military' && <MilitaryDashboard />}
+        {activeTab === 'Store' && <StoreDashboard />}
       </main>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Unit, Settlement, Facility } from '../../types';
+import { Unit, Settlement, Facility, UnitType } from '../../types';
 import { useGameData } from '../../GameContext';
 
 const TYPE_COLORS: Record<string, string> = {
@@ -7,11 +7,21 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export function DormantUnitsTable() {
-  const { units, settlements, facilities } = useGameData() as { 
+  const { units, settlements, facilities, unitTypes } = useGameData() as { 
     units: Unit[], 
     settlements: Settlement[], 
-    facilities: Facility[] 
+    facilities: Facility[],
+    unitTypes: UnitType[]
   };
+
+  // Create a lookup map for static unit type stats
+  const typeStatsMap = useMemo(() => {
+    const map: Record<string, UnitType> = {};
+    (unitTypes || []).forEach(t => {
+      map[t.unit_type] = t;
+    });
+    return map;
+  }, [unitTypes]);
 
   const dormantUnits = useMemo(() => {
     return (units || [])
@@ -47,7 +57,7 @@ export function DormantUnitsTable() {
         .tooltip { 
           visibility: hidden; opacity: 0; position: absolute; 
           right: 30px; top: 50%; transform: translateY(-50%);
-          width: 120px; background: #1e1e1e; border: 1px solid #444; 
+          width: 140px; background: #1e1e1e; border: 1px solid #444; 
           padding: 8px; border-radius: 4px; z-index: 100;
           transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
@@ -72,32 +82,38 @@ export function DormantUnitsTable() {
               </tr>
             </thead>
             <tbody>
-              {dormantUnits.map((u, i) => (
-                <tr key={`${u.type_id}-${i}`}>
-                  <td style={s.td}>
-                    <span style={{ ...s.badge, color: TYPE_COLORS[u.unit_type] || '#bb86fc', opacity: 0.7 }}>
-                      {u.unit_type}
-                    </span>
-                  </td>
-                  <td style={s.td}><span style={{ color: '#666' }}>#{u.type_id}</span></td>
-                  <td style={s.td}>
-                    <span style={{ 
-                      color: u.isError ? '#cf6679' : '#aaa',
-                      fontWeight: u.isError ? 'bold' : 'normal',
-                      fontSize: '0.9rem'
-                    }}>
-                      {u.location}
-                    </span>
-                  </td>
-                  <td style={s.td}><InfoIcon unit={u} /></td>
-                  <td style={s.td}>
-                    <div style={{ ...s.statusTag, borderColor: u.isError ? '#cf6679' : '#444' }}>
-                      {u.isError ? 'CONFLICT' : 'STANDBY'}
-                    </div>
-                  </td>
-                  <td style={s.td}><ActionMenu unit={u} /></td>
-                </tr>
-              ))}
+              {dormantUnits.map((u, i) => {
+                const stats = typeStatsMap[u.unit_type];
+                return (
+                  <tr key={`${u.type_id}-${i}`}>
+                    <td style={s.td}>
+                      <span style={{ ...s.badge, color: TYPE_COLORS[u.unit_type] || '#bb86fc', opacity: 0.7 }}>
+                        {u.unit_type}
+                      </span>
+                    </td>
+                    <td style={s.td}><span style={{ color: '#666' }}>#{u.type_id}</span></td>
+                    <td style={s.td}>
+                      <span style={{ 
+                        color: u.isError ? '#cf6679' : '#aaa',
+                        fontWeight: u.isError ? 'bold' : 'normal',
+                        fontSize: '0.9rem'
+                      }}>
+                        {u.location}
+                      </span>
+                    </td>
+                    <td style={s.td}>
+                      {/* Pulling from unitTypes map instead of unit instance */}
+                      <InfoIcon stats={stats} />
+                    </td>
+                    <td style={s.td}>
+                      <div style={{ ...s.statusTag, borderColor: u.isError ? '#cf6679' : '#444' }}>
+                        {u.isError ? 'CONFLICT' : 'STANDBY'}
+                      </div>
+                    </td>
+                    <td style={s.td}><ActionMenu unit={u} /></td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         ) : (
@@ -154,14 +170,23 @@ const ActionMenu = ({ unit }: { unit: any }) => {
   );
 };
 
-const InfoIcon = ({ unit }: { unit: Unit }) => (
+// Updated to display UnitType static data
+const InfoIcon = ({ stats }: { stats?: UnitType }) => (
   <div className="info-wrap">
     <div className="tooltip">
-      <div style={{ color: '#fff', borderBottom: '1px solid #333', marginBottom: '5px', paddingBottom: '2px', fontWeight: 'bold' }}>Unit Stats</div>
-      <div style={s.statRow}><span>Dmg:</span> <b>{unit.damage}</b></div>
-      <div style={s.statRow}><span>Atk:</span> <b>{unit.num_attacks}</b></div>
-      <div style={s.statRow}><span>Rng:</span> <b>{unit.attack_range}</b></div>
-      <div style={s.statRow}><span>Spd:</span> <b>{unit.speed}</b></div>
+      <div style={{ color: '#fff', borderBottom: '1px solid #333', marginBottom: '5px', paddingBottom: '2px', fontWeight: 'bold' }}>
+        Base Stats
+      </div>
+      {stats ? (
+        <>
+          <div style={s.statRow}><span>Dmg:</span> <b>{stats.damage}</b></div>
+          <div style={s.statRow}><span>Atk:</span> <b>{stats.num_attacks}</b></div>
+          <div style={s.statRow}><span>Rng:</span> <b>{stats.attack_range}</b></div>
+          <div style={s.statRow}><span>Spd:</span> <b>{stats.speed}</b></div>
+        </>
+      ) : (
+        <div style={{ fontSize: '0.7rem', color: '#666' }}>No data</div>
+      )}
     </div>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
