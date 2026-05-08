@@ -3,32 +3,29 @@ import { useGameData } from '../../GameContext';
 import '../../styles/storeStyles.css';
 
 export function ActiveOrders() {
-  const { orders, facilities, gameState } = useGameData();
-  const currentInterval = gameState?.interval || 0;
+  const { orders, facilities } = useGameData();
 
   const processingOrders = useMemo(() => {
     if (!orders || !facilities) return [];
 
     return orders
-      .filter(order => order.target_interval > currentInterval)
+      // Filter for orders that still have time remaining
+      .filter(order => order.intervals_remaining > 0)
       .map(order => {
         const factory = facilities.find(f => f.global_id === order.facility_id);
-        
-        // Logic: (Current / Target) would be inaccurate if we don't know start_interval.
-        // If your DB doesn't track start_interval, we show remaining ticks or a generic active state.
-        // Assuming a standard "ticks remaining" approach:
-        const ticksLeft = order.target_interval - currentInterval;
         
         return {
           ...order,
           facilityName: factory 
             ? `${factory.facility_type} #${factory.type_id}` 
             : `Unknown Facility`,
-          ticksLeft
+          // We map the value directly now
+          ticksLeft: order.intervals_remaining
         };
       })
-      .sort((a, b) => a.target_interval - b.target_interval); // Sooner completions first
-  }, [orders, facilities, currentInterval]);
+      // Sort by smallest intervals_remaining first (soonest to finish)
+      .sort((a, b) => a.intervals_remaining - b.intervals_remaining);
+  }, [orders, facilities]);
 
   return (
     <div className="store-container sidebar-variant">
@@ -46,7 +43,9 @@ export function ActiveOrders() {
               <div key={order.order_id} className="purchase-card active-order-card">
                 <div className="order-header">
                   <span className="card-name">{order.piece_type}</span>
-                  <span className="order-status-tag">{order.ticksLeft} Intervals Until Completion</span>
+                  <span className="order-status-tag">
+                    {order.ticksLeft} {order.ticksLeft === 1 ? 'Interval' : 'Intervals'} Remaining
+                  </span>
                 </div>
                 
                 <div className="order-facility-sub">
@@ -54,7 +53,7 @@ export function ActiveOrders() {
                 </div>
 
                 <div className="order-progress-container">
-                  {/* Since we only have target_interval, we use a pulsed "active" bar */}
+                  {/* Indeterminate bar used since we lack the original start_interval for a % calculation */}
                   <div className="order-progress-bar indeterminate"></div>
                 </div>
               </div>

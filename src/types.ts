@@ -1,4 +1,5 @@
 export interface Unit {
+    global_id: number;
     unit_type: string;
     type_id: number;
     max_health: number;
@@ -13,6 +14,7 @@ export interface Unit {
     inactive_settlement: number;
     inactive_facility: number;
     attacks_remaining: number;
+    worked_facility: number;
 }
 
 export interface UnitType {
@@ -76,7 +78,7 @@ export interface Facility {
     TitaniumOre: number;
     PlatinumOre: number;
     UraniumOre: number;
-    [key: string]: string | number | boolean;
+    [key: string]: any;
 }
 
 
@@ -101,7 +103,9 @@ export interface FacilityType {
     build_time: number;
     factory_lvl: number;
     proprietary_nation: string;
-    [key: string]: string | number;
+    is_purchasable: boolean;
+    is_variable_output: boolean;
+    [key: string]: any;
 }
 
 export interface Settlement {
@@ -167,7 +171,8 @@ export interface gameStateData {
     interval: number;
     cycle: number;
     next_interval_time: string;
-    is_paused: boolean;
+    is_active: boolean;
+    id: number;
 }
 
 
@@ -192,7 +197,9 @@ export interface Nation {
 
 export interface Order {
     order_id: number;
-    target_interval: number;
-
+    intervals_remaining: number;
+    nation_id: string;
+    facility_id: number;
+    piece_type: string;
     [key: number]: string | number;
 }

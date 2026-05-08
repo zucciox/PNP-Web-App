@@ -53,8 +53,20 @@ export function FactoryStore() {
 
   const purchasableItems = useMemo(() => {
     if (!activeFactoryType) return [];
-    const source = selectedType === 'unit' ? unitTypes : facilityTypes;
-    return source.filter(item => item.factory_lvl <= activeFactoryType.mfg_level);
+    
+    const isUnit = selectedType === 'unit';
+    const source = isUnit ? unitTypes : facilityTypes;
+
+    return source.filter(item => {
+      // 1. Check Factory Level Requirement
+      const meetLevel = item.factory_lvl <= activeFactoryType.mfg_level;
+      
+      // 2. Check Purchasable Flag (Only for facilities)
+      // We check if it's NOT a unit, then ensure is_purchasable isn't explicitly false
+      const canBePurchased = isUnit || item.is_purchasable !== false;
+
+      return meetLevel && canBePurchased;
+    });
   }, [selectedType, activeFactoryType, unitTypes, facilityTypes]);
 
   const groupedItems = useMemo(() => {

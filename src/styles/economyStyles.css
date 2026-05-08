@@ -292,6 +292,7 @@
   justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
+  margin-bottom: 20px;
 }
 
 .dashboard-column {
@@ -502,4 +503,126 @@ input::-webkit-inner-spin-button {
 .modal-content h4 {
   border-bottom: 1px solid #333;
   padding-bottom: 0.5rem;
+}
+
+/* --- Facility Table Specific Additions --- */
+
+.facility-card-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.facility-card {
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.facility-card.inactive-facility {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+  border-style: dashed;
+}
+
+.production-info {
+  margin: 0.5rem 0;
+  padding: 4px 8px;
+  background: #121212;
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.stored-resources-section {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.section-title {
+  font-size: 0.65rem;
+  color: #666;
+  text-transform: uppercase;
+  margin: 0 0 4px 0;
+  letter-spacing: 0.5px;
+}
+
+.storage-mini-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.storage-pill {
+  font-size: 0.65rem;
+  background: #2a2a2a;
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #333;
+}
+
+.res-label {
+  color: #999;
+  margin-right: 3px;
+}
+
+.res-value {
+  font-weight: bold;
+}
+
+/* Hover Overlay Logic */
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 5;
+}
+
+.facility-card-wrapper:hover .card-overlay {
+  opacity: 1;
+}
+
+.btn-enable, .btn-disable {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.btn-enable {
+  background-color: #03da3c;
+  color: #000;
+}
+
+.btn-disable {
+  background-color: #da0303;
+  color: #fff;
+}
+
+.error-banner {
+  background: rgba(218, 3, 3, 0.2);
+  color: #ff4444;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid #da0303;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+  text-align: center;
 }

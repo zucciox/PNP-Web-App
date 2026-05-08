@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Add this
 import { supabase } from './supabaseClient';
-import './app.css'; // Import your CSS file here
+import './app.css';
 
 export const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate(); // Initialize navigate
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // Map username to the internal dummy email
     const dummyEmail = `${username.toLowerCase()}@powerpeace.org`;
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: dummyEmail,
       password: password,
     });
@@ -25,7 +26,8 @@ export const LoginPage = () => {
       setError("Access denied. Check your Player ID and Access Key.");
       setLoading(false);
     } else {
-      window.location.href = '/dashboard'; 
+      // Use navigate instead of window.location.href for smoother session handling
+      navigate('/dashboard');
     }
   };
 

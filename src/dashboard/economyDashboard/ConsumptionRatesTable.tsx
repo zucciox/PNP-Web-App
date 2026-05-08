@@ -7,12 +7,15 @@ const formatResourceValue = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(value);
 };
 
-type KeysOfType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T];
-
 export function ConsumptionRatesTable() {
   const { settlements } = useGameData();
 
-  const resourceMap: { key: KeysOfType<Settlement, number>; label: string }[] = [
+  /**
+   * By using 'keyof Settlement', we ensure the keys exist.
+   * We use an explicit type assertion 'as number' in the map below 
+   * to handle the Index Signature conflict.
+   */
+  const resourceMap: { key: keyof Settlement; label: string }[] = [
     { key: 'treasury_cr', label: 'Money' },
     { key: 'energy_cr', label: 'Energy' },
     { key: 'gas_cr', label: 'Gas' },
@@ -50,7 +53,10 @@ export function ConsumptionRatesTable() {
                 <div key={res.key} className="resource-item">
                   <span className="resource-label">{res.label}</span>
                   <span className="resource-value">
-                    -{formatResourceValue(s[res.key])} 
+                    {/* Casting to number here because the Settlement interface 
+                        allows both string | number via its index signature.
+                    */}
+                    -{formatResourceValue(s[res.key] as number)} 
                     <small className="resource-unit"> /cycle</small>
                   </span>
                 </div>

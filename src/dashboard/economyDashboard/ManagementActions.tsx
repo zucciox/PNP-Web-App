@@ -18,8 +18,10 @@ export function ManagementActions() {
     amount: '', 
     originId: '',
     originType: 'facility',
+    originFacilityType: '',
     originNation: '', 
-    unitId: '', 
+    unitId: '',        // This maps to the unit's type_id
+    unitType: '',      // Added: The specific type of unit (e.g., Truck)
     destination: '', 
     notes: ''
   };
@@ -87,16 +89,19 @@ export function ManagementActions() {
       setErrorMessage('Error: Origin Nation must be a single capital letter (A-Z).');
       return;
     }
+
     const { error } = await supabase.rpc('create_shipment', { 
       p_resource: shipmentForm.resource,
       p_amount: parseInt(shipmentForm.amount), 
       p_origin_id: parseInt(shipmentForm.originId), 
       p_origin_type: shipmentForm.originType,
       p_origin_nation: shipmentForm.originNation, 
-      p_unit_id: parseInt(shipmentForm.unitId), 
+      p_unit_id: parseInt(shipmentForm.unitId),       // Passes type_id
+      p_unit_type: shipmentForm.unitType,             // Passes unit_type
       p_destination: shipmentForm.destination, 
       p_notes: shipmentForm.notes,
     });
+
     if (error) setErrorMessage(error.message);
     else closeModal();
   };
@@ -128,6 +133,7 @@ export function ManagementActions() {
         ))}
       </div>
 
+      {/* Complete Shipment Modal */}
       {activeModal === 'complete' && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -196,7 +202,7 @@ export function ManagementActions() {
             <form onSubmit={handlePayNation}>
               <div className="input-group">
                 <label>Nation (A-Z)</label>
-                <input type="text" maxLength={1} value={payNationInput} onChange={(e) => setPayNationInput(e.target.value)} required />
+                <input type="text" maxLength={1} value={payNationInput} onChange={(e) => setPayNationInput(e.target.value.toUpperCase())} required />
               </div>
               <div className="input-group">
                 <label>Amount</label>
@@ -212,7 +218,7 @@ export function ManagementActions() {
         </div>
       )}
 
-      {/* Create Shipment Modal */}
+      {/* Create Shipment Modal (Updated) */}
       {activeModal === 'shipment' && (
         <div className="modal-overlay">
           <div className="modal-content modal-large">
@@ -225,12 +231,13 @@ export function ManagementActions() {
                 </div>
                 <div className="input-group">
                   <label>Origin Nation (A-Z)</label>
-                  <input type="text" maxLength={1} value={shipmentForm.originNation} onChange={(e) => setShipmentForm({...shipmentForm, originNation: e.target.value})} required />
+                  <input type="text" maxLength={1} value={shipmentForm.originNation} onChange={(e) => setShipmentForm({...shipmentForm, originNation: e.target.value.toUpperCase()})} required />
                 </div>
                 <div className="input-group">
                   <label>Amount</label>
                   <input type="number" value={shipmentForm.amount} onChange={(e) => setShipmentForm({...shipmentForm, amount: e.target.value})} required />
                 </div>
+                
                 <div className="input-group">
                   <label>Origin Type</label>
                   <select 
@@ -242,19 +249,37 @@ export function ManagementActions() {
                     <option value="settlement">Settlement</option>
                   </select>
                 </div>
+
+                {shipmentForm.originType === 'facility' && (
+                  <div className="input-group">
+                    <label>Facility Type</label>
+                    <input type="text" placeholder="Mine, Factory, etc." value={shipmentForm.originFacilityType} onChange={(e) => setShipmentForm({...shipmentForm, originFacilityType: e.target.value})} required />
+                  </div>
+                )}
+
                 <div className="input-group">
                   <label>{shipmentForm.originType === 'facility' ? 'Origin type_id' : 'Origin global_id'}</label>
                   <input type="number" value={shipmentForm.originId} onChange={(e) => setShipmentForm({...shipmentForm, originId: e.target.value})} required />
                 </div>
+
+                <hr style={{ gridColumn: 'span 2', width: '100%', margin: '10px 0', borderColor: '#444' }} />
+
                 <div className="input-group">
-                  <label>Shipping Unit ID</label>
+                  <label>Shipping Unit Type</label>
+                  <input type="text" placeholder="Truck, Cargo Ship, etc." value={shipmentForm.unitType} onChange={(e) => setShipmentForm({...shipmentForm, unitType: e.target.value})} required />
+                </div>
+
+                <div className="input-group">
+                  <label>Shipping Unit type_id</label>
                   <input type="number" value={shipmentForm.unitId} onChange={(e) => setShipmentForm({...shipmentForm, unitId: e.target.value})} required />
                 </div>
+
                 <div className="input-group">
                   <label>Destination Label</label>
-                  <input type="text" value={shipmentForm.destination} onChange={(e) => setShipmentForm({...shipmentForm, destination: e.target.value})} required />
+                  <input type="text" placeholder="Friendly name for logs" value={shipmentForm.destination} onChange={(e) => setShipmentForm({...shipmentForm, destination: e.target.value})} required />
                 </div>
               </div>
+
               <div className="input-group" style={{ marginTop: '10px' }}>
                 <label>Notes</label>
                 <textarea rows={2} value={shipmentForm.notes} onChange={(e) => setShipmentForm({...shipmentForm, notes: e.target.value})} />

@@ -1,71 +1,64 @@
-import React, { useState } from 'react';
-import { useGameData } from '../../GameContext';
+import React from 'react'; 
+import { useGameData } from '../../GameContext'; 
 import '../../styles/economyStyles.css'; 
 
-export function OperatingCostsTable() {
-  const { facilities, units } = useGameData();
-  const [activeTab, setActiveTab] = useState<'units' | 'facilities'>('units');
+export function OperatingCostsTable() { 
+  const { facilities, units, facilityTypes, unitTypes } = useGameData(); 
 
-  const totalInterval = [...units, ...facilities].reduce((acc, item) => {
-    const cost = Number(item?.oc_interval ?? 0);
-    return acc + cost;
-  }, 0);
-  const totalCycle = totalInterval * 10;
+  const getOperatingCost = (item: any): number => { 
+    if ('unit_type' in item) { 
+      const typeDef = unitTypes.find((t: any) => t.unit_type === item.unit_type); 
+      return Number(typeDef?.oc_interval ?? 0); 
+    } else { 
+      const typeDef = facilityTypes.find((t: any) => t.facility_type === item.facility_type); 
+      return Number(typeDef?.oc_interval ?? 0); 
+    } 
+  }; 
 
-  const formatCurrency = (value: number | undefined | null) => {
-    return (value ?? 0).toLocaleString(undefined, {
-    });
-  };
+  // Combined total only for active items
+  const totalInterval = [...units, ...facilities]
+    .filter(item => item.is_active)
+    .reduce((acc, item) => acc + getOperatingCost(item), 0); 
 
-  return (
-    <section className="summary-container">
-      <h3>
-        Operating Costs
-      </h3>
+  const totalCycle = totalInterval * 10; 
 
-      {/* Summary Highlight Card */}
-      <div className="settlement-card costs-summary-card">
-        <div>
-          <span className="cost-label">Total Per Interval</span>
-          <span className="cost-value-large">${formatCurrency(totalInterval)}</span>
+  const formatCurrency = (value: number | undefined | null) => { 
+    return (value ?? 0).toLocaleString(undefined); 
+  }; 
+
+  // Calculating sub-totals for active items
+  const activeUnits = units.filter(u => u.is_active);
+  const activeFacilities = facilities.filter(f => f.is_active);
+
+  const unitsTotal = activeUnits.reduce((acc, u) => acc + getOperatingCost(u), 0);
+  const facilitiesTotal = activeFacilities.reduce((acc, f) => acc + getOperatingCost(f), 0);
+
+  return ( 
+    <section className="summary-container"> 
+      <h3>Operating Costs</h3> 
+
+      <div className="settlement-card costs-summary-card"> 
+        <div> 
+          <span className="cost-label">Total Per Interval</span> 
+          <span className="cost-value-large">${formatCurrency(totalInterval)}</span> 
+        </div> 
+        <div className="divider-v"></div> 
+        <div> 
+          <span className="cost-label">Total Per Cycle</span> 
+          <span className="cost-value-large">${formatCurrency(totalCycle)}</span> 
+        </div> 
+      </div> 
+
+      <div className="settlement-card" style={{ marginTop: '12px', padding: '16px' }}>
+        <div className="resource-item">
+          <span>Active Units ({activeUnits.length}/{units.length})</span>
+          <span className="resource-value">${formatCurrency(unitsTotal)}</span>
         </div>
-        <div className="divider-v"></div>
-        <div>
-          <span className="cost-label">Total Per Cycle</span>
-          <span className="cost-value-large">${formatCurrency(totalCycle)}</span>
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="tab-nav">
-        <button 
-          onClick={() => setActiveTab('units')} 
-          className={`tab-button ${activeTab === 'units' ? 'active' : ''}`}
-        >
-          Units ({units.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('facilities')} 
-          className={`tab-button ${activeTab === 'facilities' ? 'active' : ''}`}
-        >
-          Facilities ({facilities.length})
-        </button>
-      </div>
-
-      {/* List Area */}
-      <div className="scroll-area">
-        <div className="settlement-card tab-content-area">
-          {(activeTab === 'units' ? units : facilities).map((item, i) => (
-            <div key={`${activeTab}-${i}`} className="resource-item" style={{ marginBottom: '6px' }}>
-              <span style={{ color: '#e0e0e0' }}>
-                {'unit_type' in item ? item.unit_type : item.facility_type} 
-                <small className="sub-text"> ID:{item.type_id}</small>
-              </span>
-              <span className="resource-value">${(Number(item?.oc_interval) || 0).toLocaleString()}</span>
-            </div>
-          ))}
+        <div className="resource-item" style={{ marginTop: '8px' }}>
+          <span>Active Facilities ({activeFacilities.length}/{facilities.length})</span>
+          <span className="resource-value">${formatCurrency(facilitiesTotal)}</span>
         </div>
       </div>
-    </section>
-  );
+    </section> 
+  ); 
 }

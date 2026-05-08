@@ -1,5 +1,5 @@
 import React from 'react';
-import { FacilitySummaryTable } from './FacilitySummaryTable'; 
+import { ProductionSummaryTable } from './ProductionSummaryTable'; 
 import { ConsumptionRatesTable } from './ConsumptionRatesTable'; 
 import { ResourceStockpileTable } from './ResourceStockpileTable'; 
 import { OperatingCostsTable } from './OperatingCostsTable';
@@ -7,6 +7,8 @@ import { ShipmentsTable } from './ShipmentsTable';
 import { ManagementActions } from './ManagementActions';
 import { useGameData } from '../../GameContext';
 import '../../styles/economyStyles.css'; 
+import { FacilityTable } from './FacilityTable';
+import { WorkersTable } from './WorkerTable';
 
 export default function EconomyDashboard() {
   const { facilities, settlements, units, shipments } = useGameData();
@@ -28,7 +30,7 @@ export default function EconomyDashboard() {
           <h2 className="economy-column-header">Resource Production</h2>
           <ResourceStockpileTable />
           <div className="spacer-v" />
-          <FacilitySummaryTable />
+          <ProductionSummaryTable />
         </section>
 
         {/* Resource Management Column */}
@@ -40,6 +42,8 @@ export default function EconomyDashboard() {
         </section>
 
       </main>
+      <FacilityTable/>
+      <WorkersTable/>
     </div>
   );
 }
