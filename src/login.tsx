@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Add this
 import { supabase } from './supabaseClient';
-import './app.css';
+import './App.css';
 
 export const LoginPage = () => {
   const [username, setUsername] = useState('');
