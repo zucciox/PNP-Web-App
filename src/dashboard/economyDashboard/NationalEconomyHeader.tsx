@@ -1,0 +1,147 @@
+import React, { useMemo, useState } from 'react';
+import { useGameData } from '../../GameContext';
+import '../../styles/economyStyles.css'; 
+
+const resourceColors: Record<string, string> = {
+  Treasury: '#daa520', Steel: '#7a5a30', Aluminum: '#7b409e', Copper: '#8b4513',
+  Platinum: '#2d74b3', Titanium: '#58b7e6', Gold: '#daa520', Diamond: '#74a1d3',
+  Uranium: '#76a34d', Oxygen: '#4a7c36', Food: '#a0522d', Water: '#3d5a99', 
+  Fuel: '#e3242b', Energy: '#ffea00'
+};
+
+const DISPLAY_RESOURCES = [
+  'Treasury', 'Energy', 'Steel', 'Aluminum', 'Copper', 'Platinum', 
+  'Titanium', 'Gold', 'Diamond', 'Uranium', 'Oxygen', 'Food', 'Water', 'Fuel'
+];
+
+export function NationalEconomyHeader() {
+  const { facilities, facilityTypes, settlements, nation } = useGameData();
+  const [viewMode, setViewMode] = useState<'interval' | 'cycle'>('interval');
+
+  const stats = useMemo(() => {
+    const totals = {
+      reserves: {} as Record<string, number>,
+      production: {} as Record<string, number>,
+      consumption: {} as Record<string, number>
+    };
+
+    DISPLAY_RESOURCES.forEach(r => {
+      totals.reserves[r] = 0;
+      totals.production[r] = 0;
+      totals.consumption[r] = 0;
+    });
+
+    // 1. Reserves
+    totals.reserves['Treasury'] = nation?.Treasury || 0;
+    settlements.forEach(s => {
+      DISPLAY_RESOURCES.forEach(r => { if(r !== 'Treasury') totals.reserves[r] += (Number(s[r]) || 0); });
+    });
+    facilities.forEach(f => {
+      DISPLAY_RESOURCES.forEach(r => { if(r !== 'Treasury') totals.reserves[r] += (Number(f[r]) || 0); });
+    });
+
+    // 2. Production
+    totals.production['Treasury'] = Number(nation?.interval_income) || 0;
+    facilities.forEach(f => {
+      if (!f.is_active) return;
+      const typeDef = facilityTypes.find(t => t.facility_type === f.facility_type);
+      if (typeDef && typeDef.output_type) {
+        const res = typeDef.output_type.replace(/\s+/g, '');
+        if (DISPLAY_RESOURCES.includes(res)) {
+          let amount = Number(typeDef.output_amount_interval) || 0;
+          if (typeDef.is_variable_output) amount *= (Number(f.workers_assigned) || 0);
+          totals.production[res] += amount;
+        }
+      }
+    });
+
+    // 3. Consumption (Note: Consumption in your previous context was already per cycle /c)
+    settlements.forEach(s => {
+      totals.consumption['Treasury'] += (Number(s.treasury_cr) || 0);
+      totals.consumption['Energy'] += (Number(s.energy_cr) || 0);
+      totals.consumption['Steel'] += (Number(s.steel_cr) || 0);
+      totals.consumption['Aluminum'] += (Number(s.aluminum_cr) || 0);
+      totals.consumption['Copper'] += (Number(s.copper_cr) || 0);
+      totals.consumption['Platinum'] += (Number(s.platinum_cr) || 0);
+      totals.consumption['Titanium'] += (Number(s.titanium_cr) || 0);
+      totals.consumption['Gold'] += (Number(s.gold_cr) || 0);
+      totals.consumption['Diamond'] += (Number(s.diamond_cr) || 0);
+      totals.consumption['Uranium'] += (Number(s.uranium_cr) || 0);
+      totals.consumption['Oxygen'] += (Number(s.oxygen_cr) || 0);
+      totals.consumption['Food'] += (Number(s.food_cr) || 0);
+      totals.consumption['Water'] += (Number(s.water_cr) || 0);
+      totals.consumption['Fuel'] += (Number(s.fuel_cr) || 0);
+    });
+
+    return totals;
+  }, [facilities, facilityTypes, settlements, nation]);
+
+  const ResourceColumn = ({ title, data, valueColor, suffix = "", controls }: any) => (
+    <div className="dashboard-column" style={{ flex: 1, minWidth: '300px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 className="economy-column-header" style={{ margin: 0 }}>{title}</h2>
+        {controls}
+      </div>
+      <div className="summary-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <div className="resource-grid" style={{ padding: '10px' }}>
+          {DISPLAY_RESOURCES.map(res => {
+            const finalValue = viewMode === 'cycle' && title.includes("Production") 
+              ? data[res] * 10 
+              : data[res];
+              
+            return (
+              <div key={res} className="resource-item" style={{ borderBottom: '1px solid #333' }}>
+                <span style={{ color: resourceColors[res], fontWeight: 'bold' }}>{res}</span>
+                <span style={{ color: valueColor, fontFamily: 'monospace' }}>
+                  {finalValue.toLocaleString()}{suffix}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  const ProductionToggle = (
+    <div className="toggle-container" style={{ display: 'flex', gap: '5px', paddingRight: '10px' }}>
+      <button 
+        onClick={() => setViewMode('interval')}
+        className={`tab-button ${viewMode === 'interval' ? 'active' : ''}`}
+        style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+      >
+        Interval
+      </button>
+      <button 
+        onClick={() => setViewMode('cycle')}
+        className={`tab-button ${viewMode === 'cycle' ? 'active' : ''}`}
+        style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+      >
+        Cycle
+      </button>
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', gap: '20px', width: '100%', marginBottom: '20px' }}>
+      <ResourceColumn 
+        title="National Consumption" 
+        data={stats.consumption} 
+        valueColor="#ff4444" 
+        suffix="/c" 
+      />
+      <ResourceColumn 
+        title="National Reserves" 
+        data={stats.reserves} 
+        valueColor="#4488ff" 
+      />
+      <ResourceColumn 
+        title="National Production" 
+        data={stats.production} 
+        valueColor="#44ff44" 
+        suffix={viewMode === 'interval' ? "/i" : "/c"}
+        controls={ProductionToggle}
+      />
+    </div>
+  );
+}

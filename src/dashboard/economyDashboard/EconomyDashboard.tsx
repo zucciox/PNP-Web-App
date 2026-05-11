@@ -1,49 +1,51 @@
 import React from 'react';
+import { NationalEconomyHeader } from './NationalEconomyHeader';
 import { ProductionSummaryTable } from './ProductionSummaryTable'; 
-import { ConsumptionRatesTable } from './ConsumptionRatesTable'; 
-import { ResourceStockpileTable } from './ResourceStockpileTable'; 
+import { SettlementsTable } from './SettlementsTable'; 
 import { OperatingCostsTable } from './OperatingCostsTable';
 import { ShipmentsTable } from './ShipmentsTable';
 import { ManagementActions } from './ManagementActions';
-import { useGameData } from '../../GameContext';
-import '../../styles/economyStyles.css'; 
 import { FacilityTable } from './FacilityTable';
 import { WorkersTable } from './WorkerTable';
+import { useGameData } from '../../GameContext';
+import '../../styles/economyStyles.css'; 
 
 export default function EconomyDashboard() {
   const { facilities, settlements, units, shipments } = useGameData();
 
   return (
-    <div className="dashboard-root">
-      <main className="dashboard-grid">
+    <div className="dashboard-root" style={{ padding: '20px' }}>
+      {/* NEW FULL-WIDTH ROW */}
+      <NationalEconomyHeader />
+
+      <hr style={{ borderColor: '#333', margin: '40px 0' }} />
+
+      {/* DISPLACED COMPONENTS (Unorganized Bottom Section) */}
+      <div className="displaced-content" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+        <div style={{ flex: '1 1 45%' }}>
+          <SettlementsTable />
+        </div>
         
-        {/* Resource Consumption Column */}
-        <section className="dashboard-column">
-          <h2 className="economy-column-header">Resource Consumption</h2>
-          {settlements ? <ConsumptionRatesTable /> : <p>No consumption data found.</p>}
-          <div className="spacer-v" />
-          {units && facilities ? <OperatingCostsTable /> : <p>Loading unit and facility data...</p>}
-        </section>
+        <div style={{ flex: '1 1 45%' }}>
+          {shipments && <ShipmentsTable />}
+        </div>
 
-        {/* Resource Production Column */}
-        <section className="dashboard-column">
-          <h2 className="economy-column-header">Resource Production</h2>
-          <ResourceStockpileTable />
-          <div className="spacer-v" />
-          <ProductionSummaryTable />
-        </section>
+        <div style={{ flex: '1 1 45%' }}>
+          <OperatingCostsTable />
+        </div>
 
-        {/* Resource Management Column */}
-        <section className="dashboard-column">
-          <h2 className="economy-column-header">Resource Management</h2>
-          {shipments ? <ShipmentsTable /> : <p>No shipment data found.</p>}
-          <div className="spacer-v" />
+        <div style={{ flex: '1 1 45%' }}>
           <ManagementActions />
-        </section>
+        </div>
 
-      </main>
-      <FacilityTable/>
-      <WorkersTable/>
+        <div style={{ width: '100%' }}>
+          <FacilityTable />
+        </div>
+
+        <div style={{ width: '100%' }}>
+          <WorkersTable />
+        </div>
+      </div>
     </div>
   );
 }
