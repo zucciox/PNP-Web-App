@@ -76,7 +76,7 @@ export function NationalEconomyHeader() {
     return totals;
   }, [facilities, facilityTypes, settlements, nation]);
 
-  const ResourceColumn = ({ title, data, valueColor, suffix = "", controls }: any) => (
+  const ResourceColumn = ({ title, data, valueColor, suffix = "", controls, prefix ="" }: any) => (
     <div className="dashboard-column" style={{ flex: 1, minWidth: '300px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 className="economy-column-header" style={{ margin: 0 }}>{title}</h2>
@@ -93,7 +93,7 @@ export function NationalEconomyHeader() {
               <div key={res} className="resource-item" style={{ borderBottom: '1px solid #333' }}>
                 <span style={{ color: resourceColors[res], fontWeight: 'bold' }}>{res}</span>
                 <span style={{ color: valueColor, fontFamily: 'monospace' }}>
-                  {finalValue.toLocaleString()}{suffix}
+                  {prefix}{finalValue.toLocaleString()}{suffix}
                 </span>
               </div>
             );
@@ -128,18 +128,21 @@ export function NationalEconomyHeader() {
         title="National Consumption" 
         data={stats.consumption} 
         valueColor="#ff4444" 
-        suffix="/c" 
+        suffix="/c"
+        prefix="-" 
       />
       <ResourceColumn 
         title="National Reserves" 
         data={stats.reserves} 
         valueColor="#4488ff" 
+        prefix="" 
       />
       <ResourceColumn 
         title="National Production" 
         data={stats.production} 
         valueColor="#44ff44" 
         suffix={viewMode === 'interval' ? "/i" : "/c"}
+        prefix="+" 
         controls={ProductionToggle}
       />
     </div>

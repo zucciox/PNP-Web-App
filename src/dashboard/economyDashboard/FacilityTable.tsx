@@ -41,7 +41,24 @@ export function FacilityTable() {
     }
   };
 
-  // Helper to determine what to show in the production section
+  // --- Grouping Logic ---
+  const groups = {
+    production: facilities.filter(f => {
+      const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
+      return typeInfo?.output_type !== null;
+    }),
+    factories: facilities.filter(f => {
+      const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
+      const isFactory = f.facility_type?.includes("Factory");
+      // Avoid duplicating if it already fell into production group
+      return isFactory && typeInfo?.output_type === null;
+    }),
+    other: facilities.filter(f => {
+      const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
+      return typeInfo?.output_type === null && !f.facility_type?.includes("Factory");
+    })
+  };
+
   const renderProductionLine = (facility: Facility, typeInfo: any) => {
     const outputAmt = typeInfo?.output_amount_interval;
     const outputType = typeInfo?.output_type;
@@ -49,26 +66,22 @@ export function FacilityTable() {
     const facilityName = facility.facility_type || "";
     const workers = Number(facility.workers_assigned || 0);
 
-    // 1. If both output_type and amount are null, hide entirely
-    if (outputType === null && outputAmt === null) return null;
-
-    // 2. Factory Tier Logic (Both types null and name includes Factory)
-    if (outputType === null && inputType === null && facilityName.includes("Factory")) {
-      let refineryText = "";
-      if (facilityName.includes("Tier I ")) refineryText = "Refines Copper & Gold";
-      else if (facilityName.includes("Tier II ")) refineryText = "Refines Iron & Diamonds";
-      else if (facilityName.includes("Tier III ")) refineryText = "Refines Aluminum & Titanium";
-      else if (facilityName.includes("Tier IV ")) refineryText = "Refines Platinum & Uranium";
-      
-      return refineryText ? <span className="pos-value">{refineryText}</span> : null;
+    if (outputType === null && outputAmt === null) {
+        if (facilityName.includes("Factory")) {
+            let refineryText = "";
+            if (facilityName.includes("Tier I ")) refineryText = "Refines Copper & Gold";
+            else if (facilityName.includes("Tier II ")) refineryText = "Refines Iron & Diamonds";
+            else if (facilityName.includes("Tier III ")) refineryText = "Refines Aluminum & Titanium";
+            else if (facilityName.includes("Tier IV ")) refineryText = "Refines Platinum & Uranium";
+            return refineryText ? <span className="pos-value">{refineryText}</span> : null;
+        }
+        return null;
     }
 
-    // 3. Produces <type> (Amount null, but types exist)
     if (outputAmt === null && inputType !== null && outputType !== null) {
       return <span className="pos-value">Produces {outputType}</span>;
     }
 
-    // 4. Standard Numeric Output (Handle variable output calculation)
     const baseOutput = Number(outputAmt || 0);
     const finalOutput = typeInfo?.is_variable_output ? baseOutput * workers : baseOutput;
 
@@ -80,18 +93,17 @@ export function FacilityTable() {
     );
   };
 
-  return (
-    <div className="summary-container" style={{ padding: '1rem' }}>
-      <h2 className="consumption-header">Facilities</h2>
-      
-      {errorMsg && <div className="error-banner">{errorMsg}</div>}
-      
-      <div className="scroll-area">
+  const renderGroup = (title: string, items: Facility[]) => {
+    if (items.length === 0) return null;
+    return (
+      <div className="facility-group-section" style={{ marginBottom: '2rem' }}>
+        <h3 className="group-title" style={{ borderBottom: '1px solid #444', paddingBottom: '5px', color: '#aaa' }}>{title}</h3>
         <div className="facility-grid">
-          {facilities.map((facility: Facility) => {
+          {items.map((facility: Facility) => {
             const typeInfo = facilityTypes.find(t => t.facility_type === facility.facility_type);
             const opCost = getOperatingCost(facility);
             const workers = Number(facility.workers_assigned || 0);
+            const showWorkers = typeInfo?.needs_workers !== false;
 
             return (
               <div key={facility.global_id} className="facility-card-wrapper">
@@ -118,18 +130,20 @@ export function FacilityTable() {
                       </span>
                     </div>
 
-                    <div className="workers-info" style={{ 
-                      marginTop: '8px', 
-                      padding: '4px 0', 
-                      borderTop: '1px solid #333', 
-                      borderBottom: '1px solid #333', 
-                      textAlign: 'center' 
-                    }}>
-                      <span className="sub-text">Workers: </span>
-                      <span style={{ color: '#58b7e6', fontWeight: 'bold' }}>
-                        {workers.toLocaleString()}
-                      </span>
-                    </div>
+                    {showWorkers && (
+                      <div className="workers-info" style={{ 
+                        marginTop: '8px', 
+                        padding: '4px 0', 
+                        borderTop: '1px solid #333', 
+                        borderBottom: '1px solid #333', 
+                        textAlign: 'center' 
+                      }}>
+                        <span className="sub-text">Workers: </span>
+                        <span style={{ color: '#58b7e6', fontWeight: 'bold' }}>
+                          {workers.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="stored-resources-section">
                       <h5 className="section-title">Stored Resources</h5>
@@ -163,6 +177,19 @@ export function FacilityTable() {
             );
           })}
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="summary-container" style={{ padding: '1rem' }}>
+      <h2 className="consumption-header">Facilities</h2>
+      {errorMsg && <div className="error-banner">{errorMsg}</div>}
+      
+      <div className="scroll-area">
+        {renderGroup("Production Facilities", groups.production)}
+        {renderGroup("Factories", groups.factories)}
+        {renderGroup("Support & Logistics", groups.other)}
       </div>
     </div>
   );

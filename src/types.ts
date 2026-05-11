@@ -117,7 +117,7 @@ export interface FacilityType {
     mfg_level: number;
     output_amount_interval: number;
     output_type: string;
-    needs_workers: string;
+    needs_workers: boolean;
     mine_level: string;
     input_type: string;
     oc_interval: number;
