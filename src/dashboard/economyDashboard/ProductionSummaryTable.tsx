@@ -30,13 +30,13 @@ const resourceColors: Record<string, string> = {
 type TabType = 'primary' | 'raw';
 
 export function ProductionSummaryTable() {
-  const { facilities, facilityTypes } = useGameData();
+  // Destructure nation from useGameData
+  const { facilities, facilityTypes, nation } = useGameData();
   const [activeTab, setActiveTab] = useState<TabType>('primary');
 
   let activeCount = 0;
 
   const productionTotals = facilities.reduce((acc, f) => {
-    // Standardizing check for 'true' or 1 to ensure active facilities are counted
     const isActive = f.is_active === true;
   
     if (isActive) {
@@ -44,13 +44,11 @@ export function ProductionSummaryTable() {
       const typeDef = facilityTypes.find(t => t.facility_type === f.facility_type);
       
       if (typeDef) {
-        // Sanitize output_type (remove spaces) to match our list keys (e.g., "Iron Ore" -> "IronOre")
         const rawType = typeDef.output_type || 'None';
         const sanitizedType = rawType.replace(/\s+/g, ''); 
         
         let amount = Number(typeDef.output_amount_interval) || 0; 
 
-        // Feature: Variable Output based on workers
         if (typeDef.is_variable_output) {
           const workers = Number(f.workers_assigned) || 0;
           amount = amount * workers;
@@ -61,6 +59,9 @@ export function ProductionSummaryTable() {
     }
     return acc;
   }, {} as Record<string, number>);
+
+  // Inject the Global National Interval Income into the Treasury key
+  productionTotals['Treasury'] = (productionTotals['Treasury'] || 0) + (Number(nation?.interval_income) || 0);
 
   const currentResourceList = activeTab === 'primary' ? PRIMARY_RESOURCES : RAW_RESOURCES;
 
@@ -96,7 +97,7 @@ export function ProductionSummaryTable() {
                 <span style={{ color: labelColor, fontWeight: 'bold' }}>{res}</span>
                 <div style={{ textAlign: 'right' }}>
                   <div className={amount > 0 ? "pos-value" : "neutral-value"}>
-                    +{amount.toLocaleString()} 
+                    {amount > 0 ? '+' : ''}{amount.toLocaleString()} 
                     <small className="resource-unit"> /int</small>
                   </div>
                   <div className="sub-text">Cycle: {(amount * 10).toLocaleString()}</div>

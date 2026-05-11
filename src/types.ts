@@ -223,6 +223,7 @@ export interface Shipment {
 export interface Nation {
     id: string;
     Treasury: number;
+    interval_income: number;
     [key: string]: string | number;
 }
 
