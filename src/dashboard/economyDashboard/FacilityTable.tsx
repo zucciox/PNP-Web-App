@@ -45,17 +45,19 @@ export function FacilityTable() {
   const groups = {
     production: facilities.filter(f => {
       const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
-      return typeInfo?.output_type !== null;
+      const isRefinery = f.facility_type?.includes("Tier"); 
+      return typeInfo?.output_type !== null || isRefinery;
     }),
     factories: facilities.filter(f => {
       const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
       const isFactory = f.facility_type?.includes("Factory");
-      // Avoid duplicating if it already fell into production group
-      return isFactory && typeInfo?.output_type === null;
+      const inProduction = typeInfo?.output_type !== null || f.facility_type?.includes("Tier");
+      return isFactory && !inProduction;
     }),
     other: facilities.filter(f => {
       const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
-      return typeInfo?.output_type === null && !f.facility_type?.includes("Factory");
+      const isFactory = f.facility_type?.includes("Factory");
+      return typeInfo?.output_type === null && !isFactory;
     })
   };
 
@@ -66,19 +68,21 @@ export function FacilityTable() {
     const facilityName = facility.facility_type || "";
     const workers = Number(facility.workers_assigned || 0);
 
-    if (outputType === null && outputAmt === null) {
+    // Logic for factories that don't have a single output_type (Refineries)
+    if (!outputType && (!outputAmt || outputAmt === 0)) {
         if (facilityName.includes("Factory")) {
             let refineryText = "";
-            if (facilityName.includes("Tier I ")) refineryText = "Refines Copper & Gold";
-            else if (facilityName.includes("Tier II ")) refineryText = "Refines Iron & Diamonds";
-            else if (facilityName.includes("Tier III ")) refineryText = "Refines Aluminum & Titanium";
-            else if (facilityName.includes("Tier IV ")) refineryText = "Refines Platinum & Uranium";
-            return refineryText ? <span className="pos-value">{refineryText}</span> : null;
+            if (facilityName.includes("Tier I")) refineryText = "Refines Copper & Gold";
+            else if (facilityName.includes("Tier II")) refineryText = "Refines Iron & Diamonds";
+            else if (facilityName.includes("Tier III")) refineryText = "Refines Aluminum & Titanium";
+            else if (facilityName.includes("Tier IV")) refineryText = "Refines Platinum & Uranium";
+            
+            return refineryText ? <span className="pos-value" style={{ color: '#4db6ac' }}>{refineryText}</span> : null;
         }
         return null;
     }
 
-    if (outputAmt === null && inputType !== null && outputType !== null) {
+    if (!outputAmt && inputType && outputType) {
       return <span className="pos-value">Produces {outputType}</span>;
     }
 
@@ -186,7 +190,7 @@ export function FacilityTable() {
       <h2 className="consumption-header">Facilities</h2>
       {errorMsg && <div className="error-banner">{errorMsg}</div>}
       
-      <div className="scroll-area">
+      <div className="scroll-area" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
         {renderGroup("Production Facilities", groups.production)}
         {renderGroup("Factories", groups.factories)}
         {renderGroup("Support & Logistics", groups.other)}
