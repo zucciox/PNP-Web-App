@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import '../../styles/economyStyles.css'; 
 
 export function ManagementActions() {
-  const { shipments } = useGameData();
+  const { shipments, profile } = useGameData();
   const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
   
   const [activeModal, setActiveModal] = useState<'payment' | 'shipment' | 'complete' | null>(null);
@@ -17,11 +17,9 @@ export function ManagementActions() {
     resource: '',
     amount: '', 
     originId: '',
-    originType: 'facility',
-    originFacilityType: '',
-    originNation: '', 
-    unitId: '',        // This maps to the unit's type_id
-    unitType: '',      // Added: The specific type of unit (e.g., Truck)
+    originType: '', // e.g., 'Mine', 'Farm', 'City'
+    unitId: '',        
+    unitType: '',      
     destination: '', 
     notes: ''
   };
@@ -31,8 +29,7 @@ export function ManagementActions() {
   const [completeForm, setCompleteForm] = useState({
     shipmentId: '',
     destinationId: '',
-    destinationType: 'facility',
-    destinationFacilityType: '',
+    destinationType: '', // e.g., 'Factory', 'Outpost'
     destinationNation: ''
   });
 
@@ -45,8 +42,7 @@ export function ManagementActions() {
     setCompleteForm({ 
       shipmentId: '', 
       destinationId: '', 
-      destinationType: 'facility',
-      destinationFacilityType: '',
+      destinationType: '',
       destinationNation: ''
     });
   };
@@ -59,8 +55,7 @@ export function ManagementActions() {
       p_shipment_id: parseInt(completeForm.shipmentId),
       p_destination_id: parseInt(completeForm.destinationId),
       p_destination_type: completeForm.destinationType,
-      p_destination_facility_type: completeForm.destinationType === 'facility' ? completeForm.destinationFacilityType : null,
-      p_destination_nation: completeForm.destinationType === 'facility' ? completeForm.destinationNation : null
+      p_destination_nation: completeForm.destinationNation
     });
 
     if (error) setErrorMessage(error.message);
@@ -84,24 +79,25 @@ export function ManagementActions() {
 
   const handleCreateShipment = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nationRegex = /^[A-Z]$/;
-    if (!nationRegex.test(shipmentForm.originNation)) {
-      setErrorMessage('Error: Origin Nation must be a single capital letter (A-Z).');
+    setErrorMessage('');
+  
+    if (!profile?.nation_id) {
+      setErrorMessage('Error: User profile or Nation ID not found.');
       return;
     }
-
+  
     const { error } = await supabase.rpc('create_shipment', { 
       p_resource: shipmentForm.resource,
       p_amount: parseInt(shipmentForm.amount), 
       p_origin_id: parseInt(shipmentForm.originId), 
       p_origin_type: shipmentForm.originType,
-      p_origin_nation: shipmentForm.originNation, 
-      p_unit_id: parseInt(shipmentForm.unitId),       // Passes type_id
-      p_unit_type: shipmentForm.unitType,             // Passes unit_type
+      p_origin_nation: profile.nation_id,
+      p_unit_id: parseInt(shipmentForm.unitId),       
+      p_unit_type: shipmentForm.unitType,             
       p_destination: shipmentForm.destination, 
       p_notes: shipmentForm.notes,
     });
-
+  
     if (error) setErrorMessage(error.message);
     else closeModal();
   };
@@ -143,44 +139,31 @@ export function ManagementActions() {
                 <label>Shipment ID</label>
                 <input type="number" value={completeForm.shipmentId} onChange={(e) => setCompleteForm({...completeForm, shipmentId: e.target.value})} required />
               </div>
+              
               <div className="input-group">
-                <label>Destination Type</label>
-                <select 
-                  className="modal-select"
-                  value={completeForm.destinationType} 
-                  onChange={(e) => setCompleteForm({...completeForm, destinationType: e.target.value})}
-                >
-                  <option value="facility">Facility</option>
-                  <option value="settlement">Settlement</option>
-                </select>
+                <label>Destination Nation (A-Z)</label>
+                <input 
+                  type="text" 
+                  maxLength={1} 
+                  value={completeForm.destinationNation} 
+                  onChange={(e) => setCompleteForm({...completeForm, destinationNation: e.target.value.toUpperCase()})} 
+                  required 
+                />
               </div>
 
-              {completeForm.destinationType === 'facility' && (
-                <>
-                  <div className="input-group">
-                    <label>Destination Nation (A-Z)</label>
-                    <input 
-                      type="text" 
-                      maxLength={1} 
-                      value={completeForm.destinationNation} 
-                      onChange={(e) => setCompleteForm({...completeForm, destinationNation: e.target.value.toUpperCase()})} 
-                      required 
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Facility Type (e.g. Mine)</label>
-                    <input 
-                      type="text" 
-                      value={completeForm.destinationFacilityType} 
-                      onChange={(e) => setCompleteForm({...completeForm, destinationFacilityType: e.target.value})} 
-                      required 
-                    />
-                  </div>
-                </>
-              )}
+              <div className="input-group">
+                <label>Destination Type (e.g. City, Mine)</label>
+                <input 
+                  type="text" 
+                  placeholder="Matches settlement_type or facility_type"
+                  value={completeForm.destinationType} 
+                  onChange={(e) => setCompleteForm({...completeForm, destinationType: e.target.value})} 
+                  required 
+                />
+              </div>
 
               <div className="input-group">
-                <label>{completeForm.destinationType === 'facility' ? 'Target type_id' : 'Target global_id'}</label>
+                <label>Target type_id</label>
                 <input type="number" value={completeForm.destinationId} onChange={(e) => setCompleteForm({...completeForm, destinationId: e.target.value})} required />
               </div>
 
@@ -218,47 +201,38 @@ export function ManagementActions() {
         </div>
       )}
 
-      {/* Create Shipment Modal (Updated) */}
+      {/* Create Shipment Modal */}
       {activeModal === 'shipment' && (
         <div className="modal-overlay">
           <div className="modal-content modal-large">
             <h4>Logistics Shipment</h4>
+            <p className="sub-text">Originating from Nation: <strong>{profile?.nation_id || 'Loading...'}</strong></p>
+            
             <form onSubmit={handleCreateShipment}>
               <div className="form-grid">
                 <div className="input-group">
-                  <label>Resource Column (e.g. Steel)</label>
-                  <input type="text" placeholder="Casing must match DB" value={shipmentForm.resource} onChange={(e) => setShipmentForm({...shipmentForm, resource: e.target.value})} required />
+                  <label>Resource (e.g. Steel)</label>
+                  <input type="text" placeholder="Resource Name" value={shipmentForm.resource} onChange={(e) => setShipmentForm({...shipmentForm, resource: e.target.value})} required />
                 </div>
-                <div className="input-group">
-                  <label>Origin Nation (A-Z)</label>
-                  <input type="text" maxLength={1} value={shipmentForm.originNation} onChange={(e) => setShipmentForm({...shipmentForm, originNation: e.target.value.toUpperCase()})} required />
-                </div>
+                
                 <div className="input-group">
                   <label>Amount</label>
                   <input type="number" value={shipmentForm.amount} onChange={(e) => setShipmentForm({...shipmentForm, amount: e.target.value})} required />
                 </div>
                 
                 <div className="input-group">
-                  <label>Origin Type</label>
-                  <select 
-                    className="modal-select"
+                  <label>Origin Type (e.g. City, Mine)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Subtype name"
                     value={shipmentForm.originType} 
                     onChange={(e) => setShipmentForm({...shipmentForm, originType: e.target.value})}
-                  >
-                    <option value="facility">Facility</option>
-                    <option value="settlement">Settlement</option>
-                  </select>
+                    required
+                  />
                 </div>
 
-                {shipmentForm.originType === 'facility' && (
-                  <div className="input-group">
-                    <label>Facility Type</label>
-                    <input type="text" placeholder="Mine, Factory, etc." value={shipmentForm.originFacilityType} onChange={(e) => setShipmentForm({...shipmentForm, originFacilityType: e.target.value})} required />
-                  </div>
-                )}
-
                 <div className="input-group">
-                  <label>{shipmentForm.originType === 'facility' ? 'Origin type_id' : 'Origin global_id'}</label>
+                  <label>Origin type_id</label>
                   <input type="number" value={shipmentForm.originId} onChange={(e) => setShipmentForm({...shipmentForm, originId: e.target.value})} required />
                 </div>
 

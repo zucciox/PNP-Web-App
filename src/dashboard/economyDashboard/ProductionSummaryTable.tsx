@@ -8,7 +8,6 @@ const PRIMARY_RESOURCES = [
   'Coal', 'Gas', 'Energy'
 ];
 
-// The full list from your Facility Table
 const ALL_STORAGE_RESOURCES = [
   'Energy', 'Gas', 'Coal', 'Fuel', 'Water', 'Food', 'Oxygen', 'Steel', 
   'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 'Diamond', 
@@ -16,7 +15,6 @@ const ALL_STORAGE_RESOURCES = [
   'IronOre', 'AluminumOre', 'TitaniumOre', 'PlatinumOre', 'UraniumOre'
 ];
 
-// Filter out any resource already shown in the Primary tab
 const RAW_RESOURCES = ALL_STORAGE_RESOURCES.filter(res => !PRIMARY_RESOURCES.includes(res));
 
 const resourceColors: Record<string, string> = {
@@ -37,21 +35,32 @@ export function ProductionSummaryTable() {
 
   let activeCount = 0;
 
-  // Calculate totals based on active status and type definitions
   const productionTotals = facilities.reduce((acc, f) => {
-    if (f.is_active) {
+    // Standardizing check for 'true' or 1 to ensure active facilities are counted
+    const isActive = f.is_active === true;
+  
+    if (isActive) {
       activeCount++;
       const typeDef = facilityTypes.find(t => t.facility_type === f.facility_type);
       
       if (typeDef) {
-        const type = typeDef.output_type || 'None';
-        const amount = Number(typeDef.output_amount_interval) || 0; 
-        acc[type] = (acc[type] || 0) + amount;
+        // Sanitize output_type (remove spaces) to match our list keys (e.g., "Iron Ore" -> "IronOre")
+        const rawType = typeDef.output_type || 'None';
+        const sanitizedType = rawType.replace(/\s+/g, ''); 
+        
+        let amount = Number(typeDef.output_amount_interval) || 0; 
+
+        // Feature: Variable Output based on workers
+        if (typeDef.is_variable_output) {
+          const workers = Number(f.workers_assigned) || 0;
+          amount = amount * workers;
+        }
+        
+        acc[sanitizedType] = (acc[sanitizedType] || 0) + amount;
       }
     }
     return acc;
   }, {} as Record<string, number>);
-
 
   const currentResourceList = activeTab === 'primary' ? PRIMARY_RESOURCES : RAW_RESOURCES;
 

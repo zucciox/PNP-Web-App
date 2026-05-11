@@ -10,11 +10,6 @@ const formatResourceValue = (value: number): string => {
 export function ConsumptionRatesTable() {
   const { settlements } = useGameData();
 
-  /**
-   * By using 'keyof Settlement', we ensure the keys exist.
-   * We use an explicit type assertion 'as number' in the map below 
-   * to handle the Index Signature conflict.
-   */
   const resourceMap: { key: keyof Settlement; label: string }[] = [
     { key: 'treasury_cr', label: 'Money' },
     { key: 'energy_cr', label: 'Energy' },
@@ -41,11 +36,19 @@ export function ConsumptionRatesTable() {
       </h3>
       
       <div className="settlement-grid">
-        {settlements.map((s, index) => (
-          <div key={index} className="settlement-card">
+        {settlements.map((s) => (
+          /* Using type_id and settlement_type as a unique key for React */
+          <div key={`${s.settlement_type}-${s.type_id}`} className="settlement-card">
             <div className="settlement-title">
-              <span>{s.name}</span>
-              <span className="settlement-id">ID: {index}</span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="settlement-name">{s.name}</span>
+                {/* Displaying the Type so the user knows what to put in the "Origin Type" form field */}
+                <span className="sub-text" style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                  {s.settlement_type}
+                </span>
+              </div>
+              {/* Displaying type_id instead of the array index */}
+              <span className="settlement-id">ID: {s.type_id}</span>
             </div>
 
             <div className="resource-grid">
@@ -53,9 +56,6 @@ export function ConsumptionRatesTable() {
                 <div key={res.key} className="resource-item">
                   <span className="resource-label">{res.label}</span>
                   <span className="resource-value">
-                    {/* Casting to number here because the Settlement interface 
-                        allows both string | number via its index signature.
-                    */}
                     -{formatResourceValue(s[res.key] as number)} 
                     <small className="resource-unit"> /cycle</small>
                   </span>

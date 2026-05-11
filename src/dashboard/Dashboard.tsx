@@ -6,6 +6,11 @@ import EconomyDashboard from './economyDashboard/EconomyDashboard';
 import MilitaryDashboard from './militaryDashboard/MilitaryDashboard';
 import StoreDashboard from './storeDashboard/StoreDashboard';
 import WorldDashboard from './worldDashboard/WorldDashboard';
+import CombatAlert from './CombatAlert'; 
+
+// Changed: Added curly braces for the named export import
+import { NotificationWindow } from './NotificationWindow'; 
+
 
 const LOADING_STYLE: React.CSSProperties = { textAlign: 'center', fontFamily: 'sans-serif', marginTop: '1rem', color: 'white' };
 const BANNER_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', backgroundColor: '#1a1a1a', padding: '10px 20px', color: 'white', fontFamily: 'sans-serif' };
@@ -15,43 +20,25 @@ const TAB_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', gap: '30px',
 const TAB_STYLE: React.CSSProperties = { cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', textTransform: 'uppercase', color: '#ffffff', padding: '5px 10px' };
 const ACTIVE_TAB_STYLE: React.CSSProperties = { ...TAB_STYLE, backgroundColor: '#333333' };
 const DASHBOARD_CONTAINER: React.CSSProperties = { width: '100%', padding: '0px', boxSizing: 'border-box' };
-
 const ADMIN_BTN_STYLE: React.CSSProperties = { backgroundColor: '#d97706', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' };
 const SELECT_STYLE: React.CSSProperties = { backgroundColor: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px', padding: '2px 5px', fontSize: '14px', marginLeft: '10px' };
 
 function DashboardContent() {
   const [activeTab, setActiveTab] = useState<string>('Economy');
-  const { loading, nationId, gameState } = useGameData();
+  const { loading, nationId, gameState, notifications, profile } = useGameData(); 
   const [timerString, setTimerString] = useState<string>('00:00');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
 
+  const isAdmin = profile?.role === 'Admin';
   const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
-  useEffect(() => {
-    const checkAdminRole = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Note the double quotes: '"Profiles"' ensures Postgres finds the capitalized table
-        const { data, error } = await supabase
-          .from('Profiles') 
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        
-        if (error) {
-          console.error("Fetch Error:", error.message);
-        } else if (data?.role === 'Admin') { // Matches "Admin" from your screenshot
-          setIsAdmin(true);
-        }
-      } catch (err) {
-        console.error("Auth Exception:", err);
-      }
-    };
-    checkAdminRole();
-  }, []);
+  const unreadCount = notifications.filter(n => {
+    if (n.is_resolved) return false;
+    const isForMyNation = n.receiving_nation === nationId;
+    const isAdminNotif = isAdmin && n.is_admin === true;
+    return isForMyNation || isAdminNotif;
+  }).length;
 
   useEffect(() => {
     if (!gameState?.next_interval_time) return;
@@ -76,23 +63,16 @@ function DashboardContent() {
     const newNation = e.target.value;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
-    const { error } = await supabase
-      .from('Profiles')
-      .update({ nation_id: newNation })
-      .eq('id', user.id);
-
-    if (error) {
-      alert(`Update failed: ${error.message}`);
-    } else {
-      window.location.reload();
-    }
+    await supabase.from('Profiles').update({ nation_id: newNation }).eq('id', user.id);
+    window.location.reload();
   };
 
   if (loading) return <div style={LOADING_STYLE}><h1>Loading Game Data...</h1></div>;
 
   return (
-    <div style={{ backgroundColor: '#121212', minHeight: '100vh', color: 'white' }}>
+    <div style={{ backgroundColor: '#121212', minHeight: '100vh', color: 'white', position: 'relative' }}>
+      <CombatAlert />
+
       <nav style={BANNER_STYLE}>
         <div style={NATION_CARD_STYLE}>
           <span>Nation: {nationId}</span>
@@ -116,13 +96,30 @@ function DashboardContent() {
               {tab}
             </div>
           ))}
-          {isAdmin && (
-            <button onClick={() => navigate('/admin')} style={ADMIN_BTN_STYLE}>
-              SWITCH TO ADMIN VIEW
-            </button>
-          )}
+
+          {/* Notification Trigger */}
+          <div 
+            style={{ position: 'relative', cursor: 'pointer', fontSize: '20px', marginLeft: '10px' }}
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
+            🔔
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute', top: '-5px', right: '-10px', backgroundColor: '#ff4d4d',
+                color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold'
+              }}>
+                {unreadCount}
+              </span>
+            )}
+          </div>
+
+          {isAdmin && <button onClick={() => navigate('/admin')} style={ADMIN_BTN_STYLE}>ADMIN VIEW</button>}
         </div>
       </nav>
+
+      {showNotifications && (
+        <NotificationWindow onClose={() => setShowNotifications(false)} />
+      )}
 
       <main style={DASHBOARD_CONTAINER}>
         {activeTab === 'Economy' && <EconomyDashboard />}
@@ -147,13 +144,8 @@ export default function Dashboard() {
     checkUser();
   }, []);
 
-  if (!authChecked) {
-    return <div style={LOADING_STYLE}><h1>Verifying Identity...</h1></div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!authChecked) return <div style={LOADING_STYLE}><h1>Verifying Identity...</h1></div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return (
     <GameProvider>

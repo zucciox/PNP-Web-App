@@ -186,3 +186,22 @@ tr:hover { background-color: #333; }
   cursor: not-allowed;
 }
 
+.error-container {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  border: 1px solid #ef9a9a;
+}
+
+.error-icon {
+  margin-right: 8px;
+}
+
+.input-error {
+  border: 1px solid #c62828 !important;
+}

@@ -1,3 +1,33 @@
+// Define the Profile interface
+export interface Profile {
+    id: string;
+    nation_id: string;
+    role: string;
+    // Add other profile fields here (e.g., username, avatar_url)
+  }
+
+export interface CombatExchange {
+    id: number;
+    aggressor_nation: string;
+    victim_nation: string;
+    aggressor_piece: number;
+    victim_piece: number;
+    is_resolved: boolean;
+    is_disputed: boolean;
+    aggressor_label: string;
+    damage: number;
+}
+
+export interface Notification {
+    id: number;
+    created_at: EpochTimeStamp;
+    body: string;
+    header: string;
+    receiving_nation: string;
+    is_admin: boolean;
+    is_resolved: boolean;
+}
+
 export interface Unit {
     global_id: number;
     unit_type: string;
@@ -110,7 +140,9 @@ export interface FacilityType {
 
 export interface Settlement {
     global_id: number;
+    type_id: number;
     name: string;
+    settlement_type: string;
     owner_nation: string;
     Treasury: number;
     Energy: number;

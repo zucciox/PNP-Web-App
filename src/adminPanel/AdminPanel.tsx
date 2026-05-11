@@ -199,7 +199,7 @@ function AdminPanelContent() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label style={{ color: '#888', fontSize: '11px', textTransform: 'uppercase' }}>Nation ID</label>
-              <input style={{ backgroundColor: '#111', border: '1px solid #444', color: 'white', padding: '10px', borderRadius: '4px' }} value={nationId} onChange={(e) => setNationId(e.target.value)} placeholder="e.g. USA, GER..." required />
+              <input style={{ backgroundColor: '#111', border: '1px solid #444', color: 'white', padding: '10px', borderRadius: '4px' }} value={nationId} onChange={(e) => setNationId(e.target.value)} placeholder="e.g. A, B..." required />
             </div>
             {error && <div style={{ backgroundColor: 'rgba(255, 77, 77, 0.1)', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '10px', fontSize: '12px', borderRadius: '4px', lineHeight: '1.4' }}><strong>RPC Error:</strong><br/>{error}</div>}
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>

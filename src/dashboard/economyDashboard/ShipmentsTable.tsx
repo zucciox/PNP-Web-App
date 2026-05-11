@@ -23,7 +23,14 @@ export function ShipmentsTable() {
 }
 
 function ShipmentCard({ shipment: s }: { shipment: Shipment }) {
+  const { units } = useGameData(); // Access units to perform the lookup
   const [isHovered, setIsHovered] = useState(false);
+
+  // Cross-reference: Find the unit where global_id matches the shipment's unit_id
+  const matchingUnit = units?.find(u => u.global_id === s.unit_id);
+  
+  // Use the type_id if found, otherwise fallback to the global_id (s.unit_id)
+  const displayId = matchingUnit ? matchingUnit.type_id : s.unit_id;
 
   return (
     <article 
@@ -46,8 +53,9 @@ function ShipmentCard({ shipment: s }: { shipment: Shipment }) {
           <span className="shipment-truncate" title={s.destination}>{s.destination}</span>
         </div>
 
+        {/* Now displaying the cross-referenced type_id */}
         <div className="sub-text" style={{ marginTop: '2px', textTransform: 'uppercase' }}>
-          {s.unit_type} {s.unit_id}
+          {s.unit_type} {displayId}
         </div>
       </div>
 

@@ -21,7 +21,11 @@ export function ActiveUnitsTable() {
   const { units, unitTypes, refreshData } = useGameData() as GameDataContext;
   
   const [modalUnit, setModalUnit] = useState<Unit | null>(null);
-  const [baseTypeId, setBaseTypeId] = useState<string>(''); // User enters Type ID
+  const [baseTypeId, setBaseTypeId] = useState<string>('');
+
+  const [attackModalUnit, setAttackModalUnit] = useState<Unit | null>(null);
+  const [victimData, setVictimData] = useState({ nation: '', typeId: '', unitType: '' });
+
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -58,6 +62,42 @@ export function ActiveUnitsTable() {
     }
   };
 
+  const handleAttack = async (): Promise<void> => {
+    if (!attackModalUnit || !victimData.nation || !victimData.typeId || !victimData.unitType) return;
+    
+    // Safety check for UI bypass
+    if ((attackModalUnit.attacks_remaining ?? 0) <= 0) {
+        setError("Unit has no attacks remaining.");
+        return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error: rpcError } = await supabase.rpc('attack_piece', {
+        p_aggressor_nation: attackModalUnit.nation_id,
+        p_victim_nation: victimData.nation,
+        p_aggressor_type_id: attackModalUnit.type_id,
+        p_aggressor_piece_type: attackModalUnit.unit_type, 
+        p_victim_type_id: parseInt(victimData.typeId, 10),
+        p_victim_piece_type: victimData.unitType         
+      });
+
+      if (rpcError) throw rpcError;
+
+      setAttackModalUnit(null);
+      setVictimData({ nation: '', typeId: '', unitType: '' });
+      
+      if (refreshData) await refreshData(); 
+    } catch (err: any) {
+      console.error("Combat RPC Error:", err);
+      setError(err.message || 'Attack failed. Verify victim details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section style={s.container}>
       <style>{`
@@ -71,7 +111,8 @@ export function ActiveUnitsTable() {
         }
         .info-wrap:hover .tooltip { visibility: visible; opacity: 1; }
         .menu-btn:hover { background: #333 !important; }
-        .menu-item:hover { background: #3d3d3d !important; color: #fff !important; }
+        .menu-item:hover:not(.disabled) { background: #3d3d3d !important; color: #fff !important; }
+        .menu-item.disabled { cursor: not-allowed; opacity: 0.5; }
       `}</style>
       
       <div style={s.header}>
@@ -124,7 +165,11 @@ export function ActiveUnitsTable() {
                     </td>
                     <td style={s.td}><InfoIcon stats={stats} /></td>
                     <td style={s.td}>
-                        <ActionMenu unit={u} onDemobilize={() => setModalUnit(u)} />
+                        <ActionMenu 
+                            unit={u} 
+                            onDemobilize={() => setModalUnit(u)} 
+                            onAttack={() => setAttackModalUnit(u)}
+                        />
                     </td>
                   </tr>
                 );
@@ -134,34 +179,72 @@ export function ActiveUnitsTable() {
         ) : <div style={s.empty}>No active units.</div>}
       </div>
 
+      {/* --- DEMOBILIZE MODAL --- */}
       {modalUnit && (
         <div style={s.modalOverlay}>
           <div style={s.modalContent}>
             <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Demobilize {modalUnit.unit_type}</h3>
             <p style={{ fontSize: '0.8rem', color: '#bbb', lineHeight: '1.4' }}>
               Assigning Unit #{modalUnit.type_id} to reserve. 
-              Please enter the <strong>Military Base Type ID</strong>:
             </p>
-            
             <input 
               type="number" 
-              placeholder="e.g. 104"
+              placeholder="Base Type ID (e.g. 104)"
               value={baseTypeId}
               onChange={(e) => setBaseTypeId(e.target.value)}
               style={s.input}
               autoFocus
             />
+            {error && <div style={s.error}>{error}</div>}
+            <div style={s.modalActions}>
+              <button onClick={() => { setModalUnit(null); setError(null); setBaseTypeId(''); }} style={s.cancelBtn}>Cancel</button>
+              <button onClick={handleDemobilize} disabled={loading || !baseTypeId} style={s.confirmBtn}>
+                {loading ? 'Working...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- ATTACK MODAL --- */}
+      {attackModalUnit && (
+        <div style={s.modalOverlay}>
+          <div style={s.modalContent}>
+            <h3 style={{ marginTop: 0, fontSize: '1.1rem', color: '#e53935' }}>Command Attack</h3>
+            <p style={{ fontSize: '0.8rem', color: '#bbb' }}>
+              Aggressor: {attackModalUnit.unit_type} #{attackModalUnit.type_id}
+            </p>
+            
+            <input 
+              placeholder="Victim Nation ID" 
+              value={victimData.nation}
+              onChange={(e) => setVictimData({...victimData, nation: e.target.value})}
+              style={s.input}
+            />
+            <input 
+              placeholder="Victim Piece Type (e.g. Tank, Settlement)" 
+              value={victimData.unitType}
+              onChange={(e) => setVictimData({...victimData, unitType: e.target.value})}
+              style={s.input}
+            />
+            <input 
+              type="number" 
+              placeholder="Victim Type ID (or Global ID)" 
+              value={victimData.typeId}
+              onChange={(e) => setVictimData({...victimData, typeId: e.target.value})}
+              style={s.input}
+            />
 
             {error && <div style={s.error}>{error}</div>}
 
             <div style={s.modalActions}>
-              <button onClick={() => { setModalUnit(null); setError(null); setBaseTypeId(''); }} style={s.cancelBtn}>Cancel</button>
+              <button onClick={() => { setAttackModalUnit(null); setError(null); }} style={s.cancelBtn}>Cancel</button>
               <button 
-                onClick={handleDemobilize} 
-                disabled={loading || !baseTypeId} 
-                style={{ ...s.confirmBtn, opacity: (loading || !baseTypeId) ? 0.5 : 1 }}
+                onClick={handleAttack} 
+                disabled={loading || !victimData.nation || !victimData.typeId} 
+                style={{ ...s.confirmBtn, background: '#e53935' }}
               >
-                {loading ? 'Working...' : 'Confirm'}
+                {loading ? 'Engaging...' : 'Execute Attack'}
               </button>
             </div>
           </div>
@@ -171,9 +254,12 @@ export function ActiveUnitsTable() {
   );
 }
 
-const ActionMenu = ({ unit, onDemobilize }: { unit: Unit, onDemobilize: () => void }) => {
+const ActionMenu = ({ unit, onDemobilize, onAttack }: { unit: Unit, onDemobilize: () => void, onAttack: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // New check: Is the unit out of attacks?
+  const canAttack = (unit.attacks_remaining ?? 0) > 0;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -188,6 +274,19 @@ const ActionMenu = ({ unit, onDemobilize }: { unit: Unit, onDemobilize: () => vo
       <button className="menu-btn" onClick={() => setIsOpen(!isOpen)} style={s.actionBtn}>•••</button>
       {isOpen && (
         <div style={s.popover}>
+          <div 
+            className={`menu-item ${!canAttack ? 'disabled' : ''}`} 
+            style={s.menuItem} 
+            onClick={() => { 
+                if (canAttack) {
+                    onAttack(); 
+                    setIsOpen(false); 
+                }
+            }}
+          >
+            <span style={{ color: !canAttack ? '#444' : '#e53935', marginRight: '8px' }}>⚔</span> 
+            {canAttack ? 'Attack Target' : 'All attacks used'}
+          </div>
           <div className="menu-item" style={s.menuItem} onClick={() => { onDemobilize(); setIsOpen(false); }}>
             <span style={{ color: '#aaa', marginRight: '8px' }}>⚑</span> Demobilize
           </div>
@@ -227,7 +326,7 @@ const s: Record<string, React.CSSProperties> = {
   statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#bbb', margin: '2px 0' },
   empty: { padding: '2rem', color: '#555', textAlign: 'center' },
   actionBtn: { background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px' },
-  popover: { position: 'absolute', right: 0, top: '100%', marginTop: '5px', backgroundColor: '#1e1e1e', border: '1px solid #444', borderRadius: '4px', zIndex: 110, width: '130px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' },
+  popover: { position: 'absolute', right: 0, top: '100%', marginTop: '5px', backgroundColor: '#1e1e1e', border: '1px solid #444', borderRadius: '4px', zIndex: 110, width: '150px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' },
   menuItem: { padding: '10px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#bbb' },
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 },
   modalContent: { background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #444', width: '320px' },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Add this
+import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import './App.css';
 
@@ -8,25 +8,52 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
+
+  const getErrorMessage = (err: any) => {
+    // Supabase error messages often come in err.message or err.status
+    const message = err.message.toLowerCase();
+
+    if (message.includes('invalid login credentials')) {
+      return "Incorrect Player ID or Access Key. Please try again.";
+    }
+    if (message.includes('email not confirmed')) {
+      return "Your account hasn't been activated yet. Check your inbox.";
+    }
+    if (message.includes('too many requests') || err.status === 429) {
+      return "Too many failed attempts. Please wait a few minutes before trying again.";
+    }
+    if (message.includes('network') || err.status === 500) {
+      return "Connection error. Please check your internet and try again.";
+    }
+    
+    // Fallback for unexpected errors
+    return err.message || "An unexpected error occurred. Please contact support.";
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const dummyEmail = `${username.toLowerCase()}@powerpeace.org`;
+    // Basic client-side validation before hitting the API
+    if (username.trim().length < 3) {
+      setError("Player ID must be at least 3 characters.");
+      setLoading(false);
+      return;
+    }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const dummyEmail = `${username.trim().toLowerCase()}@powerpeace.org`;
+
+    const { error: supabaseError } = await supabase.auth.signInWithPassword({
       email: dummyEmail,
       password: password,
     });
 
-    if (error) {
-      setError("Access denied. Check your Player ID and Access Key.");
+    if (supabaseError) {
+      setError(getErrorMessage(supabaseError));
       setLoading(false);
     } else {
-      // Use navigate instead of window.location.href for smoother session handling
       navigate('/dashboard');
     }
   };
@@ -44,11 +71,12 @@ export const LoginPage = () => {
           <input
             id="username"
             type="text"
+            className={error && error.includes('ID') ? 'input-error' : ''}
             placeholder="e.g. player89"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            autoComplete="off"
+            autoComplete="username"
           />
         </div>
 
@@ -57,17 +85,28 @@ export const LoginPage = () => {
           <input
             id="password"
             type="password"
+            className={error && error.includes('Key') ? 'input-error' : ''}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            autoComplete="current-password"
           />
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-container">
+            <span className="error-icon">⚠️</span>
+            <span className="error-message">{error}</span>
+          </div>
+        )}
 
         <button type="submit" className="login-button" disabled={loading}>
-          {loading ? 'Authenticating...' : 'Enter the Game'}
+          {loading ? (
+            <span className="loader-text">Verifying Credentials...</span>
+          ) : (
+            'Enter the Game'
+          )}
         </button>
       </form>
     </div>
