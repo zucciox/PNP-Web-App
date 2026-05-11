@@ -20,6 +20,7 @@ export function DormantUnitsTable() {
   
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const typeStatsMap = useMemo(() => {
     const map: Record<string, UnitType> = {};
@@ -27,7 +28,9 @@ export function DormantUnitsTable() {
     return map;
   }, [unitTypes]);
 
-  const dormantUnits = useMemo(() => {
+  const filteredDormantUnits = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    
     return (units || [])
       .filter(u => !u.is_active)
       .map(unit => {
@@ -51,15 +54,20 @@ export function DormantUnitsTable() {
         }
 
         return { ...unit, location, isError };
+      })
+      .filter(u => {
+        return (
+          u.unit_type.toLowerCase().includes(query) ||
+          u.type_id.toString().includes(query) ||
+          u.location.toLowerCase().includes(query)
+        );
       });
-  }, [units, settlements, facilities]);
+  }, [units, settlements, facilities, searchQuery]);
 
   const handleMobilize = async (unit: Unit) => {
     setLoading(true);
     setError(null);
     try {
-      // For mobilization, p_military_base_type_id is ignored by the RPC 
-      // logic because is_active is false, but we pass a placeholder 0.
       const { error: rpcError } = await supabase.rpc('toggle_unit', {
         p_type_id: unit.type_id,
         p_unit_type: unit.unit_type,
@@ -91,19 +99,30 @@ export function DormantUnitsTable() {
         .info-wrap:hover .tooltip { visibility: visible; opacity: 1; }
         .menu-btn:hover { background: #333 !important; color: #fff !important; }
         .menu-item:hover { background: #3d3d3d !important; color: #fff !important; }
+        .search-input::placeholder { color: #555; }
       `}</style>
       
       <div style={s.header}>
-        <div style={s.title}>Dormant Units</div>
-        <div style={{ fontSize: '0.85rem', color: '#666' }}>
-          {loading ? 'Processing...' : `${dormantUnits.length} In Reserve`}
+        <div>
+          <div style={s.title}>Dormant Units</div>
+          <div style={{ fontSize: '0.85rem', color: '#666' }}>
+            {loading ? 'Processing...' : `${filteredDormantUnits.length} Visible`}
+          </div>
         </div>
+        <input 
+          type="text"
+          placeholder="Search reserve..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-input"
+          style={s.searchField}
+        />
       </div>
 
       {error && <div style={s.globalError}>{error}</div>}
 
       <div style={s.tableWrap}>
-        {dormantUnits.length > 0 ? (
+        {filteredDormantUnits.length > 0 ? (
           <table style={s.table}>
             <thead>
               <tr>
@@ -113,7 +132,7 @@ export function DormantUnitsTable() {
               </tr>
             </thead>
             <tbody>
-              {dormantUnits.map((u) => {
+              {filteredDormantUnits.map((u) => {
                 const stats = typeStatsMap[u.unit_type];
                 return (
                   <tr key={u.global_id}>
@@ -143,7 +162,7 @@ export function DormantUnitsTable() {
             </tbody>
           </table>
         ) : (
-          <div style={s.empty}>No dormant units found.</div>
+          <div style={s.empty}>No matching units in reserve.</div>
         )}
       </div>
     </section>
@@ -209,7 +228,8 @@ const InfoIcon = ({ stats }: { stats?: UnitType }) => (
 
 const s: Record<string, React.CSSProperties> = {
   container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', width: 'fit-content' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #333', paddingBottom: '1rem' },
+  searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },
   title: { fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', color: '#999', letterSpacing: '0.05em' },
   globalError: { color: '#cf6679', fontSize: '0.8rem', marginBottom: '10px', fontWeight: 'bold', padding: '5px', border: '1px solid #cf6679', borderRadius: '4px' },
   tableWrap: { overflow: 'visible' },

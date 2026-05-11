@@ -28,8 +28,23 @@ export function ActiveUnitsTable() {
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const activeUnits = useMemo(() => (units || []).filter(u => u.is_active), [units]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // --- NEW STATE FOR MULTI-SELECT ---
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isBulkMode, setIsBulkMode] = useState(false);
+
+  const filteredUnits = useMemo(() => {
+    return (units || [])
+      .filter(u => u.is_active && u.unit_type !== 'Worker')
+      .filter(u => {
+        const query = searchQuery.toLowerCase();
+        return (
+          u.unit_type.toLowerCase().includes(query) || 
+          u.type_id.toString().includes(query)
+        );
+      });
+  }, [units, searchQuery]);
 
   const typeStatsMap = useMemo(() => {
     const map: Record<string, UnitType> = {};
@@ -37,23 +52,44 @@ export function ActiveUnitsTable() {
     return map;
   }, [unitTypes]);
 
+  // Handle row selection
+  const toggleSelection = (globalId: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(globalId)) next.delete(globalId);
+      else next.add(globalId);
+      return next;
+    });
+  };
+
   const handleDemobilize = async (): Promise<void> => {
-    if (!modalUnit || !baseTypeId) return;
+    // Look through the MASTER units list, not just the filtered/visible ones
+    const unitsToProcess = isBulkMode 
+        ? (units || []).filter(u => selectedIds.has(u.global_id))
+        : modalUnit ? [modalUnit] : [];
+
+    if (unitsToProcess.length === 0 || !baseTypeId) return;
+    
     setLoading(true);
     setError(null);
 
     try {
-      const { error: rpcError } = await supabase.rpc('toggle_unit', {
-        p_type_id: modalUnit.type_id,
-        p_unit_type: modalUnit.unit_type,
-        p_military_base_type_id: parseInt(baseTypeId, 10),
-        p_nation_id: modalUnit.nation_id
-      });
+      // Using Promise.all here is faster than a 'for' loop as it runs requests in parallel
+      await Promise.all(unitsToProcess.map(unit => 
+        supabase.rpc('toggle_unit', {
+          p_type_id: unit.type_id,
+          p_unit_type: unit.unit_type,
+          p_military_base_type_id: parseInt(baseTypeId, 10),
+          p_nation_id: unit.nation_id
+        })
+      ));
 
-      if (rpcError) throw rpcError;
-
+      // Reset state on success
       setModalUnit(null);
       setBaseTypeId('');
+      setSelectedIds(new Set());
+      setIsBulkMode(false);
+      
       if (refreshData) await refreshData(); 
     } catch (err: any) {
       setError(err.message || 'Check Base ID and try again.');
@@ -64,8 +100,6 @@ export function ActiveUnitsTable() {
 
   const handleAttack = async (): Promise<void> => {
     if (!attackModalUnit || !victimData.nation || !victimData.typeId || !victimData.unitType) return;
-    
-    // Safety check for UI bypass
     if ((attackModalUnit.attacks_remaining ?? 0) <= 0) {
         setError("Unit has no attacks remaining.");
         return;
@@ -85,14 +119,11 @@ export function ActiveUnitsTable() {
       });
 
       if (rpcError) throw rpcError;
-
       setAttackModalUnit(null);
       setVictimData({ nation: '', typeId: '', unitType: '' });
-      
       if (refreshData) await refreshData(); 
     } catch (err: any) {
-      console.error("Combat RPC Error:", err);
-      setError(err.message || 'Attack failed. Verify victim details.');
+      setError(err.message || 'Attack failed.');
     } finally {
       setLoading(false);
     }
@@ -113,15 +144,47 @@ export function ActiveUnitsTable() {
         .menu-btn:hover { background: #333 !important; }
         .menu-item:hover:not(.disabled) { background: #3d3d3d !important; color: #fff !important; }
         .menu-item.disabled { cursor: not-allowed; opacity: 0.5; }
+        .search-input::placeholder { color: #555; }
+        .unit-row { cursor: pointer; transition: background 0.2s; }
+        .unit-row:hover { background: #1a1a1a; }
+        .unit-row.selected { background: #1a237e !important; }
       `}</style>
       
       <div style={s.header}>
-        <div style={s.title}>Active Units</div>
-        <div style={{ fontSize: '0.85rem', color: '#666' }}>{activeUnits.length} Deployed</div>
+        <div>
+          <div style={s.title}>Active Combat Units</div>
+          <div style={{ fontSize: '0.85rem', color: '#666', display: 'flex', gap: '10px' }}>
+            <span>{filteredUnits.length} Visible</span>
+            {selectedIds.size > 0 && (
+                <span style={{ color: '#bb86fc', fontWeight: 'bold' }}>
+                    {selectedIds.size} Selected
+                </span>
+            )}
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {selectedIds.size > 0 && (
+            <button 
+                onClick={() => { setIsBulkMode(true); setBaseTypeId(''); setError(null); }}
+                style={{ ...s.confirmBtn, background: '#cf6679', padding: '6px 12px', fontSize: '0.75rem' }}
+            >
+                Demobilize Selected
+            </button>
+          )}
+          <input 
+            type="text"
+            placeholder="Search type or ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+            style={s.searchField}
+          />
+        </div>
       </div>
 
       <div style={s.tableWrap}>
-        {activeUnits.length > 0 ? (
+        {filteredUnits.length > 0 ? (
           <table style={s.table}>
             <thead>
               <tr>
@@ -131,14 +194,19 @@ export function ActiveUnitsTable() {
               </tr>
             </thead>
             <tbody>
-              {activeUnits.map((u) => {
+              {filteredUnits.map((u) => {
+                const isSelected = selectedIds.has(u.global_id);
                 const stats = typeStatsMap[u.unit_type];
                 const maxHealth = stats?.max_health || u.max_health || 100;
                 const pct = Math.max(0, Math.min(100, (u.health / maxHealth) * 100));
                 const hColor = getHealthColor(pct);
 
                 return (
-                  <tr key={u.global_id}>
+                  <tr 
+                    key={u.global_id} 
+                    className={`unit-row ${isSelected ? 'selected' : ''}`}
+                    onClick={() => toggleSelection(u.global_id)}
+                  >
                     <td style={s.td}>
                       <span style={{ ...s.badge, color: TYPE_COLORS[u.unit_type] || '#bb86fc' }}>
                         {u.unit_type}
@@ -164,10 +232,10 @@ export function ActiveUnitsTable() {
                       </div>
                     </td>
                     <td style={s.td}><InfoIcon stats={stats} /></td>
-                    <td style={s.td}>
+                    <td style={s.td} onClick={(e) => e.stopPropagation()}>
                         <ActionMenu 
                             unit={u} 
-                            onDemobilize={() => setModalUnit(u)} 
+                            onDemobilize={() => { setModalUnit(u); setIsBulkMode(false); }} 
                             onAttack={() => setAttackModalUnit(u)}
                         />
                     </td>
@@ -176,20 +244,22 @@ export function ActiveUnitsTable() {
               })}
             </tbody>
           </table>
-        ) : <div style={s.empty}>No active units.</div>}
+        ) : <div style={s.empty}>No matching units found.</div>}
       </div>
 
-      {/* --- DEMOBILIZE MODAL --- */}
-      {modalUnit && (
+      {/* --- REUSABLE DEMOBILIZE MODAL (FOR SINGLE & BULK) --- */}
+      {(modalUnit || isBulkMode) && (
         <div style={s.modalOverlay}>
           <div style={s.modalContent}>
-            <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>Demobilize {modalUnit.unit_type}</h3>
+            <h3 style={{ marginTop: 0, fontSize: '1.1rem' }}>
+                {isBulkMode ? `Demobilize ${selectedIds.size} Units` : `Demobilize ${modalUnit?.unit_type}`}
+            </h3>
             <p style={{ fontSize: '0.8rem', color: '#bbb', lineHeight: '1.4' }}>
-              Assigning Unit #{modalUnit.type_id} to reserve. 
+              Assigning {isBulkMode ? 'selected units' : `Unit #${modalUnit?.type_id}`} to reserve. 
             </p>
             <input 
               type="number" 
-              placeholder="Base Type ID (e.g. 104)"
+              placeholder="Target Base ID"
               value={baseTypeId}
               onChange={(e) => setBaseTypeId(e.target.value)}
               style={s.input}
@@ -197,16 +267,16 @@ export function ActiveUnitsTable() {
             />
             {error && <div style={s.error}>{error}</div>}
             <div style={s.modalActions}>
-              <button onClick={() => { setModalUnit(null); setError(null); setBaseTypeId(''); }} style={s.cancelBtn}>Cancel</button>
+              <button onClick={() => { setModalUnit(null); setIsBulkMode(false); setError(null); setBaseTypeId(''); }} style={s.cancelBtn}>Cancel</button>
               <button onClick={handleDemobilize} disabled={loading || !baseTypeId} style={s.confirmBtn}>
-                {loading ? 'Working...' : 'Confirm'}
+                {loading ? 'Processing...' : 'Confirm'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- ATTACK MODAL --- */}
+      {/* Attack Modal remains unchanged */}
       {attackModalUnit && (
         <div style={s.modalOverlay}>
           <div style={s.modalContent}>
@@ -214,36 +284,13 @@ export function ActiveUnitsTable() {
             <p style={{ fontSize: '0.8rem', color: '#bbb' }}>
               Aggressor: {attackModalUnit.unit_type} #{attackModalUnit.type_id}
             </p>
-            
-            <input 
-              placeholder="Victim Nation ID" 
-              value={victimData.nation}
-              onChange={(e) => setVictimData({...victimData, nation: e.target.value})}
-              style={s.input}
-            />
-            <input 
-              placeholder="Victim Piece Type (e.g. Tank, Settlement)" 
-              value={victimData.unitType}
-              onChange={(e) => setVictimData({...victimData, unitType: e.target.value})}
-              style={s.input}
-            />
-            <input 
-              type="number" 
-              placeholder="Victim Type ID (or Global ID)" 
-              value={victimData.typeId}
-              onChange={(e) => setVictimData({...victimData, typeId: e.target.value})}
-              style={s.input}
-            />
-
+            <input placeholder="Victim Nation ID" value={victimData.nation} onChange={(e) => setVictimData({...victimData, nation: e.target.value})} style={s.input} />
+            <input placeholder="Victim Piece Type" value={victimData.unitType} onChange={(e) => setVictimData({...victimData, unitType: e.target.value})} style={s.input} />
+            <input type="number" placeholder="Victim Type ID" value={victimData.typeId} onChange={(e) => setVictimData({...victimData, typeId: e.target.value})} style={s.input} />
             {error && <div style={s.error}>{error}</div>}
-
             <div style={s.modalActions}>
               <button onClick={() => { setAttackModalUnit(null); setError(null); }} style={s.cancelBtn}>Cancel</button>
-              <button 
-                onClick={handleAttack} 
-                disabled={loading || !victimData.nation || !victimData.typeId} 
-                style={{ ...s.confirmBtn, background: '#e53935' }}
-              >
+              <button onClick={handleAttack} disabled={loading || !victimData.nation || !victimData.typeId} style={{ ...s.confirmBtn, background: '#e53935' }}>
                 {loading ? 'Engaging...' : 'Execute Attack'}
               </button>
             </div>
@@ -254,11 +301,10 @@ export function ActiveUnitsTable() {
   );
 }
 
+// ... ActionMenu and InfoIcon remain the same as your original code ...
 const ActionMenu = ({ unit, onDemobilize, onAttack }: { unit: Unit, onDemobilize: () => void, onAttack: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  // New check: Is the unit out of attacks?
   const canAttack = (unit.attacks_remaining ?? 0) > 0;
 
   useEffect(() => {
@@ -274,18 +320,8 @@ const ActionMenu = ({ unit, onDemobilize, onAttack }: { unit: Unit, onDemobilize
       <button className="menu-btn" onClick={() => setIsOpen(!isOpen)} style={s.actionBtn}>•••</button>
       {isOpen && (
         <div style={s.popover}>
-          <div 
-            className={`menu-item ${!canAttack ? 'disabled' : ''}`} 
-            style={s.menuItem} 
-            onClick={() => { 
-                if (canAttack) {
-                    onAttack(); 
-                    setIsOpen(false); 
-                }
-            }}
-          >
-            <span style={{ color: !canAttack ? '#444' : '#e53935', marginRight: '8px' }}>⚔</span> 
-            {canAttack ? 'Attack Target' : 'All attacks used'}
+          <div className={`menu-item ${!canAttack ? 'disabled' : ''}`} style={s.menuItem} onClick={() => { if (canAttack) { onAttack(); setIsOpen(false); } }}>
+            <span style={{ color: !canAttack ? '#444' : '#e53935', marginRight: '8px' }}>⚔</span> {canAttack ? 'Attack Target' : 'All attacks used'}
           </div>
           <div className="menu-item" style={s.menuItem} onClick={() => { onDemobilize(); setIsOpen(false); }}>
             <span style={{ color: '#aaa', marginRight: '8px' }}>⚑</span> Demobilize
@@ -312,8 +348,10 @@ const InfoIcon = ({ stats }: { stats?: UnitType }) => (
 );
 
 const s: Record<string, React.CSSProperties> = {
+  // ... existing styles ...
   container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', width: 'fit-content' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #333', paddingBottom: '1rem' },
+  searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },
   title: { fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' },
   tableWrap: { overflow: 'visible' },
   table: { borderCollapse: 'collapse' },
