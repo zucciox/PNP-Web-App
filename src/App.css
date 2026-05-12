@@ -205,3 +205,9 @@ tr:hover { background-color: #333; }
 .input-error {
   border: 1px solid #c62828 !important;
 }
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}

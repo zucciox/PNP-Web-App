@@ -6,7 +6,6 @@ export default function WorldDashboard() {
   const { gameState } = useGameData();
   const [timerString, setTimerString] = useState<string>('00:00');
 
-  // Interval Logic moved here for high-visibility display
   useEffect(() => {
     if (!gameState?.next_interval_time) return;
     
@@ -34,6 +33,12 @@ export default function WorldDashboard() {
     return <div style={fullPageCenter}>Loading game state...</div>;
   }
 
+  // Determine status display logic
+  const isQueuedToPause = gameState.is_active && gameState.queue_action === 'pause';
+  const statusText = isQueuedToPause 
+    ? "GAME WILL PAUSE AT THE END OF THIS INTERVAL" 
+    : (gameState.is_active ? 'ACTIVE' : 'PAUSED');
+
   return (
     <div style={containerStyle}>
       <div style={contentWrapper}>
@@ -55,9 +60,12 @@ export default function WorldDashboard() {
             <span style={labelStyle}>STATUS</span>
             <span style={{ 
               ...valueStyle, 
-              color: gameState.is_active ? '#4dff88' : '#ff4d4d'  
+              // Shift to Gold if pausing, Green if active, Red if paused
+              color: isQueuedToPause ? '#ffcc00' : (gameState.is_active ? '#4dff88' : '#ff4d4d'),
+              fontSize: isQueuedToPause ? '1.4rem' : '3.5rem',
+              lineHeight: '1.2'
             }}>
-              {gameState.is_active ? 'ACTIVE' : 'PAUSED'}
+              {statusText}
             </span>
           </div>
 
@@ -76,11 +84,10 @@ export default function WorldDashboard() {
   );
 }
 
-// --- BIG SCREEN STYLES ---
-
+// Styles remain largely the same, but with a flex fix for the Status card
 const containerStyle: React.CSSProperties = {
   backgroundColor: '#121212',
-  minHeight: '90vh', // Accounts for the top nav
+  minHeight: '90vh',
   color: 'white',
   display: 'flex',
   flexDirection: 'column',
@@ -94,14 +101,6 @@ const containerStyle: React.CSSProperties = {
 const contentWrapper: React.CSSProperties = {
   maxWidth: '1200px',
   width: '100%'
-};
-
-const titleStyle: React.CSSProperties = {
-  fontSize: '3rem',
-  letterSpacing: '0.5rem',
-  color: '#555',
-  marginBottom: '40px',
-  fontWeight: 900
 };
 
 const timerSectionStyle: React.CSSProperties = {
@@ -120,7 +119,7 @@ const timerLabelStyle: React.CSSProperties = {
 };
 
 const timerValueStyle: React.CSSProperties = {
-  fontSize: '12rem', // Massive display for big screens
+  fontSize: '12rem',
   fontWeight: 800,
   fontFamily: 'monospace',
   lineHeight: '1'
@@ -140,7 +139,9 @@ const bigCardStyle: React.CSSProperties = {
   border: '1px solid #444',
   display: 'flex',
   flexDirection: 'column',
-  gap: '10px'
+  justifyContent: 'center', // Centers text vertically if it wraps
+  gap: '10px',
+  minHeight: '200px' // Keeps cards uniform size
 };
 
 const labelStyle: React.CSSProperties = {

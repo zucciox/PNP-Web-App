@@ -17,7 +17,7 @@ export function ManagementActions() {
     resource: '',
     amount: '', 
     originId: '',
-    originType: '', // e.g., 'Mine', 'Farm', 'City'
+    originType: '', 
     unitId: '',        
     unitType: '',      
     destination: '', 
@@ -26,10 +26,12 @@ export function ManagementActions() {
 
   const [shipmentForm, setShipmentForm] = useState(initialShipmentState);
 
+  // Updated state to include partial amount
   const [completeForm, setCompleteForm] = useState({
     shipmentId: '',
+    amount: '', // Added for partial completion
     destinationId: '',
-    destinationType: '', // e.g., 'Factory', 'Outpost'
+    destinationType: '', 
     destinationNation: ''
   });
 
@@ -41,6 +43,7 @@ export function ManagementActions() {
     setShipmentForm(initialShipmentState);
     setCompleteForm({ 
       shipmentId: '', 
+      amount: '',
       destinationId: '', 
       destinationType: '',
       destinationNation: ''
@@ -51,8 +54,10 @@ export function ManagementActions() {
     e.preventDefault();
     setErrorMessage('');
 
+    // Matches updated RPC signature: p_shipment_id, p_amount, p_destination_id, etc.
     const { error } = await supabase.rpc('complete_shipment', { 
       p_shipment_id: parseInt(completeForm.shipmentId),
+      p_amount: parseInt(completeForm.amount),
       p_destination_id: parseInt(completeForm.destinationId),
       p_destination_type: completeForm.destinationType,
       p_destination_nation: completeForm.destinationNation
@@ -104,7 +109,7 @@ export function ManagementActions() {
 
   const ACTIONS = [
     { id: 'shipment', label: 'Create Shipment', count: shipments?.length || 0, tooltip: 'Withdraw resources and load onto a unit', onClick: () => setActiveModal('shipment') },
-    { id: 'complete_shipment', label: 'Complete Shipment', count: null, tooltip: 'Deposit unit resources into a destination', onClick: () => setActiveModal('complete') },
+    { id: 'complete_shipment', label: 'Complete Shipment', count: null, tooltip: 'Deposit unit resources into a destination (Settlement or Unit)', onClick: () => setActiveModal('complete') },
     { id: 'payment', label: 'Make Payment', count: null, tooltip: 'Transfer currency to another nation', onClick: () => setActiveModal('payment') },
   ];
 
@@ -129,46 +134,60 @@ export function ManagementActions() {
         ))}
       </div>
 
-      {/* Complete Shipment Modal */}
+      {/* Complete Shipment Modal - Updated with Amount and Unit awareness */}
       {activeModal === 'complete' && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content modal-large">
             <h4>Complete Shipment</h4>
+            <p className="sub-text">Deduct from active shipment and deposit into a target (Settlement, Facility, or Unit).</p>
             <form onSubmit={handleCompleteShipment}>
-              <div className="input-group">
-                <label>Shipment ID</label>
-                <input type="number" value={completeForm.shipmentId} onChange={(e) => setCompleteForm({...completeForm, shipmentId: e.target.value})} required />
-              </div>
-              
-              <div className="input-group">
-                <label>Destination Nation (A-Z)</label>
-                <input 
-                  type="text" 
-                  maxLength={1} 
-                  value={completeForm.destinationNation} 
-                  onChange={(e) => setCompleteForm({...completeForm, destinationNation: e.target.value.toUpperCase()})} 
-                  required 
-                />
-              </div>
+              <div className="form-grid">
+                <div className="input-group">
+                  <label>Shipment ID</label>
+                  <input type="number" value={completeForm.shipmentId} onChange={(e) => setCompleteForm({...completeForm, shipmentId: e.target.value})} required />
+                </div>
 
-              <div className="input-group">
-                <label>Destination Type (e.g. City, Mine)</label>
-                <input 
-                  type="text" 
-                  placeholder="Matches settlement_type or facility_type"
-                  value={completeForm.destinationType} 
-                  onChange={(e) => setCompleteForm({...completeForm, destinationType: e.target.value})} 
-                  required 
-                />
-              </div>
+                <div className="input-group">
+                  <label>Amount to Deposit</label>
+                  <input 
+                    type="number" 
+                    placeholder="Partial or full amount" 
+                    value={completeForm.amount} 
+                    onChange={(e) => setCompleteForm({...completeForm, amount: e.target.value})} 
+                    required 
+                  />
+                </div>
+                
+                <div className="input-group">
+                  <label>Destination Nation (A-Z)</label>
+                  <input 
+                    type="text" 
+                    maxLength={1} 
+                    value={completeForm.destinationNation} 
+                    onChange={(e) => setCompleteForm({...completeForm, destinationNation: e.target.value.toUpperCase()})} 
+                    required 
+                  />
+                </div>
 
-              <div className="input-group">
-                <label>Target type_id</label>
-                <input type="number" value={completeForm.destinationId} onChange={(e) => setCompleteForm({...completeForm, destinationId: e.target.value})} required />
+                <div className="input-group">
+                  <label>Destination Type</label>
+                  <input 
+                    type="text" 
+                    placeholder="Unit, City, Mine, etc."
+                    value={completeForm.destinationType} 
+                    onChange={(e) => setCompleteForm({...completeForm, destinationType: e.target.value})} 
+                    required 
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label>Target type_id / Unit ID</label>
+                  <input type="number" value={completeForm.destinationId} onChange={(e) => setCompleteForm({...completeForm, destinationId: e.target.value})} required />
+                </div>
               </div>
 
               {errorMessage && <p className="error-text">{errorMessage}</p>}
-              <div className="modal-actions">
+              <div className="modal-actions" style={{ marginTop: '15px' }}>
                 <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary">Finalize</button>
               </div>
@@ -177,8 +196,8 @@ export function ManagementActions() {
         </div>
       )}
 
-      {/* Payment Modal */}
-      {activeModal === 'payment' && (
+     {/* Payment Modal */}
+     {activeModal === 'payment' && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h4>Send Payment</h4>

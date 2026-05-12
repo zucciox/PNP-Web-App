@@ -205,6 +205,7 @@ export interface gameStateData {
     next_interval_time: string;
     is_active: boolean;
     id: number;
+    queue_action: string;
 }
 
 
