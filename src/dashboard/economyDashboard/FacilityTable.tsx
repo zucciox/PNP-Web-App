@@ -72,10 +72,10 @@ export function FacilityTable() {
     if (!outputType && (!outputAmt || outputAmt === 0)) {
         if (facilityName.includes("Factory")) {
             let refineryText = "";
-            if (facilityName.includes("Tier I")) refineryText = "Refines Copper & Gold";
-            else if (facilityName.includes("Tier II")) refineryText = "Refines Iron & Diamonds";
+            if (facilityName.includes("Tier IV")) refineryText = "Refines Platinum & Uranium"
             else if (facilityName.includes("Tier III")) refineryText = "Refines Aluminum & Titanium";
-            else if (facilityName.includes("Tier IV")) refineryText = "Refines Platinum & Uranium";
+            else if (facilityName.includes("Tier II")) refineryText = "Refines Iron & Diamonds";
+            else if (facilityName.includes("Tier I")) refineryText = "Refines Copper & Gold";
             
             return refineryText ? <span className="pos-value" style={{ color: '#4db6ac' }}>{refineryText}</span> : null;
         }

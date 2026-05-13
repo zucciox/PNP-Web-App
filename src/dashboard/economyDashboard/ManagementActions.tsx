@@ -3,6 +3,18 @@ import { useGameData } from '../../GameContext';
 import { supabase } from '../../supabaseClient';
 import '../../styles/economyStyles.css'; 
 
+// Resource options helper
+const RESOURCE_OPTIONS = [
+  'Energy', 'Gas', 'Coal', 'Fuel', 'Water', 'Food', 'Oxygen', 'Steel', 
+  'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 'Diamond', 
+  'Uranium', 'Oil', 'Methane', 'NaturalGas', 'CopperOre', 'GoldOre', 
+  'IronOre', 'AluminumOre', 'TitaniumOre', 'PlatinumOre', 'UraniumOre'
+].map(res => ({
+  value: res,
+  // Adds spaces before capital letters (e.g., IronOre -> Iron Ore)
+  label: res.replace(/([A-Z])/g, ' $1').trim() 
+}));
+
 export function ManagementActions() {
   const { shipments, profile } = useGameData();
   const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
@@ -26,10 +38,9 @@ export function ManagementActions() {
 
   const [shipmentForm, setShipmentForm] = useState(initialShipmentState);
 
-  // Updated state to include partial amount
   const [completeForm, setCompleteForm] = useState({
     shipmentId: '',
-    amount: '', // Added for partial completion
+    amount: '', 
     destinationId: '',
     destinationType: '', 
     destinationNation: ''
@@ -54,7 +65,6 @@ export function ManagementActions() {
     e.preventDefault();
     setErrorMessage('');
 
-    // Matches updated RPC signature: p_shipment_id, p_amount, p_destination_id, etc.
     const { error } = await supabase.rpc('complete_shipment', { 
       p_shipment_id: parseInt(completeForm.shipmentId),
       p_amount: parseInt(completeForm.amount),
@@ -134,7 +144,6 @@ export function ManagementActions() {
         ))}
       </div>
 
-      {/* Complete Shipment Modal - Updated with Amount and Unit awareness */}
       {activeModal === 'complete' && (
         <div className="modal-overlay">
           <div className="modal-content modal-large">
@@ -146,46 +155,23 @@ export function ManagementActions() {
                   <label>Shipment ID</label>
                   <input type="number" value={completeForm.shipmentId} onChange={(e) => setCompleteForm({...completeForm, shipmentId: e.target.value})} required />
                 </div>
-
                 <div className="input-group">
                   <label>Amount to Deposit</label>
-                  <input 
-                    type="number" 
-                    placeholder="Partial or full amount" 
-                    value={completeForm.amount} 
-                    onChange={(e) => setCompleteForm({...completeForm, amount: e.target.value})} 
-                    required 
-                  />
+                  <input type="number" placeholder="Partial or full amount" value={completeForm.amount} onChange={(e) => setCompleteForm({...completeForm, amount: e.target.value})} required />
                 </div>
-                
                 <div className="input-group">
                   <label>Destination Nation (A-Z)</label>
-                  <input 
-                    type="text" 
-                    maxLength={1} 
-                    value={completeForm.destinationNation} 
-                    onChange={(e) => setCompleteForm({...completeForm, destinationNation: e.target.value.toUpperCase()})} 
-                    required 
-                  />
+                  <input type="text" maxLength={1} value={completeForm.destinationNation} onChange={(e) => setCompleteForm({...completeForm, destinationNation: e.target.value.toUpperCase()})} required />
                 </div>
-
                 <div className="input-group">
                   <label>Destination Type</label>
-                  <input 
-                    type="text" 
-                    placeholder="Unit, City, Mine, etc."
-                    value={completeForm.destinationType} 
-                    onChange={(e) => setCompleteForm({...completeForm, destinationType: e.target.value})} 
-                    required 
-                  />
+                  <input type="text" placeholder="Unit, City, Mine, etc." value={completeForm.destinationType} onChange={(e) => setCompleteForm({...completeForm, destinationType: e.target.value})} required />
                 </div>
-
                 <div className="input-group">
                   <label>Target type_id / Unit ID</label>
                   <input type="number" value={completeForm.destinationId} onChange={(e) => setCompleteForm({...completeForm, destinationId: e.target.value})} required />
                 </div>
               </div>
-
               {errorMessage && <p className="error-text">{errorMessage}</p>}
               <div className="modal-actions" style={{ marginTop: '15px' }}>
                 <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
@@ -196,7 +182,6 @@ export function ManagementActions() {
         </div>
       )}
 
-     {/* Payment Modal */}
      {activeModal === 'payment' && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -220,7 +205,6 @@ export function ManagementActions() {
         </div>
       )}
 
-      {/* Create Shipment Modal */}
       {activeModal === 'shipment' && (
         <div className="modal-overlay">
           <div className="modal-content modal-large">
@@ -229,10 +213,24 @@ export function ManagementActions() {
             
             <form onSubmit={handleCreateShipment}>
               <div className="form-grid">
+                {/* DROPDOWN STARTS HERE */}
                 <div className="input-group">
-                  <label>Resource (e.g. Steel)</label>
-                  <input type="text" placeholder="Resource Name" value={shipmentForm.resource} onChange={(e) => setShipmentForm({...shipmentForm, resource: e.target.value})} required />
+                  <label>Resource</label>
+                  <select 
+                    value={shipmentForm.resource} 
+                    onChange={(e) => setShipmentForm({...shipmentForm, resource: e.target.value})} 
+                    required
+                    className="modal-select" // Assumed style in economyStyles.css
+                  >
+                    <option value="" disabled>Select Resource</option>
+                    {RESOURCE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+                {/* DROPDOWN ENDS HERE */}
                 
                 <div className="input-group">
                   <label>Amount</label>
@@ -241,13 +239,7 @@ export function ManagementActions() {
                 
                 <div className="input-group">
                   <label>Origin Type (e.g. City, Mine)</label>
-                  <input 
-                    type="text" 
-                    placeholder="Subtype name"
-                    value={shipmentForm.originType} 
-                    onChange={(e) => setShipmentForm({...shipmentForm, originType: e.target.value})}
-                    required
-                  />
+                  <input type="text" placeholder="Subtype name" value={shipmentForm.originType} onChange={(e) => setShipmentForm({...shipmentForm, originType: e.target.value})} required />
                 </div>
 
                 <div className="input-group">
