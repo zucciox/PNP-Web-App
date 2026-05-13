@@ -7,8 +7,8 @@ import '../../styles/economyStyles.css';
 const RESOURCE_OPTIONS = [
   'Energy', 'Gas', 'Coal', 'Fuel', 'Water', 'Food', 'Oxygen', 'Steel', 
   'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 'Diamond', 
-  'Uranium', 'Oil', 'Methane', 'NaturalGas', 'CopperOre', 'GoldOre', 
-  'IronOre', 'AluminumOre', 'TitaniumOre', 'PlatinumOre', 'UraniumOre'
+  'Uranium', 'Oil', 'Methane', 'Copper Ore', 'Gold Ore', 
+  'Iron Ore', 'Aluminum Ore', 'Titanium Ore', 'Platinum Ore', 'Uranium Ore'
 ].map(res => ({
   value: res,
   // Adds spaces before capital letters (e.g., IronOre -> Iron Ore)
