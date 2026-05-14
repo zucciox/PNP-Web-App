@@ -14,6 +14,10 @@ const TYPE_COLORS: Record<string, string> = {
   Tank: '#e53935'
 };
 
+// Helper to check for "High Stakes" units
+const isStrategicUnit = (type: string) => 
+  ['Cruise Missile', 'ICBM', 'Nuclear Warhead'].includes(type);
+
 const getHealthColor = (pct: number): string => 
   pct >= 70 ? '#03da3c' : pct >= 35 ? '#ffb300' : '#cf6679';
 
@@ -30,7 +34,6 @@ export function ActiveUnitsTable() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // --- NEW STATE FOR MULTI-SELECT ---
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [isBulkMode, setIsBulkMode] = useState(false);
 
@@ -52,7 +55,6 @@ export function ActiveUnitsTable() {
     return map;
   }, [unitTypes]);
 
-  // Handle row selection
   const toggleSelection = (globalId: number) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -63,7 +65,6 @@ export function ActiveUnitsTable() {
   };
 
   const handleDemobilize = async (): Promise<void> => {
-    // Look through the MASTER units list, not just the filtered/visible ones
     const unitsToProcess = isBulkMode 
         ? (units || []).filter(u => selectedIds.has(u.global_id))
         : modalUnit ? [modalUnit] : [];
@@ -74,7 +75,6 @@ export function ActiveUnitsTable() {
     setError(null);
 
     try {
-      // Using Promise.all here is faster than a 'for' loop as it runs requests in parallel
       await Promise.all(unitsToProcess.map(unit => 
         supabase.rpc('toggle_unit', {
           p_type_id: unit.type_id,
@@ -84,7 +84,6 @@ export function ActiveUnitsTable() {
         })
       ));
 
-      // Reset state on success
       setModalUnit(null);
       setBaseTypeId('');
       setSelectedIds(new Set());
@@ -188,7 +187,7 @@ export function ActiveUnitsTable() {
           <table style={s.table}>
             <thead>
               <tr>
-                {['Unit', 'Type ID', 'Health', 'Attacks', 'Stats', 'Actions'].map(h => (
+                {['Unit', 'Type ID', 'Health', 'Status', 'Stats', 'Actions'].map(h => (
                   <th key={h} style={s.th}>{h}</th>
                 ))}
               </tr>
@@ -200,6 +199,7 @@ export function ActiveUnitsTable() {
                 const maxHealth = stats?.max_health || u.max_health || 100;
                 const pct = Math.max(0, Math.min(100, (u.health / maxHealth) * 100));
                 const hColor = getHealthColor(pct);
+                const isStrategic = isStrategicUnit(u.unit_type);
 
                 return (
                   <tr 
@@ -214,22 +214,30 @@ export function ActiveUnitsTable() {
                     </td>
                     <td style={s.td}><span style={{ color: '#aaa' }}>#{u.type_id}</span></td>
                     <td style={s.td}>
-                      <div style={{ width: '130px' }}>
-                        <div style={s.hpLabel}>
-                          <span>{u.health} / {maxHealth}</span>
-                          <span style={{ color: hColor, fontWeight: 'bold' }}>{pct.toFixed(0)}%</span>
+                      {isStrategic ? (
+                        <span style={{ color: '#03da3c', fontWeight: 'bold', fontSize: '0.8rem', textTransform: 'uppercase' }}>Intact</span>
+                      ) : (
+                        <div style={{ width: '130px' }}>
+                          <div style={s.hpLabel}>
+                            <span>{u.health} / {maxHealth}</span>
+                            <span style={{ color: hColor, fontWeight: 'bold' }}>{pct.toFixed(0)}%</span>
+                          </div>
+                          <div style={s.barBg}>
+                            <div style={{ ...s.barFill, width: `${pct}%`, background: hColor }} />
+                          </div>
                         </div>
-                        <div style={s.barBg}>
-                          <div style={{ ...s.barFill, width: `${pct}%`, background: hColor }} />
-                        </div>
-                      </div>
+                      )}
                     </td>
                     <td style={s.td}>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        {[...Array(stats?.num_attacks || 1)].map((_, idx) => (
-                          <span key={idx} style={{ color: idx < (u.attacks_remaining ?? 0) ? '#e53935' : '#333', marginRight: '2px' }}>⚔</span>
-                        ))}
-                      </div>
+                      {isStrategic ? (
+                        <span style={{ color: '#03da3c', fontWeight: 'bold', fontSize: '0.8rem', textTransform: 'uppercase' }}>Ready</span>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {[...Array(stats?.num_attacks || 1)].map((_, idx) => (
+                            <span key={idx} style={{ color: idx < (u.attacks_remaining ?? 0) ? '#e53935' : '#333', marginRight: '2px' }}>⚔</span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td style={s.td}><InfoIcon stats={stats} /></td>
                     <td style={s.td} onClick={(e) => e.stopPropagation()}>
@@ -247,7 +255,7 @@ export function ActiveUnitsTable() {
         ) : <div style={s.empty}>No matching units found.</div>}
       </div>
 
-      {/* --- REUSABLE DEMOBILIZE MODAL (FOR SINGLE & BULK) --- */}
+      {/* Demobilize Modal */}
       {(modalUnit || isBulkMode) && (
         <div style={s.modalOverlay}>
           <div style={s.modalContent}>
@@ -276,11 +284,13 @@ export function ActiveUnitsTable() {
         </div>
       )}
 
-      {/* Attack Modal remains unchanged */}
+      {/* Attack Modal */}
       {attackModalUnit && (
         <div style={s.modalOverlay}>
           <div style={s.modalContent}>
-            <h3 style={{ marginTop: 0, fontSize: '1.1rem', color: '#e53935' }}>Command Attack</h3>
+            <h3 style={{ marginTop: 0, fontSize: '1.1rem', color: '#e53935' }}>
+              {isStrategicUnit(attackModalUnit.unit_type) ? 'Initialize Launch' : 'Command Attack'}
+            </h3>
             <p style={{ fontSize: '0.8rem', color: '#bbb' }}>
               Aggressor: {attackModalUnit.unit_type} #{attackModalUnit.type_id}
             </p>
@@ -291,7 +301,7 @@ export function ActiveUnitsTable() {
             <div style={s.modalActions}>
               <button onClick={() => { setAttackModalUnit(null); setError(null); }} style={s.cancelBtn}>Cancel</button>
               <button onClick={handleAttack} disabled={loading || !victimData.nation || !victimData.typeId} style={{ ...s.confirmBtn, background: '#e53935' }}>
-                {loading ? 'Engaging...' : 'Execute Attack'}
+                {loading ? 'Processing...' : (isStrategicUnit(attackModalUnit.unit_type) ? 'Confirm Launch' : 'Execute Attack')}
               </button>
             </div>
           </div>
@@ -301,11 +311,11 @@ export function ActiveUnitsTable() {
   );
 }
 
-// ... ActionMenu and InfoIcon remain the same as your original code ...
 const ActionMenu = ({ unit, onDemobilize, onAttack }: { unit: Unit, onDemobilize: () => void, onAttack: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const canAttack = (unit.attacks_remaining ?? 0) > 0;
+  const isStrategic = isStrategicUnit(unit.unit_type);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -321,7 +331,10 @@ const ActionMenu = ({ unit, onDemobilize, onAttack }: { unit: Unit, onDemobilize
       {isOpen && (
         <div style={s.popover}>
           <div className={`menu-item ${!canAttack ? 'disabled' : ''}`} style={s.menuItem} onClick={() => { if (canAttack) { onAttack(); setIsOpen(false); } }}>
-            <span style={{ color: !canAttack ? '#444' : '#e53935', marginRight: '8px' }}>⚔</span> {canAttack ? 'Attack Target' : 'All attacks used'}
+            <span style={{ color: !canAttack ? '#444' : '#e53935', marginRight: '8px' }}>
+              {isStrategic ? '🚀' : '⚔'}
+            </span> 
+            {canAttack ? (isStrategic ? 'Launch' : 'Attack Target') : 'All attacks used'}
           </div>
           <div className="menu-item" style={s.menuItem} onClick={() => { onDemobilize(); setIsOpen(false); }}>
             <span style={{ color: '#aaa', marginRight: '8px' }}>⚑</span> Demobilize
@@ -348,7 +361,6 @@ const InfoIcon = ({ stats }: { stats?: UnitType }) => (
 );
 
 const s: Record<string, React.CSSProperties> = {
-  // ... existing styles ...
   container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', width: 'fit-content' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #333', paddingBottom: '1rem' },
   searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },

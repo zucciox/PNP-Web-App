@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGameData } from '../../GameContext';
 import { Facility } from '../../types'; 
 import '../../styles/economyStyles.css';
@@ -21,54 +21,136 @@ const extendedColors: Record<string, string> = {
   UraniumOre: '#32cd32'
 };
 
+interface ShippingUnit {
+  id: number;
+  unit_type: string;
+  type_id: number;
+  display_name: string;
+}
+
 export function FacilityTable() {
-  const { facilities, facilityTypes } = useGameData();
+  const { facilities, facilityTypes, profile, units, unitTypes, shipments } = useGameData();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  
+  const [activeShipmentFacility, setActiveShipmentFacility] = useState<Facility | null>(null);
+  const [activeDeliveryFacility, setActiveDeliveryFacility] = useState<Facility | null>(null);
+  const [availableUnits, setAvailableUnits] = useState<ShippingUnit[]>([]);
+
+  const [shipmentForm, setShipmentForm] = useState({
+    resource: '',
+    amount: '',
+    unitId: '',
+    unitType: '',
+    destination: '',
+    notes: ''
+  });
+
+  const [deliveryForm, setDeliveryForm] = useState({
+    shipmentId: '',
+    amount: ''
+  });
+
+  const selectedShipment = shipments?.find(s => s.shipment_id === parseInt(deliveryForm.shipmentId));
+
+  useEffect(() => {
+    if (activeShipmentFacility && units && unitTypes) {
+      const validUnits = units.filter((u: any) => {
+        const typeData = unitTypes.find(t => t.unit_type === u.unit_type);
+        return !!u.is_active && !!typeData?.is_shipment_enabled;
+      });
+
+      setAvailableUnits(validUnits.map((u: any) => ({
+        id: u.global_id,
+        unit_type: u.unit_type,
+        type_id: u.type_id,
+        display_name: `${u.unit_type} #${u.type_id}`
+      })));
+    }
+  }, [activeShipmentFacility, units, unitTypes]);
+
+  const handleToggle = async (globalId: number) => {
+    setErrorMsg(null);
+    const { error } = await supabase.rpc('toggle_facility', { p_global_id: globalId });
+    if (error) setErrorMsg(`Toggle failed: ${error.message}`);
+  };
+
+  const handleCreateShipment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.nation_id || !activeShipmentFacility) return;
+
+    setLoading(true);
+    const { error } = await supabase.rpc('create_shipment', { 
+      p_resource: shipmentForm.resource,
+      p_amount: parseInt(shipmentForm.amount), 
+      p_origin_id: activeShipmentFacility.type_id, 
+      p_origin_type: activeShipmentFacility.facility_type,
+      p_origin_nation: profile.nation_id,
+      p_unit_id: parseInt(shipmentForm.unitId),       
+      p_unit_type: shipmentForm.unitType,             
+      p_destination: shipmentForm.destination, 
+      p_notes: shipmentForm.notes,
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+    } else {
+      setActiveShipmentFacility(null);
+      setShipmentForm({ resource: '', amount: '', unitId: '', unitType: '', destination: '', notes: '' });
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteShipment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeDeliveryFacility || !profile?.nation_id) return;
+
+    setLoading(true);
+    const { error } = await supabase.rpc('complete_shipment', { 
+      p_shipment_id: parseInt(deliveryForm.shipmentId),
+      p_amount: parseInt(deliveryForm.amount),
+      p_destination_id: activeDeliveryFacility.type_id,
+      p_destination_type: activeDeliveryFacility.facility_type,
+      p_destination_nation: profile.nation_id
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+    } else {
+      setActiveDeliveryFacility(null);
+      setDeliveryForm({ shipmentId: '', amount: '' });
+      setLoading(false);
+    }
+  };
 
   const getOperatingCost = (facility: Facility): number => {
     const typeDef = facilityTypes.find((t: any) => t.facility_type === facility.facility_type);
     return Number(typeDef?.oc_interval ?? 0);
   };
 
-  const handleToggle = async (globalId: number) => {
-    setErrorMsg(null);
-    const { error } = await supabase.rpc('toggle_facility', { 
-      p_global_id: globalId 
-    });
-
-    if (error) {
-      setErrorMsg(`Toggle failed: ${error.message}`);
-    }
-  };
-
-  // --- Grouping Logic ---
   const groups = {
     production: facilities.filter(f => {
       const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
-      const isRefinery = f.facility_type?.includes("Tier"); 
-      return typeInfo?.output_type !== null || isRefinery;
+      return typeInfo?.output_type !== null || f.facility_type?.includes("Tier");
     }),
     factories: facilities.filter(f => {
       const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
-      const isFactory = f.facility_type?.includes("Factory");
-      const inProduction = typeInfo?.output_type !== null || f.facility_type?.includes("Tier");
-      return isFactory && !inProduction;
+      return f.facility_type?.includes("Factory") && typeInfo?.output_type === null && !f.facility_type?.includes("Tier");
     }),
     other: facilities.filter(f => {
       const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
-      const isFactory = f.facility_type?.includes("Factory");
-      return typeInfo?.output_type === null && !isFactory;
+      return typeInfo?.output_type === null && !f.facility_type?.includes("Factory");
     })
   };
 
   const renderProductionLine = (facility: Facility, typeInfo: any) => {
     const outputAmt = typeInfo?.output_amount_interval;
     const outputType = typeInfo?.output_type;
-    const inputType = typeInfo?.input_type;
     const facilityName = facility.facility_type || "";
     const workers = Number(facility.workers_assigned || 0);
 
-    // Logic for factories that don't have a single output_type (Refineries)
     if (!outputType && (!outputAmt || outputAmt === 0)) {
         if (facilityName.includes("Factory")) {
             let refineryText = "";
@@ -76,16 +158,10 @@ export function FacilityTable() {
             else if (facilityName.includes("Tier III")) refineryText = "Refines Aluminum & Titanium";
             else if (facilityName.includes("Tier II")) refineryText = "Refines Iron & Diamonds";
             else if (facilityName.includes("Tier I")) refineryText = "Refines Copper & Gold";
-            
             return refineryText ? <span className="pos-value" style={{ color: '#4db6ac' }}>{refineryText}</span> : null;
         }
         return null;
     }
-
-    if (!outputAmt && inputType && outputType) {
-      return <span className="pos-value">Produces {outputType}</span>;
-    }
-
     const baseOutput = Number(outputAmt || 0);
     const finalOutput = typeInfo?.is_variable_output ? baseOutput * workers : baseOutput;
 
@@ -106,8 +182,7 @@ export function FacilityTable() {
           {items.map((facility: Facility) => {
             const typeInfo = facilityTypes.find(t => t.facility_type === facility.facility_type);
             const opCost = getOperatingCost(facility);
-            const workers = Number(facility.workers_assigned || 0);
-            const showWorkers = typeInfo?.needs_workers !== false;
+            const availableInStorage = STORAGE_RESOURCES.filter(res => (facility[res as keyof Facility] as number) > 0);
 
             return (
               <div key={facility.global_id} className="facility-card-wrapper">
@@ -118,62 +193,35 @@ export function FacilityTable() {
                   </div>
 
                   <div className="card-body">
-                    <div className="production-info">
-                      {renderProductionLine(facility, typeInfo)}
-                    </div>
-
+                    <div className="production-info">{renderProductionLine(facility, typeInfo)}</div>
                     <div className="cost-info" style={{ marginTop: '4px', textAlign: 'center' }}>
-                      <span className="sub-text"> operating cost: </span>
-                      <span className="neg-value" style={{ 
-                        color: '#ff5252', 
-                        fontWeight: 'bold',
-                        textDecoration: !facility.is_active ? 'line-through' : 'none',
-                        opacity: !facility.is_active ? 0.7 : 1
-                      }}>
-                        -${opCost.toLocaleString()}
-                      </span>
+                      <span className="sub-text"> cost: </span>
+                      <span className="neg-value" style={{ color: '#ff5252', fontWeight: 'bold' }}>-${opCost.toLocaleString()}</span>
                     </div>
-
-                    {showWorkers && (
-                      <div className="workers-info" style={{ 
-                        marginTop: '8px', 
-                        padding: '4px 0', 
-                        borderTop: '1px solid #333', 
-                        borderBottom: '1px solid #333', 
-                        textAlign: 'center' 
-                      }}>
-                        <span className="sub-text">Workers: </span>
-                        <span style={{ color: '#58b7e6', fontWeight: 'bold' }}>
-                          {workers.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
 
                     <div className="stored-resources-section">
-                      <h5 className="section-title">Stored Resources</h5>
+                      <h5 className="section-title">Storage</h5>
                       <div className="storage-mini-grid">
-                        {STORAGE_RESOURCES.map(res => {
-                          const amount = (facility[res as keyof Facility] as number) || 0;
-                          if (amount <= 0) return null;
-
-                          return (
-                            <div key={res} className="storage-pill">
-                              <span style={{ color: extendedColors[res], marginRight: '4px' }}>●</span>
-                              <span className="res-label">{res}:</span> 
-                              <span className="res-value">{amount.toLocaleString()}</span>
-                            </div>
-                          );
-                        })}
+                        {availableInStorage.map(res => (
+                          <div key={res} className="storage-pill">
+                            <span style={{ color: extendedColors[res], marginRight: '4px' }}>●</span>
+                            <span className="res-label">{res}:</span> 
+                            <span className="res-value">{((facility[res as keyof Facility] as number) || 0).toLocaleString()}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  <div className="card-overlay">
-                    <button 
-                      onClick={() => handleToggle(facility.global_id)}
-                      className={facility.is_active ? 'btn-disable' : 'btn-enable'}
-                    >
+                  <div className="card-overlay" style={{ flexDirection: 'column', gap: '6px', padding: '10px' }}>
+                    <button onClick={() => handleToggle(facility.global_id)} className={facility.is_active ? 'btn-disable' : 'btn-enable'} style={{ width: '90%' }}>
                       {facility.is_active ? 'Disable' : 'Enable'}
+                    </button>
+                    <button onClick={() => setActiveShipmentFacility(facility)} className="btn-primary" style={{ width: '90%', fontSize: '0.75rem' }}>
+                      Create Shipment
+                    </button>
+                    <button onClick={() => setActiveDeliveryFacility(facility)} className="btn-secondary" style={{ width: '90%', fontSize: '0.75rem', background: '#3d5a99' }}>
+                      Deliver Shipment
                     </button>
                   </div>
                 </div>
@@ -195,6 +243,133 @@ export function FacilityTable() {
         {renderGroup("Factories", groups.factories)}
         {renderGroup("Support & Logistics", groups.other)}
       </div>
+
+      {/* CREATE SHIPMENT MODAL */}
+      {activeShipmentFacility && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-large">
+            <h4>Ship from {activeShipmentFacility.facility_type} #{activeShipmentFacility.type_id}</h4>
+            <form onSubmit={handleCreateShipment}>
+              <div className="form-grid">
+                <div className="input-group">
+                  <label>Resource</label>
+                  <select 
+                    value={shipmentForm.resource} 
+                    onChange={(e) => setShipmentForm({...shipmentForm, resource: e.target.value})} 
+                    required
+                    className="modal-select"
+                  >
+                    <option value="" disabled>Select Resource</option>
+                    {STORAGE_RESOURCES.filter(res => (activeShipmentFacility[res as keyof Facility] as number) > 0).map(res => (
+                      <option key={res} value={res}>{res}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="input-group">
+                  <label>Amount</label>
+                  <input type="number" value={shipmentForm.amount} onChange={(e) => setShipmentForm({...shipmentForm, amount: e.target.value})} required />
+                </div>
+
+                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                  <label>Shipping Unit</label>
+                  <select 
+                    required className="modal-select"
+                    value={shipmentForm.unitId}
+                    onChange={(e) => {
+                        const selectedUnit = availableUnits.find(u => u.id === parseInt(e.target.value));
+                        if (selectedUnit) setShipmentForm({...shipmentForm, unitId: selectedUnit.type_id.toString(), unitType: selectedUnit.unit_type});
+                    }}
+                  >
+                    <option value="" disabled>Select Unit...</option>
+                    {availableUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.display_name}</option>)}
+                  </select>
+                </div>
+
+                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                  <label>Destination Label</label>
+                  <input type="text" value={shipmentForm.destination} onChange={(e) => setShipmentForm({...shipmentForm, destination: e.target.value})} required />
+                </div>
+
+                {/* ADDED NOTES FIELD */}
+                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                  <label>Notes</label>
+                  <textarea 
+                    rows={2} 
+                    value={shipmentForm.notes} 
+                    onChange={(e) => setShipmentForm({...shipmentForm, notes: e.target.value})} 
+                    placeholder="Optional details..."
+                  />
+                </div>
+              </div>
+              <div className="modal-actions" style={{ marginTop: '15px' }}>
+                <button type="button" onClick={() => setActiveShipmentFacility(null)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Processing...' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELIVER SHIPMENT MODAL */}
+      {activeDeliveryFacility && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-large">
+            <h4>Deliver to {activeDeliveryFacility.facility_type} #{activeDeliveryFacility.type_id}</h4>
+            <form onSubmit={handleCompleteShipment}>
+              <div className="form-grid">
+                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                  <label>Select Incoming Shipment</label>
+                  <select 
+                    required className="modal-select"
+                    value={deliveryForm.shipmentId}
+                    onChange={(e) => {
+                      const ship = shipments?.find(s => s.shipment_id === parseInt(e.target.value));
+                      setDeliveryForm({ shipmentId: e.target.value, amount: ship ? ship.amount.toString() : '' });
+                    }}
+                  >
+                    <option value="" disabled>Select shipment...</option>
+                    {shipments?.map(s => (
+                      <option key={s.shipment_id} value={s.shipment_id}>ID: {s.shipment_id} — {s.resource} ({s.amount})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedShipment && (
+                  <div className="info-box" style={{ gridColumn: 'span 2', background: '#222', padding: '10px', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid #444' }}>
+                    <span style={{ color: '#aaa' }}>Manifest: </span> 
+                    <span style={{ color: '#fff', fontWeight: 'bold' }}>
+                        {selectedShipment.amount} {selectedShipment.resource} on {selectedShipment.unit_type} #{units?.find(u => u.global_id === selectedShipment.unit_id)?.type_id || "Unknown"}
+                    </span>
+                    <div style={{ marginTop: '4px', opacity: 0.8, fontSize: '0.75rem' }}>
+                        Heading to: {selectedShipment.destination}
+                    </div>
+                  </div>
+                )}
+
+                <div className="input-group">
+                  <label>Amount to Deposit</label>
+                  <input 
+                    type="number" 
+                    max={selectedShipment?.amount}
+                    value={deliveryForm.amount} 
+                    onChange={(e) => setDeliveryForm({...deliveryForm, amount: e.target.value})} 
+                    required 
+                  />
+                </div>
+              </div>
+              <div className="modal-actions" style={{ marginTop: '15px' }}>
+                <button type="button" onClick={() => setActiveDeliveryFacility(null)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" disabled={loading || !selectedShipment}>
+                  {loading ? 'Processing...' : 'Finalize Delivery'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

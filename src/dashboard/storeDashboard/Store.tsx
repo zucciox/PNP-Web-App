@@ -32,24 +32,31 @@ export function FactoryStore() {
   const { facilities, facilityTypes, unitTypes, nation } = useGameData();
   
   const [selectedType, setSelectedType] = useState<'unit' | 'facility'>('unit');
-  const [selectedFactoryId, setSelectedFactoryId] = useState<number | string | null>(null);
+  // Store as number to match global_id type
+  const [selectedFactoryId, setSelectedFactoryId] = useState<number | null>(null);
   const [confirmItem, setConfirmItem] = useState<any>(null);
 
   const availableFactories = useMemo(() => {
     return facilities.filter(f => 
-      f.facility_type?.includes('Factory') && 
+      f.facility_type?.toLowerCase().includes('factory') && 
       f.is_active
     );
   }, [facilities]);
 
   useEffect(() => {
     if (selectedFactoryId === null && availableFactories.length > 0) {
-      setSelectedFactoryId(availableFactories[0].global_id);
+      setSelectedFactoryId(Number(availableFactories[0].global_id));
     }
   }, [availableFactories, selectedFactoryId]);
 
-  const activeFactory = availableFactories.find(f => f.global_id === selectedFactoryId);
-  const activeFactoryType = facilityTypes.find(ft => ft.facility_type === activeFactory?.facility_type);
+  // Use Number() to ensure comparison parity
+  const activeFactory = useMemo(() => {
+    return availableFactories.find(f => Number(f.global_id) === Number(selectedFactoryId));
+  }, [availableFactories, selectedFactoryId]);
+
+  const activeFactoryType = useMemo(() => {
+    return facilityTypes.find(ft => ft.facility_type === activeFactory?.facility_type);
+  }, [facilityTypes, activeFactory]);
 
   const purchasableItems = useMemo(() => {
     if (!activeFactoryType || !nation) return [];
@@ -58,14 +65,11 @@ export function FactoryStore() {
     const source = isUnit ? unitTypes : facilityTypes;
 
     return source.filter(item => {
-      // 1. Level Check
       const meetLevel = item.factory_lvl <= activeFactoryType.mfg_level;
-      
-      // 2. Flags Check
       const canBePurchased = isUnit || item.is_purchasable !== false;
-
-      // 3. Ownership Check (Hide if proprietary_nation exists and doesn't match us)
-      const isNationAuthorized = !item.proprietary_nation || item.proprietary_nation === nation.id;
+      
+      // proprietary_nation check (ensure types match, usually text/name)
+      const isNationAuthorized = !item.proprietary_nation || String(item.proprietary_nation) === String(nation.id);
 
       return meetLevel && canBePurchased && isNationAuthorized;
     });
@@ -88,8 +92,15 @@ export function FactoryStore() {
     for (const key of COST_KEYS) {
       const cost = item[key] || 0;
       if (cost === 0) continue;
+      
       const resourceName = RESOURCE_MAP[key];
-      const balance = resourceName === 'Treasury' ? (nation.Treasury || 0) : (activeFactory[resourceName] || 0);
+      // Contract multi-word resource names (e.g., 'Iron Ore' -> 'IronOre')
+      const dbKey = resourceName.replace(/\s+/g, '');
+      
+      const balance = resourceName === 'Treasury' 
+        ? (nation.Treasury || 0) 
+        : (activeFactory[dbKey] || 0);
+        
       if (balance < cost) return false;
     }
     return true;
@@ -98,6 +109,7 @@ export function FactoryStore() {
   const handlePurchase = async () => {
     if (!confirmItem || !activeFactory || !nation) return;
     const pieceType = selectedType === 'unit' ? confirmItem.unit_type : confirmItem.facility_type;
+    
     const { error } = await supabase.rpc('create_order', {
       p_piece_type: pieceType,
       p_nation_id: nation.id,
@@ -127,7 +139,7 @@ export function FactoryStore() {
         <select 
           className="store-select"
           value={selectedFactoryId || ''}
-          onChange={(e) => setSelectedFactoryId(e.target.value)}
+          onChange={(e) => setSelectedFactoryId(Number(e.target.value))}
         >
           {availableFactories.map(f => (
             <option key={f.global_id} value={f.global_id}>
@@ -163,8 +175,8 @@ export function FactoryStore() {
                         if (!cost) return null;
                         
                         const resName = RESOURCE_MAP[key];
-                        const balance = resName === 'Treasury' ? nation?.Treasury : activeFactory?.[resName];
-                        // Get color from the resourceColors record
+                        const dbKey = resName.replace(/\s+/g, '');
+                        const balance = resName === 'Treasury' ? nation?.Treasury : activeFactory?.[dbKey];
                         const tagColor = resourceColors[resName] || '#000000';
 
                         return (

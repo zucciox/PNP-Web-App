@@ -66,7 +66,8 @@ export interface UnitType {
     UraniumCost: number;
     build_time: number;
     factory_lvl: number;
-    [key: string]: string | number;
+    is_shipment_enabled: boolean;
+    [key: string]: string | number | boolean;
 }
   
 export interface Facility {
@@ -203,7 +204,7 @@ export interface gameStateData {
     interval: number;
     cycle: number;
     next_interval_time: string;
-    is_active: boolean;
+    hiactive: boolean;
     id: number;
     queue_action: string;
 }
