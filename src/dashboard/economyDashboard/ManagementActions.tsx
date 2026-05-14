@@ -244,7 +244,7 @@ export function ManagementActions() {
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#aaa' }}>
                 <strong>Cargo:</strong> {selectedShipment.amount}x {selectedShipment.resource} <br />
                 <strong>Currently on:</strong> {selectedShipment.unit_type} #{units?.find(u => u.global_id === selectedShipment.unit_id)?.type_id || "Unknown ID"}<br />
-                <strong>Manifest Dest:</strong> {selectedShipment.destination}
+                <strong>Destination:</strong> {selectedShipment.destination}
               </p>
             </div>
           )}

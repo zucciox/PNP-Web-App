@@ -83,6 +83,8 @@ export default function CombatAlert() {
     }
   };
 
+
+
   return (
     <div style={OVERLAY_STYLE}>
       <div style={MODAL_STYLE}>
