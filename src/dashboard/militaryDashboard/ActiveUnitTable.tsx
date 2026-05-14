@@ -187,7 +187,7 @@ export function ActiveUnitsTable() {
           <table style={s.table}>
             <thead>
               <tr>
-                {['Unit', 'Type ID', 'Health', 'Status', 'Stats', 'Actions'].map(h => (
+                {['Unit', 'Type ID', 'Health', 'Attacks', 'Stats', 'Actions'].map(h => (
                   <th key={h} style={s.th}>{h}</th>
                 ))}
               </tr>
