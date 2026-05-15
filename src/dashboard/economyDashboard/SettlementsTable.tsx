@@ -29,6 +29,23 @@ interface ShippingUnit {
 
 type ViewMode = 'consumption' | 'reserves';
 
+// Helper to determine max health based on settlement type
+const getMaxHealth = (settlementType: string): number => {
+  switch (settlementType) {
+    case 'Capital': return 350;
+    case 'City': return 250;
+    case 'Town': return 150;
+    default: return 100;
+  }
+};
+
+// Helper to get conditional gradient color based on health percentage
+const getHealthGradient = (percentage: number): string => {
+  if (percentage > 60) return 'linear-gradient(90deg, #2e7d32, #4caf50)';
+  if (percentage > 30) return 'linear-gradient(90deg, #ff9800, #ffeb3b)';
+  return 'linear-gradient(90deg, #c62828, #ef5350)';
+};
+
 export function SettlementsTable() {
   const { settlements, profile, units, unitTypes, shipments } = useGameData();
   const [viewMode, setViewMode] = useState<ViewMode>('consumption');
@@ -165,38 +182,60 @@ export function SettlementsTable() {
 
       <div className="scroll-area">
         <div className="settlement-grid">
-          {settlements.map((s) => (
-            <div key={`${s.settlement_type}-${s.type_id}`} className="settlement-card">
-              <div className="settlement-title">
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span className="settlement-name">{s.name}</span>
-                  <span className="sub-text" style={{ fontSize: '0.75rem', opacity: 0.8 }}>{s.settlement_type}</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <span className="settlement-id">ID: {s.type_id}</span>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                        <button className="btn-primary" style={{ fontSize: '0.6rem', padding: '2px 6px' }} onClick={() => setActiveShipmentSettlement(s)}>Ship</button>
-                        <button className="btn-secondary" style={{ fontSize: '0.6rem', padding: '2px 6px', background: '#3d5a99' }} onClick={() => setActiveDeliverySettlement(s)}>Deliver</button>
-                    </div>
-                </div>
-              </div>
+          {settlements.map((s) => {
+            // Health Calculation Parameters
+            const currentHealth = Number(s.health) || 0;
+            const maxHealth = getMaxHealth(s.settlement_type);
+            const healthPercentage = Math.min(Math.max((currentHealth / maxHealth) * 100, 0), 100);
 
-              <div className="resource-grid">
-                {currentMap.map((res) => {
-                  const val = Number(s[res.key]) || 0;
-                  if (val <= 0) return null;
-                  return (
-                    <div key={res.key} className="resource-item">
-                      <span style={{ color: resourceColors[res.label] || '#bb86fc', fontWeight: 'bold' }}>{res.label}</span>
-                      <span style={{ color: viewMode === 'consumption' ? '#ff4444' : '#4488ff', fontFamily: 'monospace' }}>
-                        {viewMode === 'consumption' ? '-' : ''}{formatResourceValue(val)} 
-                      </span>
-                    </div>
-                  );
-                })}
+            return (
+              <div key={`${s.settlement_type}-${s.type_id}`} className="settlement-card">
+                <div className="settlement-title">
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span className="settlement-name">{s.name}</span>
+                    <span className="sub-text" style={{ fontSize: '0.75rem', opacity: 0.8 }}>{s.settlement_type}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                      <span className="settlement-id">ID: {s.type_id}</span>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                          <button className="btn-primary" style={{ fontSize: '0.6rem', padding: '2px 6px' }} onClick={() => setActiveShipmentSettlement(s)}>Ship</button>
+                          <button className="btn-secondary" style={{ fontSize: '0.6rem', padding: '2px 6px', background: '#3d5a99' }} onClick={() => setActiveDeliverySettlement(s)}>Deliver</button>
+                      </div>
+                  </div>
+                </div>
+
+                {/* Health Bar Integration */}
+                <div className="settlement-health-container" style={{ margin: '8px 0 12px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '3px', opacity: 0.9 }}>
+                    <span style={{ fontWeight: 'bold' }}>{currentHealth} / {maxHealth} HP</span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', backgroundColor: '#333', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: `${healthPercentage}%`, 
+                      height: '100%', 
+                      background: getHealthGradient(healthPercentage),
+                      transition: 'width 0.4s ease, background 0.4s ease' 
+                    }} />
+                  </div>
+                </div>
+
+                <div className="resource-grid">
+                  {currentMap.map((res) => {
+                    const val = Number(s[res.key]) || 0;
+                    if (val <= 0) return null;
+                    return (
+                      <div key={res.key} className="resource-item">
+                        <span style={{ color: resourceColors[res.label] || '#bb86fc', fontWeight: 'bold' }}>{res.label}</span>
+                        <span style={{ color: viewMode === 'consumption' ? '#ff4444' : '#4488ff', fontFamily: 'monospace' }}>
+                          {viewMode === 'consumption' ? '-' : ''}{formatResourceValue(val)} 
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

@@ -28,6 +28,18 @@ interface ShippingUnit {
   display_name: string;
 }
 
+// Helper to determine max health based on facility type
+const getMaxHealth = (facilityType: string): number => {
+  return facilityType === 'Military Base' ? 300 : 50;
+};
+
+// Helper to get conditional gradient color based on health percentage
+const getHealthGradient = (percentage: number): string => {
+  if (percentage > 60) return 'linear-gradient(90deg, #2e7d32, #4caf50)';
+  if (percentage > 30) return 'linear-gradient(90deg, #ff9800, #ffeb3b)';
+  return 'linear-gradient(90deg, #c62828, #ef5350)';
+};
+
 export function FacilityTable() {
   const { facilities, facilityTypes, profile, units, unitTypes, shipments } = useGameData();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -184,6 +196,11 @@ export function FacilityTable() {
             const opCost = getOperatingCost(facility);
             const availableInStorage = STORAGE_RESOURCES.filter(res => (facility[res as keyof Facility] as number) > 0);
 
+            // Health Calculation Parameters
+            const currentHealth = Number(facility.health) || 0;
+            const maxHealth = getMaxHealth(facility.facility_type || '');
+            const healthPercentage = Math.min(Math.max((currentHealth / maxHealth) * 100, 0), 100);
+
             return (
               <div key={facility.global_id} className="facility-card-wrapper">
                 <div className={`facility-card ${!facility.is_active ? 'inactive-facility' : ''}`}>
@@ -193,6 +210,21 @@ export function FacilityTable() {
                   </div>
 
                   <div className="card-body">
+                    {/* Facility Health Line Indicator */}
+                    <div className="facility-health-container" style={{ margin: '2px 0 10px 0', padding: '0 4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '3px', opacity: 0.85 }}>
+                        <span style={{ fontWeight: 'bold' }}>{currentHealth} / {maxHealth} HP</span>
+                      </div>
+                      <div style={{ width: '100%', height: '5px', backgroundColor: '#333', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ 
+                          width: `${healthPercentage}%`, 
+                          height: '100%', 
+                          background: getHealthGradient(healthPercentage),
+                          transition: 'width 0.4s ease, background 0.4s ease' 
+                        }} />
+                      </div>
+                    </div>
+
                     <div className="production-info">{renderProductionLine(facility, typeInfo)}</div>
                     <div className="cost-info" style={{ marginTop: '4px', textAlign: 'center' }}>
                       <span className="sub-text"> cost: </span>

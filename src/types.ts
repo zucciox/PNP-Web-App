@@ -11,7 +11,9 @@ export interface CombatExchange {
     aggressor_nation: string;
     victim_nation: string;
     aggressor_piece: number;
-    victim_piece: number;
+    victim_unit: number;
+    victim_facility: number;
+    victim_settlement: number;
     is_resolved: boolean;
     is_disputed: boolean;
     aggressor_label: string;
@@ -109,6 +111,7 @@ export interface Facility {
     TitaniumOre: number;
     PlatinumOre: number;
     UraniumOre: number;
+    health: number;
     [key: string]: any;
 }
 
@@ -177,6 +180,7 @@ export interface Settlement {
     gold_cr: number;
     diamond_cr: number;
     uranium_cr: number;
+    health: number;
     [key: string]: string | number;
 }
 

@@ -45,10 +45,18 @@ export default function CombatAlert() {
 
   if (!activeConflict) return null;
 
-  // 1. Resolve Victim Label using correct schema keys
-  const victimUnit = units.find(u => u.global_id === activeConflict.victim_piece);
-  const victimFacility = facilities.find(f => f.global_id === activeConflict.victim_piece);
-  const victimSettlement = settlements.find(s => s.global_id === activeConflict.victim_piece);
+  // 1. Resolve Victim Label by pointing to the correct split schema column
+  const victimUnit = activeConflict.victim_unit 
+    ? units.find(u => u.global_id === activeConflict.victim_unit) 
+    : null;
+
+  const victimFacility = activeConflict.victim_facility 
+    ? facilities.find(f => f.global_id === activeConflict.victim_facility) 
+    : null;
+
+  const victimSettlement = activeConflict.victim_settlement 
+    ? settlements.find(s => s.global_id === activeConflict.victim_settlement) 
+    : null;
 
   let victimLabel = "Unknown Target";
   if (victimUnit) {
@@ -82,8 +90,6 @@ export default function CombatAlert() {
       setLoading(false);
     }
   };
-
-
 
   return (
     <div style={OVERLAY_STYLE}>
