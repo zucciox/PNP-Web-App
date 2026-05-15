@@ -227,7 +227,7 @@ export function FacilityTable() {
 
                     <div className="production-info">{renderProductionLine(facility, typeInfo)}</div>
                     <div className="cost-info" style={{ marginTop: '4px', textAlign: 'center' }}>
-                      <span className="sub-text"> cost: </span>
+                      <span className="sub-text"> operating cost: </span>
                       <span className="neg-value" style={{ color: '#ff5252', fontWeight: 'bold' }}>-${opCost.toLocaleString()}</span>
                     </div>
 
