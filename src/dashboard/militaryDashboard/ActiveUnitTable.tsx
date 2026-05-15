@@ -69,28 +69,71 @@ export function ActiveUnitsTable() {
         ? (units || []).filter(u => selectedIds.has(u.global_id))
         : modalUnit ? [modalUnit] : [];
 
-    if (unitsToProcess.length === 0 || !baseTypeId) return;
+    if (unitsToProcess.length === 0) {
+      console.warn("Demobilize aborted: No units selected to process.");
+      return;
+    }
+    if (!baseTypeId) {
+      console.warn("Demobilize aborted: Base Type ID is missing.");
+      setError("Please enter a target Base ID.");
+      return;
+    }
     
     setLoading(true);
     setError(null);
 
-    try {
-      await Promise.all(unitsToProcess.map(unit => 
-        supabase.rpc('toggle_unit', {
-          p_type_id: unit.type_id,
-          p_unit_type: unit.unit_type,
-          p_military_base_type_id: parseInt(baseTypeId, 10),
-          p_nation_id: unit.nation_id
-        })
-      ));
+    console.group(`=== RPC DEBUG: Demobilizing ${unitsToProcess.length} Unit(s) ===`);
+    console.log("Target Military Base Type ID:", parseInt(baseTypeId, 10));
 
+    try {
+      // Execute RPC calls and trap individual payloads
+      const results = await Promise.all(
+        unitsToProcess.map(async (unit) => {
+          const payload = {
+            p_type_id: unit.type_id,
+            p_unit_type: unit.unit_type,
+            p_military_base_type_id: parseInt(baseTypeId, 10),
+            p_nation_id: unit.nation_id
+          };
+          
+          console.log(`Sending RPC 'toggle_unit' for Unit ID #${unit.type_id}:`, payload);
+          
+          const { data, error: rpcError } = await supabase.rpc('toggle_unit', payload);
+          
+          return { unitId: unit.type_id, data, rpcError };
+        })
+      );
+
+      // Check if any of the network operations resulted in an RPC/DB failure
+      const failedRequests = results.filter(r => r.rpcError !== null);
+
+      if (failedRequests.length > 0) {
+        console.error("RPC Errors encountered during batch process:", failedRequests);
+        
+        // Collate the errors into a readable string for your UI error state
+        const errorMessages = failedRequests
+          .map(f => `Unit #${f.unitId}: ${f.rpcError?.message || 'Unknown DB error'}`)
+          .join(' | ');
+          
+        throw new Error(`RPC Failures: ${errorMessages}`);
+      }
+
+      console.log("All RPC requests completed successfully:", results);
+      console.groupEnd();
+
+      // UI updates upon clean success
       setModalUnit(null);
       setBaseTypeId('');
       setSelectedIds(new Set());
       setIsBulkMode(false);
       
-      if (refreshData) await refreshData(); 
+      if (refreshData) {
+        console.log("Triggering UI data refresh...");
+        await refreshData(); 
+      }
     } catch (err: any) {
+      console.error("Demobilization Exception Caught:", err);
+      console.groupEnd();
       setError(err.message || 'Check Base ID and try again.');
     } finally {
       setLoading(false);
