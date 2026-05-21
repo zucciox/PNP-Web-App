@@ -42,20 +42,20 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const fetchData = async (id: string, role: string) => {
     // Logic for notifications: Admins get all, players get filtered
     const notificationQuery = role === 'Admin' 
-      ? supabase.from('Notifications').select('*')
-      : supabase.from('Notifications').select('*').eq('receiving_nation', id);
+      ? supabase.from('notifications').select('*')
+      : supabase.from('notifications').select('*').eq('receiving_nation', id);
 
     const [u, f, ft, ut, g, set, ship, n, ord, comb, notificationsData] = await Promise.all([
-      supabase.from('Units').select('*').eq('nation_id', id),
-      supabase.from('Facilities').select('*').eq('owner_nation', id),
-      supabase.from('FacilityTypes').select('*'),
-      supabase.from('UnitTypes').select('*'),
-      supabase.from('GameState').select('*').maybeSingle(),
-      supabase.from('Settlements').select('*').eq('owner_nation', id),
-      supabase.from('Shipments').select('*').eq('origin_nation', id),
-      supabase.from('Nation').select('*').eq('id', id).maybeSingle(),
-      supabase.from('StoreOrders').select('*').eq('nation_id', id),
-      supabase.from('CombatExchanges').select('*').or(`aggressor_nation.eq.${id},victim_nation.eq.${id}`),
+      supabase.from('units').select('*').eq('nation_id', id),
+      supabase.from('facilities').select('*').eq('owner_nation', id),
+      supabase.from('facility_types').select('*'),
+      supabase.from('unit_types').select('*'),
+      supabase.from('game_state').select('*').maybeSingle(),
+      supabase.from('settlements').select('*').eq('owner_nation', id),
+      supabase.from('shipments').select('*').eq('origin_nation', id),
+      supabase.from('nation').select('*').eq('id', id).maybeSingle(),
+      supabase.from('factory_orders').select('*').eq('nation_id', id),
+      supabase.from('combat_exchanges').select('*').or(`aggressor_nation.eq.${id},victim_nation.eq.${id}`),
       notificationQuery // Dynamic query based on role
     ]);
   
@@ -80,7 +80,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !isMounted) return;
   
-      const { data: profileData } = await supabase.from('Profiles')
+      const { data: profileData } = await supabase.from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
@@ -101,17 +101,17 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         channel = supabase.channel(`game-room-${id}`);
   
         channel
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Units', filter: `nation_id=eq.${id}` }, () => fetchData(id, role))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Facilities', filter: `owner_nation=eq.${id}` }, () => fetchData(id, role))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Settlements', filter: `owner_nation=eq.${id}` }, () => fetchData(id, role))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Shipments', filter: `origin_nation=eq.${id}` }, () => fetchData(id, role))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Nation', filter: `id=eq.${id}` }, () => fetchData(id, role))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'StoreOrders', filter: `nation_id=eq.${id}` }, () => fetchData(id, role)) 
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'GameState' }, () => fetchData(id, role))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'CombatExchanges' }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'units', filter: `nation_id=eq.${id}` }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'facilities', filter: `owner_nation=eq.${id}` }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'settlements', filter: `owner_nation=eq.${id}` }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'shipments', filter: `origin_nation=eq.${id}` }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'nation', filter: `id=eq.${id}` }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'factory_orders', filter: `nation_id=eq.${id}` }, () => fetchData(id, role)) 
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'combat_exchanges' }, () => fetchData(id, role))
           // Realtime Notifications
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Notifications' }, () => fetchData(id, role))
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'Profiles', filter: `id=eq.${user.id}` }, (payload) => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, (payload) => {
              setProfile(payload.new as Profile);
           })
           .subscribe();

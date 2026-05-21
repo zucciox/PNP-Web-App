@@ -63,7 +63,7 @@ function DashboardContent() {
     const newNation = e.target.value;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from('Profiles').update({ nation_id: newNation }).eq('id', user.id);
+    await supabase.from('profiles').update({ nation_id: newNation }).eq('id', user.id);
     window.location.reload();
   };
 

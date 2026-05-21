@@ -9,10 +9,36 @@ const resourceColors: Record<string, string> = {
   Fuel: '#e3242b', Energy: '#ffea00'
 };
 
+// We keep UI keys as PascalCase to avoid breaking your styles and rendering
 const DISPLAY_RESOURCES = [
   'Treasury', 'Energy', 'Steel', 'Aluminum', 'Copper', 'Platinum', 
   'Titanium', 'Gold', 'Diamond', 'Uranium', 'Oxygen', 'Food', 'Water', 'Fuel'
 ];
+
+// Helper mapping function to convert UI display names into the new backend keys
+const getBackendKey = (resourceName: string): string => {
+  if (resourceName === 'Treasury') return 'Treasury'; // Left unchanged as it wasn't listed in the migration array
+  if (resourceName === 'NaturalGas') return 'natural_gas';
+  
+  // Handle listed compound words dynamically or explicitly
+  const compoundWords: Record<string, string> = {
+    NaturalGas: 'natural_gas',
+    CopperOre: 'copper_ore',
+    GoldOre: 'gold_ore',
+    IronOre: 'iron_ore',
+    AluminumOre: 'aluminum_ore',
+    TitaniumOre: 'titanium_ore',
+    PlatinumOre: 'platinum_ore',
+    UraniumOre: 'uranium_ore'
+  };
+
+  if (compoundWords[resourceName]) {
+    return compoundWords[resourceName];
+  }
+
+  // Fallback for single words -> force lowercase
+  return resourceName.toLowerCase();
+};
 
 export function NationalEconomyHeader() {
   const { facilities, facilityTypes, settlements, nation } = useGameData();
@@ -33,11 +59,23 @@ export function NationalEconomyHeader() {
 
     // 1. Reserves
     totals.reserves['Treasury'] = nation?.Treasury || 0;
+    
     settlements.forEach(s => {
-      DISPLAY_RESOURCES.forEach(r => { if(r !== 'Treasury') totals.reserves[r] += (Number(s[r]) || 0); });
+      DISPLAY_RESOURCES.forEach(r => { 
+        if (r !== 'Treasury') {
+          const backendKey = getBackendKey(r);
+          totals.reserves[r] += (Number(s[backendKey]) || 0); 
+        }
+      });
     });
+    
     facilities.forEach(f => {
-      DISPLAY_RESOURCES.forEach(r => { if(r !== 'Treasury') totals.reserves[r] += (Number(f[r]) || 0); });
+      DISPLAY_RESOURCES.forEach(r => { 
+        if (r !== 'Treasury') {
+          const backendKey = getBackendKey(r);
+          totals.reserves[r] += (Number(f[backendKey]) || 0); 
+        }
+      });
     });
 
     // 2. Production
@@ -46,20 +84,30 @@ export function NationalEconomyHeader() {
       if (!f.is_active) return;
       const typeDef = facilityTypes.find(t => t.facility_type === f.facility_type);
       if (typeDef && typeDef.output_type) {
-        const res = typeDef.output_type.replace(/\s+/g, '');
-        if (DISPLAY_RESOURCES.includes(res)) {
+        // Formats "Natural Gas" or "NaturalGas" into "natural_gas" / single words to "lowercase"
+        const normalizedOutputType = typeDef.output_type
+          .trim()
+          .replace(/([a-z])([A-Z])/g, '$1_$2') // Add underscore between camelCase/PascalCase words
+          .replace(/\s+/g, '_')               // Replace spaces with underscores
+          .toLowerCase();
+
+        // Match normalized type against backend key schemas
+        const matchedRes = DISPLAY_RESOURCES.find(r => getBackendKey(r) === normalizedOutputType);
+        
+        if (matchedRes) {
           let amount = Number(typeDef.output_amount_interval) || 0;
           if (typeDef.is_variable_output) amount *= (Number(f.workers_assigned) || 0);
-          totals.production[res] += amount;
+          totals.production[matchedRes] += amount;
         }
       }
     });
 
-    // 3. Consumption (Note: Consumption in your previous context was already per cycle /c)
+    // 3. Consumption
     settlements.forEach(s => {
+      // Direct mappings using the safe key converter rules + original '_cr' suffixes
       totals.consumption['Treasury'] += (Number(s.treasury_cr) || 0);
-      totals.consumption['Energy'] += (Number(s.energy_cr) || 0);
-      totals.consumption['Steel'] += (Number(s.steel_cr) || 0);
+      totals.consumption['Energy'] += (Number(s.energy_cr) || 0); // energy_cr
+      totals.consumption['Steel'] += (Number(s.steel_cr) || 0);   // steel_cr
       totals.consumption['Aluminum'] += (Number(s.aluminum_cr) || 0);
       totals.consumption['Copper'] += (Number(s.copper_cr) || 0);
       totals.consumption['Platinum'] += (Number(s.platinum_cr) || 0);

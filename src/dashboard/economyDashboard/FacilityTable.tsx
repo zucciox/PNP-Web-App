@@ -21,6 +21,27 @@ const extendedColors: Record<string, string> = {
   UraniumOre: '#32cd32'
 };
 
+// Helper mapping function to convert UI display names into the new backend keys
+const getBackendKey = (resourceName: string): string => {
+  const compoundWords: Record<string, string> = {
+    NaturalGas: 'natural_gas',
+    CopperOre: 'copper_ore',
+    GoldOre: 'gold_ore',
+    IronOre: 'iron_ore',
+    AluminumOre: 'aluminum_ore',
+    TitaniumOre: 'titanium_ore',
+    PlatinumOre: 'platinum_ore',
+    UraniumOre: 'uranium_ore'
+  };
+
+  if (compoundWords[resourceName]) {
+    return compoundWords[resourceName];
+  }
+
+  // Single word columns are now lowercase
+  return resourceName.toLowerCase();
+};
+
 interface ShippingUnit {
   id: number;
   unit_type: string;
@@ -28,12 +49,10 @@ interface ShippingUnit {
   display_name: string;
 }
 
-// Helper to determine max health based on facility type
 const getMaxHealth = (facilityType: string): number => {
   return facilityType === 'Military Base' ? 300 : 50;
 };
 
-// Helper to get conditional gradient color based on health percentage
 const getHealthGradient = (percentage: number): string => {
   if (percentage > 60) return 'linear-gradient(90deg, #2e7d32, #4caf50)';
   if (percentage > 30) return 'linear-gradient(90deg, #ff9800, #ffeb3b)';
@@ -92,8 +111,12 @@ export function FacilityTable() {
     if (!profile?.nation_id || !activeShipmentFacility) return;
 
     setLoading(true);
+    
+    // Convert selected resource UI display name to backend name format before transmission
+    const backendResourceName = getBackendKey(shipmentForm.resource);
+
     const { error } = await supabase.rpc('create_shipment', { 
-      p_resource: shipmentForm.resource,
+      p_resource: backendResourceName,
       p_amount: parseInt(shipmentForm.amount), 
       p_origin_id: activeShipmentFacility.type_id, 
       p_origin_type: activeShipmentFacility.facility_type,
@@ -194,9 +217,13 @@ export function FacilityTable() {
           {items.map((facility: Facility) => {
             const typeInfo = facilityTypes.find(t => t.facility_type === facility.facility_type);
             const opCost = getOperatingCost(facility);
-            const availableInStorage = STORAGE_RESOURCES.filter(res => (facility[res as keyof Facility] as number) > 0);
+            
+            // Filter dynamic items by mapping to the backend schema property string safely
+            const availableInStorage = STORAGE_RESOURCES.filter(res => {
+              const backendKey = getBackendKey(res);
+              return (Number(facility[backendKey as keyof Facility]) || 0) > 0;
+            });
 
-            // Health Calculation Parameters
             const currentHealth = Number(facility.health) || 0;
             const maxHealth = getMaxHealth(facility.facility_type || '');
             const healthPercentage = Math.min(Math.max((currentHealth / maxHealth) * 100, 0), 100);
@@ -210,7 +237,6 @@ export function FacilityTable() {
                   </div>
 
                   <div className="card-body">
-                    {/* Facility Health Line Indicator */}
                     <div className="facility-health-container" style={{ margin: '2px 0 10px 0', padding: '0 4px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '3px', opacity: 0.85 }}>
                         <span style={{ fontWeight: 'bold' }}>{currentHealth} / {maxHealth} HP</span>
@@ -234,13 +260,17 @@ export function FacilityTable() {
                     <div className="stored-resources-section">
                       <h5 className="section-title">Storage</h5>
                       <div className="storage-mini-grid">
-                        {availableInStorage.map(res => (
-                          <div key={res} className="storage-pill">
-                            <span style={{ color: extendedColors[res], marginRight: '4px' }}>●</span>
-                            <span className="res-label">{res}:</span> 
-                            <span className="res-value">{((facility[res as keyof Facility] as number) || 0).toLocaleString()}</span>
-                          </div>
-                        ))}
+                        {availableInStorage.map(res => {
+                          const backendKey = getBackendKey(res);
+                          const value = Number(facility[backendKey as keyof Facility]) || 0;
+                          return (
+                            <div key={res} className="storage-pill">
+                              <span style={{ color: extendedColors[res], marginRight: '4px' }}>●</span>
+                              <span className="res-label">{res}:</span> 
+                              <span className="res-value">{value.toLocaleString()}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -292,7 +322,10 @@ export function FacilityTable() {
                     className="modal-select"
                   >
                     <option value="" disabled>Select Resource</option>
-                    {STORAGE_RESOURCES.filter(res => (activeShipmentFacility[res as keyof Facility] as number) > 0).map(res => (
+                    {STORAGE_RESOURCES.filter(res => {
+                      const backendKey = getBackendKey(res);
+                      return (Number(activeShipmentFacility[backendKey as keyof Facility]) || 0) > 0;
+                    }).map(res => (
                       <option key={res} value={res}>{res}</option>
                     ))}
                   </select>
@@ -323,7 +356,6 @@ export function FacilityTable() {
                   <input type="text" value={shipmentForm.destination} onChange={(e) => setShipmentForm({...shipmentForm, destination: e.target.value})} required />
                 </div>
 
-                {/* ADDED NOTES FIELD */}
                 <div className="input-group" style={{ gridColumn: 'span 2' }}>
                   <label>Notes</label>
                   <textarea 
@@ -364,6 +396,7 @@ export function FacilityTable() {
                   >
                     <option value="" disabled>Select shipment...</option>
                     {shipments?.map(s => (
+                      // Handle displaying legacy uppercase/snake_case string values cleanly in the selector text
                       <option key={s.shipment_id} value={s.shipment_id}>ID: {s.shipment_id} — {s.resource} ({s.amount})</option>
                     ))}
                   </select>

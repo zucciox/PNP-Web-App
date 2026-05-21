@@ -20,6 +20,29 @@ const SHIPMENT_RESOURCES = [
   'Copper', 'Platinum', 'Titanium', 'Gold', 'Diamond', 'Uranium'
 ];
 
+// Helper mapping function to convert UI display names into the new backend keys
+const getBackendKey = (resourceName: string): string => {
+  if (resourceName === 'Treasury') return 'Treasury'; // Preserved case format
+
+  const compoundWords: Record<string, string> = {
+    NaturalGas: 'natural_gas',
+    CopperOre: 'copper_ore',
+    GoldOre: 'gold_ore',
+    IronOre: 'iron_ore',
+    AluminumOre: 'aluminum_ore',
+    TitaniumOre: 'titanium_ore',
+    PlatinumOre: 'platinum_ore',
+    UraniumOre: 'uranium_ore'
+  };
+
+  if (compoundWords[resourceName]) {
+    return compoundWords[resourceName];
+  }
+
+  // Single word columns are now lowercase
+  return resourceName.toLowerCase();
+};
+
 interface ShippingUnit {
   id: number;
   unit_type: string;
@@ -29,7 +52,6 @@ interface ShippingUnit {
 
 type ViewMode = 'consumption' | 'reserves';
 
-// Helper to determine max health based on settlement type
 const getMaxHealth = (settlementType: string): number => {
   switch (settlementType) {
     case 'Capital': return 350;
@@ -39,7 +61,6 @@ const getMaxHealth = (settlementType: string): number => {
   }
 };
 
-// Helper to get conditional gradient color based on health percentage
 const getHealthGradient = (percentage: number): string => {
   if (percentage > 60) return 'linear-gradient(90deg, #2e7d32, #4caf50)';
   if (percentage > 30) return 'linear-gradient(90deg, #ff9800, #ffeb3b)';
@@ -98,8 +119,12 @@ export function SettlementsTable() {
     if (!profile?.nation_id || !activeShipmentSettlement) return;
 
     setLoading(true);
+
+    // Convert selection parameter to backend naming schema format
+    const backendResourceName = getBackendKey(shipmentForm.resource);
+
     const { error } = await supabase.rpc('create_shipment', { 
-      p_resource: shipmentForm.resource,
+      p_resource: backendResourceName,
       p_amount: parseInt(shipmentForm.amount), 
       p_origin_id: activeShipmentSettlement.type_id, 
       p_origin_type: activeShipmentSettlement.settlement_type,
@@ -144,7 +169,8 @@ export function SettlementsTable() {
     }
   };
 
-  const consumptionMap: { key: keyof Settlement; label: string }[] = [
+  // Maps display names directly to prevent typing mapping problems
+  const consumptionMap = [
     { key: 'treasury_cr', label: 'Treasury' }, { key: 'energy_cr', label: 'Energy' },
     { key: 'fuel_cr', label: 'Fuel' }, { key: 'water_cr', label: 'Water' },
     { key: 'food_cr', label: 'Food' }, { key: 'oxygen_cr', label: 'Oxygen' },
@@ -154,7 +180,7 @@ export function SettlementsTable() {
     { key: 'diamond_cr', label: 'Diamond' }, { key: 'uranium_cr', label: 'Uranium' },
   ];
 
-  const reservesMap: { key: keyof Settlement; label: string }[] = [
+  const reservesMap = [
     { key: 'Treasury', label: 'Treasury' }, { key: 'Energy', label: 'Energy' },
     { key: 'Fuel', label: 'Fuel' }, { key: 'Water', label: 'Water' },
     { key: 'Food', label: 'Food' }, { key: 'Oxygen', label: 'Oxygen' },
@@ -183,7 +209,6 @@ export function SettlementsTable() {
       <div className="scroll-area">
         <div className="settlement-grid">
           {settlements.map((s) => {
-            // Health Calculation Parameters
             const currentHealth = Number(s.health) || 0;
             const maxHealth = getMaxHealth(s.settlement_type);
             const healthPercentage = Math.min(Math.max((currentHealth / maxHealth) * 100, 0), 100);
@@ -204,7 +229,6 @@ export function SettlementsTable() {
                   </div>
                 </div>
 
-                {/* Health Bar Integration */}
                 <div className="settlement-health-container" style={{ margin: '8px 0 12px 0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '3px', opacity: 0.9 }}>
                     <span style={{ fontWeight: 'bold' }}>{currentHealth} / {maxHealth} HP</span>
@@ -221,7 +245,10 @@ export function SettlementsTable() {
 
                 <div className="resource-grid">
                   {currentMap.map((res) => {
-                    const val = Number(s[res.key]) || 0;
+                    // Intelligently lookup key based on whether it is a consumption format or standard asset structure
+                    const targetKey = viewMode === 'consumption' ? res.key : getBackendKey(res.label);
+                    const val = Number(s[targetKey as keyof Settlement]) || 0;
+                    
                     if (val <= 0) return null;
                     return (
                       <div key={res.key} className="resource-item">
@@ -250,14 +277,23 @@ export function SettlementsTable() {
                   <label>Resource</label>
                   <select value={shipmentForm.resource} onChange={(e) => setShipmentForm({...shipmentForm, resource: e.target.value})} required className="modal-select">
                     <option value="" disabled>Select Resource</option>
-                    {SHIPMENT_RESOURCES.filter(res => (activeShipmentSettlement[res as keyof Settlement] as number) > 0).map(res => (
+                    {SHIPMENT_RESOURCES.filter(res => {
+                      const backendKey = getBackendKey(res);
+                      return (Number(activeShipmentSettlement[backendKey as keyof Settlement]) || 0) > 0;
+                    }).map(res => (
                       <option key={res} value={res}>{res}</option>
                     ))}
                   </select>
                 </div>
                 <div className="input-group">
                   <label>Amount</label>
-                  <input type="number" max={activeShipmentSettlement[shipmentForm.resource as keyof Settlement] as number || 0} value={shipmentForm.amount} onChange={(e) => setShipmentForm({...shipmentForm, amount: e.target.value})} required />
+                  <input 
+                    type="number" 
+                    max={activeShipmentSettlement[getBackendKey(shipmentForm.resource) as keyof Settlement] as number || 0} 
+                    value={shipmentForm.amount} 
+                    onChange={(e) => setShipmentForm({...shipmentForm, amount: e.target.value})} 
+                    required 
+                  />
                 </div>
                 <div className="input-group" style={{ gridColumn: 'span 2' }}>
                   <label>Shipping Unit</label>

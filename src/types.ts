@@ -211,6 +211,7 @@ export interface gameStateData {
     hiactive: boolean;
     id: number;
     queue_action: string;
+    is_active: boolean;
 }
 
 

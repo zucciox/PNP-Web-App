@@ -102,7 +102,7 @@ function AdminPanelContent() {
           return;
         }
         const { data: profile, error: profileError } = await supabase
-          .from('Profiles')
+          .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single();
@@ -131,7 +131,7 @@ function AdminPanelContent() {
     setError(null);
     try {
       const { error: updateError } = await supabase
-        .from('GameState')
+        .from('game_state')
         .update({ queue_action: action })
         .eq('id', gameState.id);
       if (updateError) throw updateError;
