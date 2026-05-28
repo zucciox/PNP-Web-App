@@ -7,7 +7,7 @@ export function ShipmentsTable() {
   const { shipments } = useGameData();
   
   return (
-    <section className="summary-container">
+    <section className="summary-container" style={{height: '87vh'}}>
       <header className="consumption-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <h3 className="settlement-title" style={{ margin: 0 }}>Active Shipments</h3>
         <span className="sub-text">{shipments.length} Total</span>

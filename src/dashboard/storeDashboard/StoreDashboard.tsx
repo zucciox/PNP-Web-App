@@ -3,6 +3,7 @@ import '../../App.css';
 import { useGameData } from '../../GameContext';
 import { FactoryStore } from './Store';
 import { ActiveOrders } from './ActiveOrders';
+import '../../styles/economyStyles.css'; 
 
 // Updated container to handle the sidebar layout
 const DASHBOARD_CONTAINER: React.CSSProperties = { 
@@ -33,7 +34,7 @@ export default function StoreDashboard() {
   const { } = useGameData();
 
   return (
-    <div className="container" style={{ backgroundColor: '#121212', minHeight: '100vh', color: 'white' }}>
+    <div className="summary-container" style={{ backgroundColor: '#121212', height: '87vh', color: 'white', }}>
       <main style={DASHBOARD_CONTAINER}>
         <div style={STORE_SECTION}>
           <FactoryStore />

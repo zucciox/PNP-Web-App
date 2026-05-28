@@ -25,7 +25,7 @@ const ALL_RESOURCE_KEYS = [
 export function ResourceStockpileTable() {
   // Destructure 'nation' from context
   const { facilities, settlements, nation } = useGameData();
-  const [activeTab, setActiveTab] = useState<'totals' | 'location'>('totals');
+  const [activePanel, setactivePanel] = useState<'totals' | 'location'>('totals');
 
   const calculatedTotals = useMemo(() => {
     const totals: Record<string, number> = {};
@@ -81,21 +81,21 @@ export function ResourceStockpileTable() {
     <section className="summary-container">
       <header className="tab-nav">
         <button 
-          onClick={() => setActiveTab('totals')} 
-          className={`tab-button ${activeTab === 'totals' ? 'active' : ''}`}
+          onClick={() => setactivePanel('totals')} 
+          className={`tab-button ${activePanel === 'totals' ? 'active' : ''}`}
         >
           National Reserves
         </button>
         <button 
-          onClick={() => setActiveTab('location')} 
-          className={`tab-button ${activeTab === 'location' ? 'active' : ''}`}
+          onClick={() => setactivePanel('location')} 
+          className={`tab-button ${activePanel === 'location' ? 'active' : ''}`}
         >
           By Location
         </button>
       </header>
 
       <div className="scroll-area">
-        {activeTab === 'totals' ? (
+        {activePanel === 'totals' ? (
           <ResourceGrid 
             items={ALL_RESOURCE_KEYS.map(k => ({ key: k, value: calculatedTotals[k] }))} 
             isGlobal 

@@ -32,7 +32,7 @@ type TabType = 'primary' | 'raw';
 export function ProductionSummaryTable() {
   // Destructure nation from useGameData
   const { facilities, facilityTypes, nation } = useGameData();
-  const [activeTab, setActiveTab] = useState<TabType>('primary');
+  const [activePanel, setactivePanel] = useState<TabType>('primary');
 
   let activeCount = 0;
 
@@ -63,20 +63,20 @@ export function ProductionSummaryTable() {
   // Inject the Global National Interval Income into the Treasury key
   productionTotals['Treasury'] = (productionTotals['Treasury'] || 0) + (Number(nation?.interval_income) || 0);
 
-  const currentResourceList = activeTab === 'primary' ? PRIMARY_RESOURCES : RAW_RESOURCES;
+  const currentResourceList = activePanel === 'primary' ? PRIMARY_RESOURCES : RAW_RESOURCES;
 
   return (
     <section className="summary-container">
       <div className="tab-nav">
         <button 
-          className={`tab-button ${activeTab === 'primary' ? 'active' : ''}`}
-          onClick={() => setActiveTab('primary')}
+          className={`tab-button ${activePanel === 'primary' ? 'active' : ''}`}
+          onClick={() => setactivePanel('primary')}
         >
           Primary Production
         </button>
         <button 
-          className={`tab-button ${activeTab === 'raw' ? 'active' : ''}`}
-          onClick={() => setActiveTab('raw')}
+          className={`tab-button ${activePanel === 'raw' ? 'active' : ''}`}
+          onClick={() => setactivePanel('raw')}
         >
           Raw Materials
         </button>

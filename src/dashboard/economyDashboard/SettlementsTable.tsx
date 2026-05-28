@@ -193,7 +193,7 @@ export function SettlementsTable() {
   const currentMap = viewMode === 'consumption' ? consumptionMap : reservesMap;
 
   return (
-    <section className="summary-container">
+    <section className="summary-container" style={{height: '87vh'}}>
       <header className="tab-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px' }}>
         <h3 className="consumption-header" style={{ margin: 0 }}>
           Settlement {viewMode === 'consumption' ? 'Consumption' : 'Reserves'}

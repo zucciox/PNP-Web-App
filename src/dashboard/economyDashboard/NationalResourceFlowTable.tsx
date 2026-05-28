@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Unit, UnitType } from '../../types'; 
 import { useGameData } from '../../GameContext';
 import { supabase } from '../../supabaseClient';
+import { OperatingCostsTable } from './OperatingCostsTable';
 
 
 const resourceColors: Record<string, string> = {
@@ -169,8 +170,8 @@ export function NationalResourceFlowTable() {
               {DISPLAY_RESOURCES.map((r) => {
 
                 const finalReserveValue = stats.reserves[r];
-                const finalConsumptionValue = stats.consumption[r]*10;
-                const finalProductionValue = stats.production[r];
+                const finalConsumptionValue = stats.consumption[r];
+                const finalProductionValue = stats.production[r]*10;
 
                 return (
                   <tr 
@@ -190,21 +191,21 @@ export function NationalResourceFlowTable() {
             </tbody>
           </table>
       </div>
+      <OperatingCostsTable/>
     </section>
   );
 }
 
 const s: Record<string, React.CSSProperties> = {
-  container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', width: 'fit-content' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #333', paddingBottom: '1rem' },
+  container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', maxWidth: '475px', height: '91vh' },
+  header: { display: 'flex', justifyContent: 'left', alignItems: 'center', paddingBottom: '1rem' },
   searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },
   title: { fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' },
-  tableWrap: { overflow: 'visible' },
-  table: { borderCollapse: 'collapse' },
-  th: { textAlign: 'left', padding: '0.6rem 1rem', fontSize: '0.7rem', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #333' },
-  td: { fontFamily: 'monospace', padding: '0.8rem 1rem', borderBottom: '1px solid #222', fontSize: '0.9rem', verticalAlign: 'middle' },
+  tableWrap: { overflow: 'visible', width: '100%', overflowX: 'auto', },
+  table: { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', },
+  th: { textAlign: 'left', padding: '0.6rem .5rem', fontSize: '0.8rem', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #333' },
+  td: {justifyContent: 'left', fontFamily: 'monospace', padding: '0.8rem 0.5rem', borderBottom: '1px solid #222', fontSize: '0.7rem', verticalAlign: 'middle' },
   badge: { backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '3px 8px', fontWeight: 600, fontSize: '0.8rem' },
-  hpLabel: { display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.7rem', color: '#999' },
   barBg: { height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' },
   barFill: { height: '100%', transition: 'width .3s' },
   statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#bbb', margin: '2px 0' },

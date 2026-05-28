@@ -17,11 +17,11 @@
 .settlement-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
 }
 
 .settlement-card {
-  background-color: #1e1e1e;
+  background-color: #1e1e1e4b;
   border: 1px solid #333;
   border-radius: var(--radius-lg);
   padding: 0.75rem;
@@ -80,7 +80,7 @@
 }
 
 .summary-container {
-  background-color: #1d1d1d;
+  background-color: #00000000;
   color: #e0e0e0;
   padding-top: auto;
   border-radius: var(--radius-xl);
@@ -95,7 +95,6 @@
 .tab-nav {
   display: flex;
   gap: 8px;
-  border-bottom: 1px solid #333;
   flex-shrink: 0;
 }
 
@@ -168,7 +167,7 @@
 
 .cost-value-large {
   color: #da0303;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
 }
 
@@ -281,9 +280,11 @@
   background-color: #121212;
   min-height: 100vh;
   color: white;
-  padding: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
   box-sizing: border-box;
   display: flex;
+  gap: 20px;
 }
 
 .dashboard-grid {

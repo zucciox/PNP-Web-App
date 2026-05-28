@@ -296,11 +296,10 @@ export function FacilityTable() {
   };
 
   return (
-    <div className="summary-container" style={{ padding: '1rem' }}>
-      <h2 className="consumption-header">Facilities</h2>
+    <div className="summary-container" style={{ paddingLeft: '1rem',  paddingRight: '1rem', height: '87vh'}}>
       {errorMsg && <div className="error-banner">{errorMsg}</div>}
       
-      <div className="scroll-area" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+      <div className="scroll-area" style={{overflowY: 'auto' }}>
         {renderGroup("Production Facilities", groups.production)}
         {renderGroup("Factories", groups.factories)}
         {renderGroup("Support & Logistics", groups.other)}

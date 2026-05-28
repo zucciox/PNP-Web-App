@@ -34,31 +34,20 @@ export function OperatingCostsTable() {
   const facilitiesTotal = activeFacilities.reduce((acc, f) => acc + getOperatingCost(f), 0);
 
   return ( 
-    <section className="summary-container"> 
-      <h3>Operating Costs</h3> 
+    <div> 
+      <h3>Operating Costs (Per Interval)</h3> 
 
       <div className="settlement-card costs-summary-card"> 
-        <div> 
-          <span className="cost-label">Total Per Interval</span> 
-          <span className="cost-value-large">${formatCurrency(totalInterval)}</span> 
+        <div style={{display: 'flex', gap: '10px'}}> 
+          <span>Units:</span> 
+          <span className="cost-value-large">${formatCurrency(unitsTotal)}</span> 
         </div> 
         <div className="divider-v"></div> 
-        <div> 
-          <span className="cost-label">Total Per Cycle</span> 
-          <span className="cost-value-large">${formatCurrency(totalCycle)}</span> 
+        <div style={{display: 'flex', gap: '10px'}}> 
+          <span>Facilities:</span> 
+          <span className="cost-value-large">${formatCurrency(facilitiesTotal)}</span> 
         </div> 
       </div> 
-
-      <div className="settlement-card" style={{ marginTop: '12px', padding: '16px' }}>
-        <div className="resource-item">
-          <span>Active Units ({activeUnits.length}/{units.length})</span>
-          <span className="resource-value">${formatCurrency(unitsTotal)}</span>
-        </div>
-        <div className="resource-item" style={{ marginTop: '8px' }}>
-          <span>Active Facilities ({activeFacilities.length}/{facilities.length})</span>
-          <span className="resource-value">${formatCurrency(facilitiesTotal)}</span>
-        </div>
-      </div>
-    </section> 
+    </div> 
   ); 
 }

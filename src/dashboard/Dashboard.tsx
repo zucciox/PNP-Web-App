@@ -13,7 +13,7 @@ import { NotificationWindow } from './NotificationWindow';
 
 
 const LOADING_STYLE: React.CSSProperties = { textAlign: 'center', fontFamily: 'sans-serif', marginTop: '1rem', color: 'white' };
-const BANNER_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', backgroundColor: '#1a1a1a', padding: '10px 20px', color: 'white', fontFamily: 'sans-serif' };
+const BANNER_STYLE: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', backgroundColor: '#1a1a1a', paddingLeft: '10px', paddingBottom: '5px', color: 'white', fontFamily: 'sans-serif' };
 const COUNTDOWN_STYLE: React.CSSProperties = { backgroundColor: '#262626', padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 'bold', marginRight: 'auto' };
 const NATION_CARD_STYLE: React.CSSProperties = { backgroundColor: '#262626', padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 'bold', marginRight: '20px' };
 const TAB_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', gap: '30px', alignItems: 'center', marginRight: '40px', marginTop: '5px' };
@@ -24,7 +24,7 @@ const ADMIN_BTN_STYLE: React.CSSProperties = { backgroundColor: '#d97706', color
 const SELECT_STYLE: React.CSSProperties = { backgroundColor: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px', padding: '2px 5px', fontSize: '14px', marginLeft: '10px' };
 
 function DashboardContent() {
-  const [activeTab, setActiveTab] = useState<string>('Economy');
+  const [activePanel, setactivePanel] = useState<string>('Economy');
   const { loading, nationId, gameState, notifications, profile } = useGameData(); 
   const [timerString, setTimerString] = useState<string>('00:00');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -92,7 +92,7 @@ function DashboardContent() {
 
         <div style={TAB_CONTAINER_STYLE}>
           {['World', 'Economy', 'Military', 'Store'].map(tab => (
-            <div key={tab} onClick={() => setActiveTab(tab)} style={activeTab === tab ? ACTIVE_TAB_STYLE : TAB_STYLE}>
+            <div key={tab} onClick={() => setactivePanel(tab)} style={activePanel === tab ? ACTIVE_TAB_STYLE : TAB_STYLE}>
               {tab}
             </div>
           ))}
@@ -122,10 +122,10 @@ function DashboardContent() {
       )}
 
       <main style={DASHBOARD_CONTAINER}>
-        {activeTab === 'Economy' && <EconomyDashboard />}
-        {activeTab === 'Military' && <MilitaryDashboard />}
-        {activeTab === 'Store' && <StoreDashboard />}
-        {activeTab === 'World' && <WorldDashboard />}
+        {activePanel === 'Economy' && <EconomyDashboard />}
+        {activePanel === 'Military' && <MilitaryDashboard />}
+        {activePanel === 'Store' && <StoreDashboard />}
+        {activePanel === 'World' && <WorldDashboard />}
       </main>
     </div>
   );
