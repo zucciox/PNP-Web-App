@@ -9,14 +9,16 @@ import { FacilityTable } from './FacilityTable';
 import { WorkersTable } from './WorkerTable';
 import { useGameData } from '../../GameContext';
 import '../../styles/economyStyles.css'; 
+import { NationalResourceFlowTable } from './NationalResourceFlowTable';
+import { useState } from 'react';
 
 export default function EconomyDashboard() {
   const { facilities, settlements, units, shipments } = useGameData();
 
   return (
     <div className="dashboard-root" style={{ padding: '20px' }}>
-      {/* NEW FULL-WIDTH ROW */}
-      <NationalEconomyHeader />
+
+      <NationalResourceFlowTable/>
 
       <hr style={{ borderColor: '#333', margin: '40px 0' }} />
 

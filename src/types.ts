@@ -243,3 +243,17 @@ export interface Order {
     piece_type: string;
     [key: number]: string | number;
 }
+
+export interface EventType {
+    point_value: number;
+    event_type: string;
+}
+
+export interface GameFeed {
+    point_value: number;
+    event_type: string;
+    body: string;
+    nation: string;
+    created_at: EpochTimeStamp;
+    id: number;
+}

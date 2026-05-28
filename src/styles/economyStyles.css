@@ -283,6 +283,7 @@
   color: white;
   padding: 10px;
   box-sizing: border-box;
+  display: flex;
 }
 
 .dashboard-grid {

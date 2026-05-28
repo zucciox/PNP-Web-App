@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from './supabaseClient';
-// Added Notification to types
-import { Unit, Facility, Settlement, Shipment, gameStateData, FacilityType, UnitType, Nation, Order, Profile, CombatExchange, Notification } from './types';
+// Added GameFeed and EventType to imports
+import { Unit, Facility, Settlement, Shipment, gameStateData, FacilityType, UnitType, Nation, Order, Profile, CombatExchange, Notification, GameFeed, EventType } from './types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface GameContextType {
@@ -14,7 +14,9 @@ interface GameContextType {
   shipments: Shipment[];
   orders: Order[]; 
   combat: CombatExchange[];
-  notifications: Notification[]; // Added notifications
+  notifications: Notification[];
+  gameFeed: GameFeed[];    // Added
+  eventTypes: EventType[]; // Added
   nation: Nation | null;
   nationId: string | null;
   profile: Profile | null;
@@ -33,19 +35,20 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [orders, setOrders] = useState<Order[]>([]); 
   const [combat, setCombat] = useState<CombatExchange[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]); // Added state
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [gameFeed, setGameFeed] = useState<GameFeed[]>([]);    // Added state
+  const [eventTypes, setEventTypes] = useState<EventType[]>([]); // Added state
   const [nation, setNation] = useState<Nation | null>(null);
   const [nationId, setNationId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async (id: string, role: string) => {
-    // Logic for notifications: Admins get all, players get filtered
     const notificationQuery = role === 'Admin' 
       ? supabase.from('notifications').select('*')
       : supabase.from('notifications').select('*').eq('receiving_nation', id);
 
-    const [u, f, ft, ut, g, set, ship, n, ord, comb, notificationsData] = await Promise.all([
+    const [u, f, ft, ut, g, set, ship, n, ord, comb, notifs, feed, et] = await Promise.all([
       supabase.from('units').select('*').eq('nation_id', id),
       supabase.from('facilities').select('*').eq('owner_nation', id),
       supabase.from('facility_types').select('*'),
@@ -56,7 +59,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('nation').select('*').eq('id', id).maybeSingle(),
       supabase.from('factory_orders').select('*').eq('nation_id', id),
       supabase.from('combat_exchanges').select('*').or(`aggressor_nation.eq.${id},victim_nation.eq.${id}`),
-      notificationQuery // Dynamic query based on role
+      notificationQuery,
+      supabase.from('game_feed').select('*'), // Fetch feed
+      supabase.from('event_types').select('*') // Fetch types
     ]);
   
     setUnits(u.data || []);
@@ -69,7 +74,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setNation(n.data || null);
     setOrders(ord.data || []); 
     setCombat(comb.data || []);
-    setNotifications(notificationsData.data || []); // Update state
+    setNotifications(notifs.data || []);
+    setGameFeed(feed.data || []);
+    setEventTypes(et.data || []);
   };
   
   useEffect(() => {
@@ -77,13 +84,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     let isMounted = true;
   
     const init = async () => {
+      // ... (authentication logic remains same)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !isMounted) return;
   
-      const { data: profileData } = await supabase.from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
   
       if (!isMounted || !profileData?.nation_id) {
         setLoading(false);
@@ -91,7 +96,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const id = profileData.nation_id;
-      const role = profileData.role; // Use role to determine data fetching
+      const role = profileData.role;
       setProfile(profileData as Profile);
       setNationId(id);
       await fetchData(id, role);
@@ -109,8 +114,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'factory_orders', filter: `nation_id=eq.${id}` }, () => fetchData(id, role)) 
           .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, () => fetchData(id, role))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'combat_exchanges' }, () => fetchData(id, role))
-          // Realtime Notifications
           .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => fetchData(id, role))
+          // Added Realtime for new tables
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'game_feed' }, () => fetchData(id, role))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'event_types' }, () => fetchData(id, role))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, (payload) => {
              setProfile(payload.new as Profile);
           })
@@ -119,31 +126,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     };
   
     init();
-  
-    return () => {
-      isMounted = false;
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
+    return () => { isMounted = false; if (channel) supabase.removeChannel(channel); };
   }, []);
 
   return (
     <GameContext.Provider value={{ 
-        units, 
-        facilities, 
-        facilityTypes, 
-        unitTypes, 
-        settlements, 
-        shipments, 
-        orders, 
-        combat,
-        notifications, // Provide state
-        nation,
-        nationId, 
-        profile, 
-        gameState, 
-        loading 
+        units, facilities, facilityTypes, unitTypes, settlements, shipments, 
+        orders, combat, notifications, gameFeed, eventTypes, nation, nationId, 
+        profile, gameState, loading 
     }}>
       {children}
     </GameContext.Provider>
@@ -154,4 +144,5 @@ export const useGameData = () => {
   const context = useContext(GameContext);
   if (!context) throw new Error("useGameData must be used within GameProvider");
   return context;
-};
+}; 
+  
