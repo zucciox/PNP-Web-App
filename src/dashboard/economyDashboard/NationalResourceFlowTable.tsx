@@ -17,15 +17,22 @@ const resourceColors: Record<string, string> = {
     'Treasury', 'Energy', 'Steel', 'Aluminum', 'Copper', 'Platinum', 
     'Titanium', 'Gold', 'Diamond', 'Uranium', 'Oxygen', 'Food', 'Water', 'Fuel'
   ];
+
+  // Resources that are refined into other resources
+  const RAW_RESOURCES = [
+    'Iron Ore', 'Aluminum Ore', 'Copper Ore', 'Platinum Ore', 
+    'Titanium Ore', 'Gold Ore', 'Diamond Ore', 'Uranium Ore', 'Oil', 'Gas'
+  ];
   
   // Helper mapping function to convert UI display names into the new backend keys
   const getBackendKey = (resourceName: string): string => {
-    if (resourceName === 'Treasury') return 'Treasury'; // Left unchanged as it wasn't listed in the migration array
-    if (resourceName === 'NaturalGas') return 'natural_gas';
+    if (resourceName === 'Treasury') return 'Treasury';
     
-    // Handle listed compound words dynamically or explicitly
-    const compoundWords: Record<string, string> = {
+    // Explicit mappings for special cases
+    const explicitMappings: Record<string, string> = {
       NaturalGas: 'natural_gas',
+      Gas: 'natural_gas', // Maps "Gas" from RAW_RESOURCES to "natural_gas"
+      Oil: 'oil',
       CopperOre: 'copper_ore',
       GoldOre: 'gold_ore',
       IronOre: 'iron_ore',
@@ -35,14 +42,36 @@ const resourceColors: Record<string, string> = {
       UraniumOre: 'uranium_ore'
     };
   
-    if (compoundWords[resourceName]) {
-      return compoundWords[resourceName];
+    if (explicitMappings[resourceName]) {
+      return explicitMappings[resourceName];
     }
   
-    // Fallback for single words -> force lowercase
-    return resourceName.toLowerCase();
+    // Fallback for names: snake_case formatting + force lowercase
+    return resourceName
+      .replace(/([a-z])([A-Z])/g, '$1_$2')
+      .replace(/\s+/g, '_')
+      .toLowerCase();
   };
-  
+
+
+  const convertToRaw: Record<string, string> = {
+    'Fuel': 'Oil', 
+    'Copper': 'Copper Ore',
+    'Energy': 'Gas',
+    'Titanium': 'Titanium Ore',
+    'Platinum': 'Platinum Ore',
+    'Gold': 'Gold Ore',
+    'Diamond': 'Diamond Ore',
+    'Steel': 'Iron Ore',
+    'Uranium': 'Uranium Ore',
+    'Aluminum': 'Aluminum Ore',
+
+    // Placeholders
+    'Oxygen': 'Oxygen',
+    'Food': 'Food',
+    'Water': 'Water',
+    'Treasury': 'Treasury'
+  };
 
 export function NationalResourceFlowTable() {
   const { facilities, facilityTypes, settlements, nation } = useGameData();
@@ -54,13 +83,19 @@ export function NationalResourceFlowTable() {
     const totals = {
       reserves: {} as Record<string, number>,
       production: {} as Record<string, number>,
+      rawProduction: {} as Record<string, number>,
       consumption: {} as Record<string, number>
     };
 
     DISPLAY_RESOURCES.forEach(r => {
       totals.reserves[r] = 0;
       totals.production[r] = 0;
+      totals.rawProduction[r] = 0;
       totals.consumption[r] = 0;
+    });
+
+    RAW_RESOURCES.forEach(r => {
+      totals.rawProduction[r] = 0;
     });
 
     // 1. Reserves
@@ -84,7 +119,7 @@ export function NationalResourceFlowTable() {
       });
     });
 
-    // 2. Production
+    // 2. Production & Raw Production
     totals.production['Treasury'] = Number(nation?.interval_income) || 0;
     facilities.forEach(f => {
       if (!f.is_active) return;
@@ -99,11 +134,18 @@ export function NationalResourceFlowTable() {
 
         // Match normalized type against backend key schemas
         const matchedRes = DISPLAY_RESOURCES.find(r => getBackendKey(r) === normalizedOutputType);
+        const matchedRawRes = RAW_RESOURCES.find(r => getBackendKey(r) === normalizedOutputType);
         
         if (matchedRes) {
           let amount = Number(typeDef.output_amount_interval) || 0;
           if (typeDef.is_variable_output) amount *= (Number(f.workers_assigned) || 0);
           totals.production[matchedRes] += amount;
+          //console.log("Found primary resource producer:", typeDef.facility_type, " which produces this much output: ", typeDef.output_amount_interval)
+        }
+        else if (matchedRawRes) {
+          totals.rawProduction[matchedRawRes] += Number(typeDef.output_amount_interval)
+          console.log("Found raw resource producer:", typeDef.facility_type, " which produces this much " + typeDef.output_type + ": " + typeDef.output_amount_interval)
+          //totals.rawProduction[matchedRawRes] += typeDef.is_variable_output ?  : Number(typeDef.output_amount_interval)
         }
       }
     });
@@ -127,6 +169,7 @@ export function NationalResourceFlowTable() {
       totals.consumption['Fuel'] += (Number(s.fuel_cr) || 0);
     });
 
+    console.log("Raw Production Data:", totals.rawProduction);
     return totals;
   }, [facilities, facilityTypes, settlements, nation]);
 
@@ -153,7 +196,7 @@ export function NationalResourceFlowTable() {
       
       <div style={s.header}>
         <div>
-          <div style={s.title}>National Resource Flow</div>
+          <div style={s.title}>National Resource Balance</div>
         </div>
       </div>
 
@@ -171,7 +214,7 @@ export function NationalResourceFlowTable() {
 
                 const finalReserveValue = stats.reserves[r];
                 const finalConsumptionValue = stats.consumption[r];
-                const finalProductionValue = stats.production[r]*10;
+                const finalProductionValue = (stats.production[r]+stats.rawProduction[convertToRaw[r]])*10;
 
                 return (
                   <tr 
@@ -182,9 +225,14 @@ export function NationalResourceFlowTable() {
                         {r}
                       </span>
                     </td>
-                    <td style={s.td}><span style={{ color: '#4488ff' }}>{finalReserveValue.toLocaleString()}</span></td>
+                    <td style={s.td}>
+                      <div style={{display: 'flex', gap: '5px'}}> 
+                        <ReserveFeedbackIcon resource={r} reserveAmount={finalReserveValue} consumptionAmount={finalConsumptionValue} /> 
+                        <span style={{ color: '#4488ff' }}> {finalReserveValue.toLocaleString()} </span>
+                      </div>
+                    </td>
                     <td style={s.td}><span style={{ color: '#ff4444' }}>-{finalConsumptionValue.toLocaleString()}/c</span></td>
-                    <td style={s.td}><span style={{ color: '#44ff44' }}>+{finalProductionValue.toLocaleString()}/c</span></td>
+                    <td style={s.td}><span style={{ color: '#44ff44' }}>{finalProductionValue > finalConsumptionValue ? '✅' : '⚠️'} +{finalProductionValue.toLocaleString()}/c</span></td>
                   </tr>
                 );
               })}
@@ -194,6 +242,31 @@ export function NationalResourceFlowTable() {
       <OperatingCostsTable/>
     </section>
   );
+
+  function ReserveFeedbackIcon({ resource: r, reserveAmount: rA, consumptionAmount: cA }: { resource: string, reserveAmount: number, consumptionAmount: number }) {
+    const [isHovered, setIsHovered] = useState(false);
+  
+    // Cross-reference: Find the unit where global_id matches the shipment's unit_id
+    const isMeetingCR = rA > cA
+  
+    return (
+      <div 
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div>
+          {isMeetingCR ? '✅' : '❌'}
+        </div>
+  
+        {isHovered && (
+          <span className="resource-feedback-overlay" style={{color: isMeetingCR ? '#44ff44' : '#ff4444'}}>
+            {isMeetingCR ? 'You have enough ' + r + ' in reserve to meet your next consumption rate.' : 
+            'You DO NOT have enough ' + r + ' in reserve to meet your next consumption rate.'}
+          </span>
+        )}
+      </div>
+    );
+  }
 }
 
 const s: Record<string, React.CSSProperties> = {
@@ -204,12 +277,12 @@ const s: Record<string, React.CSSProperties> = {
   tableWrap: { overflow: 'visible', width: '100%', overflowX: 'auto', },
   table: { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', },
   th: { textAlign: 'left', padding: '0.6rem .5rem', fontSize: '0.8rem', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #333' },
-  td: {justifyContent: 'left', fontFamily: 'monospace', padding: '0.8rem 0.5rem', borderBottom: '1px solid #222', fontSize: '0.7rem', verticalAlign: 'middle' },
+  td: {textAlign: 'left', justifyContent: 'left', fontFamily: 'monospace', padding: '0.8rem 0.5rem', borderBottom: '1px solid #222', fontSize: '0.7rem', verticalAlign: 'middle' },
   badge: { backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '3px 8px', fontWeight: 600, fontSize: '0.8rem' },
   barBg: { height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' },
   barFill: { height: '100%', transition: 'width .3s' },
   statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#bbb', margin: '2px 0' },
-  empty: { padding: '2rem', color: '#555', textAlign: 'center' },
+  empty: { padding: '2rem', color: '#555', textAlign: 'left' },
   actionBtn: { background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px' },
   popover: { position: 'absolute', right: 0, top: '100%', marginTop: '5px', backgroundColor: '#1e1e1e', border: '1px solid #444', borderRadius: '4px', zIndex: 110, width: '150px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' },
   menuItem: { padding: '10px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#bbb' },

@@ -40,12 +40,13 @@ export function OperatingCostsTable() {
       <div className="settlement-card costs-summary-card"> 
         <div style={{display: 'flex', gap: '10px'}}> 
           <span>Units:</span> 
-          <span className="cost-value-large">${formatCurrency(unitsTotal)}</span> 
-        </div> 
-        <div className="divider-v"></div> 
-        <div style={{display: 'flex', gap: '10px'}}> 
+          <span style={{color: '#ff5252'}}>${formatCurrency(unitsTotal)}</span> 
+          <div className="divider-v"></div> 
           <span>Facilities:</span> 
-          <span className="cost-value-large">${formatCurrency(facilitiesTotal)}</span> 
+          <span style={{color: '#ff5252'}}>${formatCurrency(facilitiesTotal)}</span> 
+          <div className="divider-v"></div> 
+          <span>Total:</span> 
+          <span style={{fontWeight: 'bold', color: '#ff5252', fontSize: '1rem'}}>${formatCurrency(facilitiesTotal+unitsTotal)}</span> 
         </div> 
       </div> 
     </div> 
