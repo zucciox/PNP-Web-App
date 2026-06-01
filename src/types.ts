@@ -229,7 +229,7 @@ export interface Shipment {
 
 export interface Nation {
     id: string;
-    Treasury: number;
+    treasury: number;
     interval_income: number;
     [key: string]: string | number;
 }
@@ -255,5 +255,7 @@ export interface GameFeed {
     body: string;
     nation: string;
     created_at: EpochTimeStamp;
+    interval: number;
+    cycle: number;
     id: number;
 }

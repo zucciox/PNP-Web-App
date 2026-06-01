@@ -2,14 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useGameData } from '../../GameContext';
 import { supabase } from '../../supabaseClient';
 import '../../styles/storeStyles.css';
-
-const resourceColors: Record<string, string> = {
-  Steel: '#7a5a30', Aluminum: '#7b409e', Copper: '#8b4513',
-  Platinum: '#2d74b3', Titanium: '#58b7e6', Gold: '#daa520',
-  Diamond: '#74a1d3', Uranium: '#76a34d', Oxygen: '#4a7c36',
-  Food: '#a0522d', Water: '#3d5a99', Fuel: '#e3242b',
-  Coal: '#444444', Gas: '#000000', Energy: '#000000', Treasury: '#daa520'
-};
+import { resourceColors } from '../../styleConstants';
 
 const COST_KEYS = [
   'TreasuryCost', 'SteelCost', 'AluminumCost', 'CopperCost', 

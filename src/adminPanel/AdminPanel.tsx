@@ -21,7 +21,7 @@ function AdminNotificationView() {
   return (
     <div className="admin-notification-container">
       <div className="admin-notification-header">
-        <span className="admin-notification-title">Admin Logs ({filtered.length})</span>
+        <span className="admin-notification-title">Admin Alerts ({filtered.length})</span>
       </div>
       <div className="admin-notification-body">
         {filtered.length === 0 ? (
@@ -34,6 +34,32 @@ function AdminNotificationView() {
               <div className="admin-notification-actions">
                 <button className="admin-notification-dismiss" onClick={() => handleResolve(n.id)}>Dismiss</button>
               </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GameFeedView() {
+  const { gameFeed } = useGameData();
+  const filtered = gameFeed
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  return (
+    <div className="admin-notification-container">
+      <div className="admin-notification-header">
+        <span className="admin-notification-title">Game Feed ({filtered.length})</span>
+      </div>
+      <div className="admin-notification-body">
+        {filtered.length === 0 ? (
+          <div className="admin-notification-empty">No game events</div>
+        ) : (
+          filtered.map(n => (
+            <div key={n.id} style={{display: 'block'}} className="admin-notification-item">
+              <div className="admin-notification-item-body">{n.body}</div>
+              <div>Interval: {n.interval} | Cycle: {n.cycle}</div>
             </div>
           ))
         )}
@@ -140,6 +166,7 @@ function AdminPanelContent() {
         )}
       </div>
       <AdminNotificationView/>
+      <GameFeedView/>
     </div>
   );
 }

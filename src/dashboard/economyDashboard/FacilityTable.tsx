@@ -3,6 +3,8 @@ import { useGameData } from '../../GameContext';
 import { Facility } from '../../types'; 
 import '../../styles/economyStyles.css';
 import { supabase } from '../../supabaseClient';
+import { resourceColors } from '../../styleConstants';
+import { stableTextColor } from '../../styleConstants';
 
 const STORAGE_RESOURCES = [
   'Energy', 'Gas', 'Coal', 'Fuel', 'Water', 'Food', 'Oxygen', 'Steel', 
@@ -10,16 +12,6 @@ const STORAGE_RESOURCES = [
   'Uranium', 'Oil', 'Methane', 'NaturalGas', 'CopperOre', 'GoldOre', 
   'IronOre', 'AluminumOre', 'TitaniumOre', 'PlatinumOre', 'UraniumOre'
 ];
-
-const extendedColors: Record<string, string> = {
-  Energy: '#ffea00', Gas: '#000000', Coal: '#444444', Fuel: '#e3242b',
-  Water: '#3d5a99', Food: '#a0522d', Oxygen: '#4a7c36', Steel: '#7a5a30',
-  Aluminum: '#7b409e', Copper: '#8b4513', Platinum: '#2d74b3', Titanium: '#58b7e6',
-  Gold: '#daa520', Diamond: '#74a1d3', Uranium: '#76a34d', Oil: '#1a1a1a',
-  Methane: '#ff5722', NaturalGas: '#4db6ac', CopperOre: '#cd7f32', GoldOre: '#ffd700',
-  IronOre: '#8b0000', AluminumOre: '#c0c0c0', TitaniumOre: '#4682b4', PlatinumOre: '#e5e4e2',
-  UraniumOre: '#32cd32'
-};
 
 // Helper mapping function to convert UI display names into the new backend keys
 const getBackendKey = (resourceName: string): string => {
@@ -112,11 +104,9 @@ export function FacilityTable() {
 
     setLoading(true);
     
-    // Convert selected resource UI display name to backend name format before transmission
-    const backendResourceName = getBackendKey(shipmentForm.resource);
 
     const { error } = await supabase.rpc('create_shipment', { 
-      p_resource: backendResourceName,
+      p_resource: shipmentForm.resource,
       p_amount: parseInt(shipmentForm.amount), 
       p_origin_id: activeShipmentFacility.type_id, 
       p_origin_type: activeShipmentFacility.facility_type,
@@ -217,6 +207,7 @@ export function FacilityTable() {
           {items.map((facility: Facility) => {
             const typeInfo = facilityTypes.find(t => t.facility_type === facility.facility_type);
             const opCost = getOperatingCost(facility);
+            const numWorkers = facility.workers_assigned;
             
             // Filter dynamic items by mapping to the backend schema property string safely
             const availableInStorage = STORAGE_RESOURCES.filter(res => {
@@ -257,6 +248,11 @@ export function FacilityTable() {
                       <span className="neg-value" style={{ color: '#ff5252', fontWeight: 'bold' }}>-${opCost.toLocaleString()}</span>
                     </div>
 
+                    <div className="cost-info" style={{ marginTop: '4px', textAlign: 'center' }}>
+                      <span className="sub-text"> workers assigned: </span>
+                      <span className="neg-value" style={{fontWeight: 'bold' }}>{numWorkers}</span>
+                    </div>
+
                     <div className="stored-resources-section">
                       <h5 className="section-title">Storage</h5>
                       <div className="storage-mini-grid">
@@ -265,9 +261,9 @@ export function FacilityTable() {
                           const value = Number(facility[backendKey as keyof Facility]) || 0;
                           return (
                             <div key={res} className="storage-pill">
-                              <span style={{ color: extendedColors[res], marginRight: '4px' }}>●</span>
+                              <span style={{ color: resourceColors[res], marginRight: '4px' }}>●</span>
                               <span className="res-label">{res}:</span> 
-                              <span className="res-value">{value.toLocaleString()}</span>
+                              <span className="res-value" style={{ color: stableTextColor}}>{value.toLocaleString()}</span>
                             </div>
                           );
                         })}

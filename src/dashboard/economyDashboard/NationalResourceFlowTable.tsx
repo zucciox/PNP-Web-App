@@ -3,14 +3,10 @@ import { Unit, UnitType } from '../../types';
 import { useGameData } from '../../GameContext';
 import { supabase } from '../../supabaseClient';
 import { OperatingCostsTable } from './OperatingCostsTable';
-
-
-const resourceColors: Record<string, string> = {
-    Treasury: '#daa520', Steel: '#7a5a30', Aluminum: '#7b409e', Copper: '#8b4513',
-    Platinum: '#2d74b3', Titanium: '#58b7e6', Gold: '#daa520', Diamond: '#74a1d3',
-    Uranium: '#76a34d', Oxygen: '#4a7c36', Food: '#a0522d', Water: '#3d5a99', 
-    Fuel: '#e3242b', Energy: '#ffea00'
-  };
+import { resourceColors } from '../../styleConstants';
+import { stableTextColor } from '../../styleConstants';
+import { additiveTextColor } from '../../styleConstants';
+import { negativeTextColor } from '../../styleConstants';
   
   // We keep UI keys as PascalCase to avoid breaking your styles and rendering
   const DISPLAY_RESOURCES = [
@@ -26,7 +22,7 @@ const resourceColors: Record<string, string> = {
   
   // Helper mapping function to convert UI display names into the new backend keys
   const getBackendKey = (resourceName: string): string => {
-    if (resourceName === 'Treasury') return 'Treasury';
+    if (resourceName === 'Treasury') return 'treasury';
     
     // Explicit mappings for special cases
     const explicitMappings: Record<string, string> = {
@@ -80,15 +76,22 @@ export function NationalResourceFlowTable() {
   const [error, setError] = useState<string | null>(null);
 
   const stats = useMemo(() => {
+    // 🔍 DEBUG PRINTS
+  console.group('🧱 Resource Flow Hook Recalculating!');
+  console.log('Current Nation Data:', nation);
+  console.log('Total Settlements Count:', settlements?.length);
+  console.log('Total Facilities Count:', facilities?.length);
+  console.groupEnd();
+
     const totals = {
-      reserves: {} as Record<string, number>,
+      stockpiles: {} as Record<string, number>,
       production: {} as Record<string, number>,
       rawProduction: {} as Record<string, number>,
       consumption: {} as Record<string, number>
     };
 
     DISPLAY_RESOURCES.forEach(r => {
-      totals.reserves[r] = 0;
+      totals.stockpiles[r] = 0;
       totals.production[r] = 0;
       totals.rawProduction[r] = 0;
       totals.consumption[r] = 0;
@@ -98,14 +101,14 @@ export function NationalResourceFlowTable() {
       totals.rawProduction[r] = 0;
     });
 
-    // 1. Reserves
-    totals.reserves['Treasury'] = nation?.Treasury || 0;
+    // 1. Stockpiles
+    totals.stockpiles['Treasury'] = nation?.treasury || 0;
     
     settlements.forEach(s => {
       DISPLAY_RESOURCES.forEach(r => { 
         if (r !== 'Treasury') {
           const backendKey = getBackendKey(r);
-          totals.reserves[r] += (Number(s[backendKey]) || 0); 
+          totals.stockpiles[r] += (Number(s[backendKey]) || 0); 
         }
       });
     });
@@ -114,7 +117,7 @@ export function NationalResourceFlowTable() {
       DISPLAY_RESOURCES.forEach(r => { 
         if (r !== 'Treasury') {
           const backendKey = getBackendKey(r);
-          totals.reserves[r] += (Number(f[backendKey]) || 0); 
+          totals.stockpiles[r] += (Number(f[backendKey]) || 0); 
         }
       });
     });
@@ -170,6 +173,7 @@ export function NationalResourceFlowTable() {
     });
 
     console.log("Raw Production Data:", totals.rawProduction);
+    console.log("Final Treasury:", totals.stockpiles['Treasury']);
     return totals;
   }, [facilities, facilityTypes, settlements, nation]);
 
@@ -212,7 +216,7 @@ export function NationalResourceFlowTable() {
             <tbody>
               {DISPLAY_RESOURCES.map((r) => {
 
-                const finalReserveValue = stats.reserves[r];
+                const finalStockpileValue = stats.stockpiles[r];
                 const finalConsumptionValue = stats.consumption[r];
                 const finalProductionValue = (stats.production[r]+stats.rawProduction[convertToRaw[r]])*10;
 
@@ -226,13 +230,16 @@ export function NationalResourceFlowTable() {
                       </span>
                     </td>
                     <td style={s.td}>
-                      <div style={{display: 'flex', gap: '5px'}}> 
-                        <ReserveFeedbackIcon resource={r} reserveAmount={finalReserveValue} consumptionAmount={finalConsumptionValue} /> 
-                        <span style={{ color: '#4488ff' }}> {finalReserveValue.toLocaleString()} </span>
+                      <div style={{display: 'flex', gap: '5px', alignItems: 'flex-end'}}> 
+                        <StockpileFeedbackIcon resource={r} stockpileAmount={finalStockpileValue} consumptionAmount={finalConsumptionValue} /> 
                       </div>
                     </td>
-                    <td style={s.td}><span style={{ color: '#ff4444' }}>-{finalConsumptionValue.toLocaleString()}/c</span></td>
-                    <td style={s.td}><span style={{ color: '#44ff44' }}>{finalProductionValue > finalConsumptionValue ? '✅' : '⚠️'} +{finalProductionValue.toLocaleString()}/c</span></td>
+                    <td style={s.td}><span style={{ color: negativeTextColor }}>-{finalConsumptionValue.toLocaleString()}/c</span></td>
+                    <td style={s.td}>
+                      <div style={{display: 'flex', gap: '5px', alignItems: 'flex-end'}}> 
+                        <ProductionFeedbackIcon resource={r} productionAmount={finalProductionValue} consumptionAmount={finalConsumptionValue} /> 
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -243,25 +250,56 @@ export function NationalResourceFlowTable() {
     </section>
   );
 
-  function ReserveFeedbackIcon({ resource: r, reserveAmount: rA, consumptionAmount: cA }: { resource: string, reserveAmount: number, consumptionAmount: number }) {
+  function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, consumptionAmount: cA }: { resource: string, stockpileAmount: number, consumptionAmount: number }) {
     const [isHovered, setIsHovered] = useState(false);
   
     // Cross-reference: Find the unit where global_id matches the shipment's unit_id
-    const isMeetingCR = rA > cA
+    const isMeetingCR = rA >= cA
   
     return (
       <div 
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div>
-          {isMeetingCR ? '✅' : '❌'}
+        <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px', fontWeight: 'bold'}}>
+          {isMeetingCR ? '✅' : '⚠️'}
+          <span style={{ color: stableTextColor }}> {rA.toLocaleString()} </span>
         </div>
   
         {isHovered && (
           <span className="resource-feedback-overlay" style={{color: isMeetingCR ? '#44ff44' : '#ff4444'}}>
-            {isMeetingCR ? 'You have enough ' + r + ' in reserve to meet your next consumption rate.' : 
-            'You DO NOT have enough ' + r + ' in reserve to meet your next consumption rate.'}
+            {isMeetingCR ? 'You have enough total ' + r + ' stockpiled to meet your upcoming consumption rates.' : 
+            'You DO NOT have enough total ' + r + ' stockpiled to meet your upcoming consumption rates!'}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  function ProductionFeedbackIcon({ resource: r, productionAmount: pA, consumptionAmount: cA }: { resource: string, productionAmount: number, consumptionAmount: number }) {
+    const [isHovered, setIsHovered] = useState(false);
+  
+    // Cross-reference: Find the unit where global_id matches the shipment's unit_id
+    const isMeetingCR = pA >= cA
+  
+    return (
+      <div 
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px', fontWeight: 'bold'}}>
+          {isMeetingCR ? '✅' : '⚠️'}
+          <span style={{ color: additiveTextColor }}> +{pA.toLocaleString()}/c</span>
+        </div>
+  
+        {isHovered && (
+          <span className="resource-feedback-overlay" style={{color: isMeetingCR ? '#44ff44' : '#ff4444'}}>
+            {isMeetingCR 
+              ? 
+              `You produce enough ${(convertToRaw[r])} to meet your ${r} consumption rates each cycle.`
+              : 
+              `You DO NOT produce enough ${(convertToRaw[r])} to meet your ${r} consumption rates each cycle. 
+ Consider building new facilities or trading with other nations.`}
           </span>
         )}
       </div>
@@ -270,7 +308,7 @@ export function NationalResourceFlowTable() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', maxWidth: '475px', height: '91vh' },
+  container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', minWidth: '520px', height: '91vh' },
   header: { display: 'flex', justifyContent: 'left', alignItems: 'center', paddingBottom: '1rem' },
   searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },
   title: { fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' },

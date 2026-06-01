@@ -121,7 +121,17 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, (payload) => {
              setProfile(payload.new as Profile);
           })
-          .subscribe();
+          channel.subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+              console.log('%c⚡ Supabase Realtime: Successfully connected!', 'color: #00ff00; font-weight: bold;');
+            }
+            if (status === 'TIMED_OUT') {
+              console.error('❌ Supabase Realtime: Connection timed out. Check network or table filters.');
+            }
+            if (status === 'CHANNEL_ERROR') {
+              console.error('❌ Supabase Realtime: Channel error occurred:', err?.message || 'Unknown error');
+            }
+          });
       }
     };
   

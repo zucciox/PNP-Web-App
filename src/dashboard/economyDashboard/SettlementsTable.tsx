@@ -3,16 +3,10 @@ import { Settlement } from '../../types';
 import { useGameData } from '../../GameContext';
 import { supabase } from '../../supabaseClient';
 import '../../styles/economyStyles.css'; 
+import { resourceColors } from '../../styleConstants';
 
 const formatResourceValue = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(value);
-};
-
-const resourceColors: Record<string, string> = {
-  Treasury: '#daa520', Energy: '#ffea00', Fuel: '#e3242b',
-  Water: '#3d5a99', Food: '#a0522d', Oxygen: '#4a7c36', Steel: '#7a5a30',
-  Aluminum: '#7b409e', Copper: '#8b4513', Platinum: '#2d74b3', Titanium: '#58b7e6',
-  Gold: '#daa520', Diamond: '#74a1d3', Uranium: '#76a34d'
 };
 
 const SHIPMENT_RESOURCES = [

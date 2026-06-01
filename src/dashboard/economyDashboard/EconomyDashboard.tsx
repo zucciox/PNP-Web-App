@@ -6,6 +6,7 @@ import '../../styles/economyStyles.css';
 import { NationalResourceFlowTable } from './NationalResourceFlowTable';
 import { useState } from 'react';
 import StoreDashboard from '../storeDashboard/StoreDashboard';
+import { WorkersTable } from './WorkerTable';
 
 const TAB_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center'};
 const TAB_STYLE: React.CSSProperties = { cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', textTransform: 'uppercase', color: '#ffffff', padding: '5px 10px' };
@@ -21,7 +22,7 @@ export default function EconomyDashboard() {
 
       <div style={{width: '70%'}}> 
         <div style={TAB_CONTAINER_STYLE}>
-            {['Facilities', 'Settlements', 'Shipments', 'Manufacturing'].map(panel => (
+            {['Facilities', 'Settlements', 'Shipments', 'Manufacturing', 'Workers'].map(panel => (
               <div key={panel} onClick={() => setActivePanel(panel)} style={activePanel === panel ? ACTIVE_TAB_STYLE : TAB_STYLE}>
                 {panel}
               </div>
@@ -32,6 +33,7 @@ export default function EconomyDashboard() {
         {activePanel === 'Settlements' && <SettlementsTable />}
         {activePanel === 'Shipments' && <ShipmentsTable />}
         {activePanel === 'Manufacturing' && <StoreDashboard />}
+        {activePanel === 'Workers' && <WorkersTable />}
       </div>
 
     
