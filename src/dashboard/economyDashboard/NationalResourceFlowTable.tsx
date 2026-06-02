@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Unit, UnitType } from '../../types'; 
+import { Facility, Settlement, Unit, UnitType } from '../../types'; 
 import { useGameData } from '../../GameContext';
 import { supabase } from '../../supabaseClient';
 import { OperatingCostsTable } from './OperatingCostsTable';
@@ -69,13 +69,29 @@ import { negativeTextColor } from '../../styleConstants';
     'Treasury': 'Treasury'
   };
 
+  const facilityStored = (facilities: Facility[], resource: string): number => {
+    
+    let total = 0;
+    facilities.forEach(f => {
+      total += f[getBackendKey(resource)]
+    })
+    return total
+  }
+
+  const allSettlementsMeeting = (settlements: Settlement[], resource: string): boolean => {
+    
+    settlements.forEach(s => {
+      if (s[getBackendKey(resource)] < s[getBackendKey(resource)+'_cr']) 
+        return false })
+
+    return true
+  }
+
 export function NationalResourceFlowTable() {
   const { facilities, facilityTypes, settlements, nation } = useGameData();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     // 🔍 DEBUG PRINTS
@@ -197,8 +213,11 @@ export function NationalResourceFlowTable() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
           <div style={s.title}>National Resource Balance</div>
           <div className="info-icon">
-              i
+              ?
               <div className="tooltip" style={{right: '30px'}}>
+                <p>
+                  This is a summary of the flow of resources across your nation. Check this table to see if you are on track to meet your <span style={{color: negativeTextColor}}>Consumption Rates,</span> and hover over numbers for in depth explanations.
+                </p>
                 <p style={{color: stableTextColor}}>
                   Stockpile: how much of this resource you have stored across all facilities and settlements.
                 </p>
@@ -276,10 +295,47 @@ export function NationalResourceFlowTable() {
         </div>
   
         {isHovered && (
-          <span className="resource-feedback-overlay" style={{color: isMeetingCR ? '#44ff44' : '#ff4444'}}>
-            {isMeetingCR ? 'You have enough total ' + r + ' stockpiled to meet your upcoming consumption rates.' : 
-            'You DO NOT have enough total ' + r + ' stockpiled to meet your upcoming consumption rates!'}
-          </span>
+          <div className="resource-feedback-overlay" style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+
+            <span style={{color: isMeetingCR ? '#44ff44' : '#ff4444'}}>
+              {isMeetingCR ? 'You have enough ' + r + ' to meet your upcoming consumption rates.' : 
+              'You DO NOT have enough ' + r + ' to meet your upcoming consumption rates!'}
+            </span>
+        
+
+            <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+              {r !== 'Treasury' ? 
+                settlements?.map(s => (
+                  <div key={s.global_id}> 
+                      <div style={{color: stableTextColor}}>{s.name}: </div>
+                      {
+                        (s[getBackendKey(r)] >= s[getBackendKey(r)+'_cr']) ? 
+                        <div style={{color: additiveTextColor}}> {s[getBackendKey(r)].toLocaleString()}/{s[getBackendKey(r)+'_cr'].toLocaleString()} {r} ✅ </div> 
+                        : 
+                        <div style={{color: negativeTextColor}}> {s[getBackendKey(r)].toLocaleString()}/{s[getBackendKey(r)+'_cr'].toLocaleString()} {r} ⚠️ </div> 
+                      }
+                  </div>
+                ))
+              : 
+              null}
+           </div>
+
+          {r !== 'Treasury' ?  
+            <p>
+              You have <span style={{fontWeight: 'bold', color: resourceColors[r]}}>{facilityStored(facilities, r).toLocaleString()} {r}</span> not currently in settlements (stored in facilities or on active shipments).
+            </p> 
+           : null}  
+
+            {rA <= cA ? 
+            <div>To meet your consumption rates this cycle, you need to acquire 
+              <span style={{color: additiveTextColor}}> {cA-rA}</span> more <span style={{color: resourceColors[r] ?? 'white'}}>{r} </span>
+                from outside sources, or produce {r !== convertToRaw[r] ? 'and refine' : ''}
+                <span style={{color: additiveTextColor}}> {cA-rA}</span> more <span style={{color: resourceColors[convertToRaw[r] ?? 'white']}}>{convertToRaw[r]}</span> by the end of this cycle.
+            </div>       
+             :
+             ''
+          }   
+          </div>
         )}
       </div>
     );
@@ -302,14 +358,44 @@ export function NationalResourceFlowTable() {
         </div>
   
         {isHovered && (
-          <span className="resource-feedback-overlay" style={{color: isMeetingCR ? '#44ff44' : '#ff4444'}}>
+          <span className="resource-feedback-overlay">
             {isMeetingCR 
               ? 
-              `You produce enough ${(convertToRaw[r])} to meet your ${r} consumption rates each cycle.`
+              <div style={{color: additiveTextColor}}>
+                <div>You produce enough <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]}</span> to meet your <span style={{color: resourceColors[r]}}>{r}</span>  consumption rates each cycle.</div>
+                <br />
+                <div>This means you are self-sufficient in producing <span style={{color: resourceColors[r]}}>{r}</span>; you are not dependent on other nations.</div>
+                {r !== convertToRaw[r] && r !== 'Treasury' ?
+                  <div>
+                    <br />
+                    Note that you must refine your  
+                    <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]}</span>
+                    into 
+                    <span style={{color: resourceColors[r]}}>{r}</span>
+                    and move it into a city before it counts towards your consumption rates.
+                  </div>
+                :
+                  ''
+                }
+                
+              </div>
               : 
               <div>
-                <p> You DO NOT produce enough {convertToRaw[r]} to meet your {r} consumption rates each cycle.</p>
-                <p>Consider building new facilities or trading with other nations.</p>
+                <div style={{color: negativeTextColor}}> You DO NOT produce enough <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]}</span> to meet your <span style={{color: resourceColors[r]}}>{r}</span> consumption rates each cycle.</div>
+                <p>
+                  <div>
+                  <span style={{color: resourceColors[r]}}>{r}</span> needed each cycle: <span style={{color: negativeTextColor}}>{cA}</span>
+                  </div>
+                  <div>
+                   <span style={{color: resourceColors[convertToRaw[r]]}}>{convertToRaw[r]}</span> produced each cycle:  <span style={{color: additiveTextColor}}>{pA}</span>
+                  </div>
+                </p>
+                <p>To meet your consumption rates consistently, you need to acquire 
+                  <span style={{color: additiveTextColor}}> {cA-pA}</span> more <span style={{color: resourceColors[r] ?? 'white'}}>{r} </span>
+                    from outside sources each cycle, or produce {r !== convertToRaw[r] ? 'and refine ' : ''}
+                    <span style={{color: additiveTextColor}}> {cA-pA}</span> more <span style={{color: resourceColors[convertToRaw[r] ?? 'white']}}>{convertToRaw[r]}</span> each cycle to be self sufficient.
+                </p>
+                <div> Consider building new facilities or trading with other nations. </div>
               </div>}
           </span>
         )}
@@ -318,18 +404,26 @@ export function NationalResourceFlowTable() {
   }
 }
 
-function flowTableToolTip() {
+function ConsumptionFeedbackTooltip({ resource: r,consumptionAmount: cA }: { resource: string, consumptionAmount: number }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+
   return (
-    <div>
-      <p>
-        test
-      </p>
-      <p>
-        please
-      </p>
+    <div 
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px', fontWeight: 'bold'}}>
+        <span style={{ color: additiveTextColor }}> -{cA.toLocaleString()}</span>
+      </div>
+
+      {isHovered && (
+          <p></p>
+      )}
     </div>
-  )
+  );
 }
+
 
 const s: Record<string, React.CSSProperties> = {
   container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', minWidth: '520px', height: '91vh' },
@@ -340,7 +434,7 @@ const s: Record<string, React.CSSProperties> = {
   table: { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', },
   th: { textAlign: 'left', padding: '0.6rem .5rem', fontSize: '0.8rem', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #333' },
   td: {textAlign: 'left', justifyContent: 'left', fontFamily: 'monospace', padding: '0.8rem 0.5rem', borderBottom: '1px solid #222', fontSize: '0.7rem', verticalAlign: 'middle' },
-  badge: { backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '3px 8px', fontWeight: 600, fontSize: '0.8rem' },
+  badge: { backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', padding: '3px 8px', fontWeight: 600, fontSize: '0.8rem' },
   barBg: { height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' },
   barFill: { height: '100%', transition: 'width .3s' },
   statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#bbb', margin: '2px 0' },

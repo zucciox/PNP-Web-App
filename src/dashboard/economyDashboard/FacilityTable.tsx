@@ -3,7 +3,7 @@ import { useGameData } from '../../GameContext';
 import { Facility } from '../../types'; 
 import '../../styles/economyStyles.css';
 import { supabase } from '../../supabaseClient';
-import { resourceColors } from '../../styleConstants';
+import { negativeTextColor, resourceColors } from '../../styleConstants';
 import { stableTextColor } from '../../styleConstants';
 import { additiveTextColor } from '../../styleConstants';
 import { useMemo } from 'react';
@@ -293,7 +293,9 @@ export function FacilityTable() {
 
                     <div className="cost-info" style={{ marginTop: '4px', textAlign: 'center' }}>
                       <span className="sub-text"> workers assigned: </span>
-                      <span className="neg-value" style={{fontWeight: 'bold' }}>{numWorkers}</span>
+                        {
+                          typeInfo?.needs_workers ? <span className="neg-value" style={{fontWeight: 'bold' }}>{numWorkers}</span> : <span>N/A</span>
+                        }    
                     </div>
 
                     <div className="stored-resources-section">
@@ -337,19 +339,29 @@ export function FacilityTable() {
   return (
     <div className="summary-container" style={{ paddingLeft: '1rem',  paddingRight: '1rem', height: '87vh'}}>
       {errorMsg && <div className="error-banner">{errorMsg}</div>}
-      
-      <div style={{display: 'flex', paddingTop: '20px', width: '100%', justifyContent: 'space-between'}}>
-        <input 
-          type="text"
-          placeholder="Search name, output, or storage..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input search-field" 
-          style={{width: '30%', height: '15px'}}
-        />
-      </div>
+    
 
       <div className="scroll-area" style={{overflowY: 'auto' }}>
+
+        <div style={{display: 'flex', paddingTop: '20px', width: '100%', alignItems: 'center', justifyContent: 'space-between'}}>
+          <input 
+            type="text"
+            placeholder="Search name, output, or storage..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input search-field" 
+            style={{width: '30%', height: '15px'}}
+          />
+          <div className="info-icon" style={{marginRight: '5px'}}>
+              ?
+              <div className="tooltip" style={{right: '30px'}}>
+                <p>Facilities are the backbone of your economy, responsible for producing and refining 
+                  the resources that support your settlements and allow for manufacturing.</p>
+                <p></p>
+              </div>
+          </div>
+        </div>
+
         {renderGroup("Production Facilities", groups.production)}
         {renderGroup("Factories", groups.factories)}
         {renderGroup("Support & Logistics", groups.other)}

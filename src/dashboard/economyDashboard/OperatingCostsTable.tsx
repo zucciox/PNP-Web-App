@@ -36,15 +36,16 @@ export function OperatingCostsTable() {
   return ( 
     <div> 
       <div style={{display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center'}}>
-        <h3>Operating Costs (Per Interval) </h3> 
+        <h3>Operating Costs</h3> 
         <div className="info-icon">
-                i
+                ?
                 <div className="tooltip" style={{right: '30px'}}>
                   <p>
-                    You pay operating costs from your treasury each interval. Facilities and units make up your total operating costs.
+                    You pay Operating Costs from your Treasury <span style={{color: 'AccentColor'}}>each interval. </span>
+                     Facilities and Units make up your total Operating Costs.
                   </p>
                   <p>
-                    If you don't have enough in your treasury, your nation will go into debt!
+                    If you don't have enough in your Treasury, your nation will go into debt!
                   </p>
                 </div>
           </div>

@@ -8,9 +8,9 @@ import { useState } from 'react';
 import StoreDashboard from '../storeDashboard/StoreDashboard';
 import { WorkersTable } from './WorkerTable';
 
-const TAB_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center'};
+const TAB_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center', marginBottom: '5px'};
 const TAB_STYLE: React.CSSProperties = { cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', textTransform: 'uppercase', color: '#ffffff', padding: '5px 10px' };
-const ACTIVE_TAB_STYLE: React.CSSProperties = { ...TAB_STYLE, backgroundColor: '#333333' };
+const ACTIVE_TAB_STYLE: React.CSSProperties = { ...TAB_STYLE, backgroundColor: '#333333', borderRadius: '10px' };
 
 export default function EconomyDashboard() {
   const [activePanel, setActivePanel] = useState<string>('Facilities');

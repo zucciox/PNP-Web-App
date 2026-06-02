@@ -58,6 +58,7 @@
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   border: 1px solid #2a2a2a;
+  border-radius: 20px;
 }
 
 .resource-label {
@@ -195,8 +196,9 @@
   background-color: #2a2a2a;
 }
 
-/* Displayable tooltop when tooltip is wrapped inside an info-icon class */
+/* Displayable tooltop when tooltip is wrapped inside an info-icon or info-badge class */
 .info-icon:hover .tooltip { visibility: visible; opacity: 1; }
+.info-badge:hover .tooltip { visibility: visible; opacity: 1; }
 
 .info-icon {
   position: relative;
@@ -206,24 +208,42 @@
   width: 20px;
   height: 20px;
   border-radius: var(--radius-round);
-  background-color: #333;
-  color: #daa520;
+  background-color: #5c532c;
+  color: #ffb700;
   font-size: 0.7rem;
   font-weight: bold;
   cursor: help;
+  z-index: 5;
+}
+
+.info-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #5c532c;
+  color: #ffb700;
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: help;
+  z-index: 5;
+  border-radius: var(--radius-sm);
+  padding: 3px 3px;
 }
 
 .tooltip {
   visibility: hidden; opacity: 0; position: absolute; 
-  top: 50%;
+  top: 100%;
   max-width: 500px; 
   min-width: 200px; 
-  background: #1e1e1e; 
   border: 1px solid #444; 
   padding: 8px; 
-  border-radius: 4px; 
   color: #f3f3f3;
   transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  border: 1px solid #bb86fc;
+  border-radius: 10px;
+  background-color: #121212;
+  z-index: 10;
 }
 
 .resource-value-neutral {
@@ -278,16 +298,19 @@
   left: .5;
   right: 1;
   bottom: .9;
-  max-height: 350px;
-  max-width: 150px;
-  background-color: #121212;
-  padding: 6px;
+  max-height: 450px;
+  max-width: 300px;
+  padding: 15px;
   font-size: 10px;
   line-height: 1.3;
   overflow-y: auto;
   border: 1px solid #bb86fc;
   color: #e0e0e0;
   border-radius: 10px;
+  background-color: #121212;
+  z-index: 10;
+  font-size: small;
+  font-family: inherit;
 }
 
 .dashboard-root {
@@ -645,7 +668,7 @@ input::-webkit-inner-spin-button {
 .search-field { 
   background-color: #2a2a2a; /* Removed quotes, kept your preferred dark color */
   border: 1px solid #333;    /* Removed quotes */
-  border-radius: 4px;        /* Removed quotes */
+  border-radius: 15px;        /* Removed quotes */
   padding: 6px 12px;         /* Removed quotes */
   color: #fff;               /* Changed from #2a2a2a (dark text) to #fff (white text) so you can read it! */
   font-size: 0.8rem;         /* Removed quotes */
