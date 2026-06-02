@@ -41,6 +41,6 @@ export const resourceColors: Record<string, string> = {
     NaturalGas: '#4db6ac'    // Kept as a distinct soft teal
 }
 
-export const stableTextColor: string = '#4488ff';
+export const stableTextColor: string = '#5690f5';
 export const additiveTextColor: string = '#44ff44';
 export const negativeTextColor: string = '#ff4444';

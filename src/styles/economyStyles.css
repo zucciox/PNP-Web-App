@@ -140,7 +140,6 @@
 }
 
 .pos-value {
-  color: #03da3c;
   font-weight: 500;
 }
 
@@ -196,6 +195,9 @@
   background-color: #2a2a2a;
 }
 
+/* Displayable tooltop when tooltip is wrapped inside an info-icon class */
+.info-icon:hover .tooltip { visibility: visible; opacity: 1; }
+
 .info-icon {
   position: relative;
   display: flex;
@@ -212,22 +214,16 @@
 }
 
 .tooltip {
-  position: absolute;
-  right: 120%;
+  visibility: hidden; opacity: 0; position: absolute; 
   top: 50%;
-  transform: translateY(-50%);
-  background-color: #000;
-  color: #e0e0e0;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  width: 180px;
-  font-size: 0.75rem;
-  line-height: 1.4;
-  z-index: 10;
-  border: 1px solid #444;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
-  text-transform: none;
+  max-width: 500px; 
+  min-width: 200px; 
+  background: #1e1e1e; 
+  border: 1px solid #444; 
+  padding: 8px; 
+  border-radius: 4px; 
+  color: #f3f3f3;
+  transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
 }
 
 .resource-value-neutral {
@@ -544,9 +540,8 @@ input::-webkit-inner-spin-button {
 }
 
 .facility-card.inactive-facility {
-  opacity: 0.6;
-  filter: grayscale(0.5);
   border-style: dashed;
+  background-color: #da03030a;
 }
 
 .production-info {
@@ -647,3 +642,16 @@ input::-webkit-inner-spin-button {
   text-align: center;
 }
 
+.search-field { 
+  background-color: #2a2a2a; /* Removed quotes, kept your preferred dark color */
+  border: 1px solid #333;    /* Removed quotes */
+  border-radius: 4px;        /* Removed quotes */
+  padding: 6px 12px;         /* Removed quotes */
+  color: #fff;               /* Changed from #2a2a2a (dark text) to #fff (white text) so you can read it! */
+  font-size: 0.8rem;         /* Removed quotes */
+  outline: none;
+}
+
+.search-input::placeholder { 
+  color: #555; 
+}

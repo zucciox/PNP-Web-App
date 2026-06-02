@@ -5,6 +5,8 @@ import '../../styles/economyStyles.css';
 import { supabase } from '../../supabaseClient';
 import { resourceColors } from '../../styleConstants';
 import { stableTextColor } from '../../styleConstants';
+import { additiveTextColor } from '../../styleConstants';
+import { useMemo } from 'react';
 
 const STORAGE_RESOURCES = [
   'Energy', 'Gas', 'Coal', 'Fuel', 'Water', 'Food', 'Oxygen', 'Steel', 
@@ -45,6 +47,21 @@ const getMaxHealth = (facilityType: string): number => {
   return facilityType === 'Military Base' ? 300 : 50;
 };
 
+const containsResource = (facilityGID: number, facilities: Facility[], queryRes: string): boolean => {
+  const facility = facilities.find(f => f.global_id === facilityGID);
+  if (!facility) return false;
+
+  return STORAGE_RESOURCES.some(res => {
+    if (res.toLowerCase().includes(queryRes.toLowerCase())) {
+      const backendKey = getBackendKey(res);
+      const amount = facility[backendKey as keyof Facility]?? 0;
+      
+      return amount > 0;
+    }
+    return false;
+  });
+};
+
 const getHealthGradient = (percentage: number): string => {
   if (percentage > 60) return 'linear-gradient(90deg, #2e7d32, #4caf50)';
   if (percentage > 30) return 'linear-gradient(90deg, #ff9800, #ffeb3b)';
@@ -59,6 +76,8 @@ export function FacilityTable() {
   const [activeShipmentFacility, setActiveShipmentFacility] = useState<Facility | null>(null);
   const [activeDeliveryFacility, setActiveDeliveryFacility] = useState<Facility | null>(null);
   const [availableUnits, setAvailableUnits] = useState<ShippingUnit[]>([]);
+
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [shipmentForm, setShipmentForm] = useState({
     resource: '',
@@ -155,19 +174,43 @@ export function FacilityTable() {
     return Number(typeDef?.oc_interval ?? 0);
   };
 
+  const filteredFacilities = useMemo(() => {
+    return (facilities || [])
+      .filter(f => {
+        const query = searchQuery.toLowerCase();
+        const typeDef = facilityTypes.find((t: any) => t.facility_type === f.facility_type);
+        return (
+          f.facility_type?.toLowerCase().includes(query) || 
+          f.type_id?.toString().includes(query) ||
+          typeDef?.output_type?.toLowerCase().includes(query) ||
+          typeDef?.input_type?.toLowerCase().includes(query) ||
+          containsResource(f.global_id, facilities, query)
+        );
+      });
+  }, [units, searchQuery]);
+
   const groups = {
-    production: facilities.filter(f => {
+    production: filteredFacilities
+    .filter(f => {
       const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
-      return typeInfo?.output_type !== null || f.facility_type?.includes("Tier");
+      return typeInfo?.output_type !== null;
+    })
+    .sort((a, b) => {
+      return (b.is_active ? 1 : 0) - (a.is_active ? 1 : 0);
     }),
-    factories: facilities.filter(f => {
-      const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
-      return f.facility_type?.includes("Factory") && typeInfo?.output_type === null && !f.facility_type?.includes("Tier");
+    factories: filteredFacilities.filter(f => {
+      return f.facility_type?.includes("Factory");
+    })
+    .sort((a, b) => {
+      return (b.is_active ? 1 : 0) - (a.is_active ? 1 : 0);
     }),
-    other: facilities.filter(f => {
+    other: filteredFacilities.filter(f => {
       const typeInfo = facilityTypes.find(t => t.facility_type === f.facility_type);
       return typeInfo?.output_type === null && !f.facility_type?.includes("Factory");
     })
+    .sort((a, b) => {
+      return (b.is_active ? 1 : 0) - (a.is_active ? 1 : 0);
+    }),
   };
 
   const renderProductionLine = (facility: Facility, typeInfo: any) => {
@@ -192,7 +235,7 @@ export function FacilityTable() {
 
     return (
       <>
-        <span className="pos-value">+{finalOutput.toLocaleString()} {outputType || facilityName}</span>
+        <span style={{color: additiveTextColor}} className="pos-value">+{finalOutput.toLocaleString()} {outputType || facilityName}</span>
         <span className="sub-text"> per interval</span>
       </>
     );
@@ -223,7 +266,7 @@ export function FacilityTable() {
               <div key={facility.global_id} className="facility-card-wrapper">
                 <div className={`facility-card ${!facility.is_active ? 'inactive-facility' : ''}`}>
                   <div className="facility-card-header">
-                    <span>{facility.facility_type}</span>
+                    <span>{facility.facility_type} {facility.is_active ? '' : '(INACTIVE)'}</span>
                     <span className="settlement-id">#{facility.type_id}</span>
                   </div>
 
@@ -245,7 +288,7 @@ export function FacilityTable() {
                     <div className="production-info">{renderProductionLine(facility, typeInfo)}</div>
                     <div className="cost-info" style={{ marginTop: '4px', textAlign: 'center' }}>
                       <span className="sub-text"> operating cost: </span>
-                      <span className="neg-value" style={{ color: '#ff5252', fontWeight: 'bold' }}>-${opCost.toLocaleString()}</span>
+                      <span className="neg-value" style={{ color: facility.is_active ? '#ff5252' : '#533', fontWeight: 'bold', textDecoration: facility.is_active ? 'none' : 'line-through' }}>-${opCost.toLocaleString()}</span>
                     </div>
 
                     <div className="cost-info" style={{ marginTop: '4px', textAlign: 'center' }}>
@@ -254,7 +297,7 @@ export function FacilityTable() {
                     </div>
 
                     <div className="stored-resources-section">
-                      <h5 className="section-title">Storage</h5>
+                      <h5 className="section-title">In Stockpile</h5>
                       <div className="storage-mini-grid">
                         {availableInStorage.map(res => {
                           const backendKey = getBackendKey(res);
@@ -295,6 +338,17 @@ export function FacilityTable() {
     <div className="summary-container" style={{ paddingLeft: '1rem',  paddingRight: '1rem', height: '87vh'}}>
       {errorMsg && <div className="error-banner">{errorMsg}</div>}
       
+      <div style={{display: 'flex', paddingTop: '20px', width: '100%', justifyContent: 'space-between'}}>
+        <input 
+          type="text"
+          placeholder="Search name, output, or storage..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-input search-field" 
+          style={{width: '30%', height: '15px'}}
+        />
+      </div>
+
       <div className="scroll-area" style={{overflowY: 'auto' }}>
         {renderGroup("Production Facilities", groups.production)}
         {renderGroup("Factories", groups.factories)}

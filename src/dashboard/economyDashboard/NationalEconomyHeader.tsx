@@ -58,7 +58,7 @@ export function NationalEconomyHeader() {
     });
 
     // 1. Reserves
-    totals.reserves['Treasury'] = nation?.Treasury || 0;
+    totals.reserves['Treasury'] = nation?.treasury || 0;
     
     settlements.forEach(s => {
       DISPLAY_RESOURCES.forEach(r => { 

@@ -75,6 +75,8 @@ export function NationalResourceFlowTable() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
+
   const stats = useMemo(() => {
     // 🔍 DEBUG PRINTS
   console.group('🧱 Resource Flow Hook Recalculating!');
@@ -181,13 +183,6 @@ export function NationalResourceFlowTable() {
     <section style={s.container}>
       <style>{`
         .info-wrap { position: relative; cursor: help; display: flex; align-items: center; }
-        .tooltip { 
-          visibility: hidden; opacity: 0; position: absolute; 
-          right: 30px; top: 50%; transform: translateY(-50%);
-          width: 140px; background: #1e1e1e; border: 1px solid #444; 
-          padding: 8px; border-radius: 4px; z-index: 100;
-          transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-        }
         .info-wrap:hover .tooltip { visibility: visible; opacity: 1; }
         .menu-btn:hover { background: #333 !important; }
         .menu-item:hover:not(.disabled) { background: #3d3d3d !important; color: #fff !important; }
@@ -199,8 +194,22 @@ export function NationalResourceFlowTable() {
       `}</style>
       
       <div style={s.header}>
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
           <div style={s.title}>National Resource Balance</div>
+          <div className="info-icon">
+              i
+              <div className="tooltip" style={{right: '30px'}}>
+                <p style={{color: stableTextColor}}>
+                  Stockpile: how much of this resource you have stored across all facilities and settlements.
+                </p>
+                <p style={{color: negativeTextColor}}>
+                  Consumption: how much of this resource is required by all of your settlements each cycle (10 intervals). Every settlement has its own consumption rate.
+                </p>
+                <p style={{color: additiveTextColor}}>
+                  Production: how much of this resource you produce every cycle. (Note that for some resources, this only counts your raw production, and you still have to refine that resource to meet consumption rates).
+                </p>
+              </div>
+          </div>
         </div>
       </div>
 
@@ -208,7 +217,7 @@ export function NationalResourceFlowTable() {
           <table style={s.table}>
             <thead>
               <tr>
-                {['Resource', 'Stockpile', 'Consumption', "Production"].map(h => (
+                {['Resource', 'Stockpiles', 'Consumption', "Production"].map(h => (
                   <th key={h} style={s.th}>{h}</th>
                 ))}
               </tr>
@@ -298,13 +307,28 @@ export function NationalResourceFlowTable() {
               ? 
               `You produce enough ${(convertToRaw[r])} to meet your ${r} consumption rates each cycle.`
               : 
-              `You DO NOT produce enough ${(convertToRaw[r])} to meet your ${r} consumption rates each cycle. 
- Consider building new facilities or trading with other nations.`}
+              <div>
+                <p> You DO NOT produce enough {convertToRaw[r]} to meet your {r} consumption rates each cycle.</p>
+                <p>Consider building new facilities or trading with other nations.</p>
+              </div>}
           </span>
         )}
       </div>
     );
   }
+}
+
+function flowTableToolTip() {
+  return (
+    <div>
+      <p>
+        test
+      </p>
+      <p>
+        please
+      </p>
+    </div>
+  )
 }
 
 const s: Record<string, React.CSSProperties> = {

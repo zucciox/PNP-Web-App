@@ -35,10 +35,23 @@ export function OperatingCostsTable() {
 
   return ( 
     <div> 
-      <h3>Operating Costs (Per Interval)</h3> 
+      <div style={{display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center'}}>
+        <h3>Operating Costs (Per Interval) </h3> 
+        <div className="info-icon">
+                i
+                <div className="tooltip" style={{right: '30px'}}>
+                  <p>
+                    You pay operating costs from your treasury each interval. Facilities and units make up your total operating costs.
+                  </p>
+                  <p>
+                    If you don't have enough in your treasury, your nation will go into debt!
+                  </p>
+                </div>
+          </div>
+      </div>
 
       <div className="settlement-card costs-summary-card"> 
-        <div style={{display: 'flex', gap: '10px'}}> 
+        <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}> 
           <span>Units:</span> 
           <span style={{color: '#ff5252'}}>${formatCurrency(unitsTotal)}</span> 
           <div className="divider-v"></div> 
