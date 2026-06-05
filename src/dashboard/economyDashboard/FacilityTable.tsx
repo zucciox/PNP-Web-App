@@ -264,9 +264,11 @@ export function FacilityTable() {
 
             return (
               <div key={facility.global_id} className="facility-card-wrapper">
-                <div className={`facility-card ${!facility.is_active ? 'inactive-facility' : ''}`}>
+                <div 
+                  className={`facility-card ${!facility.is_active ? 'inactive-facility' : ''}`}
+                >
                   <div className="facility-card-header">
-                    <span>{facility.facility_type} {facility.is_active ? '' : '(INACTIVE)'}</span>
+                    <span style={{color: resourceColors[typeInfo?.output_type || '']}}>{facility.facility_type} {facility.is_active ? '' : <span style={{color: 'red'}}>(INACTIVE)</span>}</span>
                     <span className="settlement-id">#{facility.type_id}</span>
                   </div>
 

@@ -1,5 +1,6 @@
+import { createPortal } from 'react-dom';
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Facility, Settlement, Unit, UnitType } from '../../types'; 
+import { Facility, Settlement, Shipment, Unit, UnitType } from '../../types'; 
 import { useGameData } from '../../GameContext';
 import { supabase } from '../../supabaseClient';
 import { OperatingCostsTable } from './OperatingCostsTable';
@@ -75,20 +76,37 @@ import { negativeTextColor } from '../../styleConstants';
     facilities.forEach(f => {
       total += f[getBackendKey(resource)]
     })
+
+    return total
+  }
+
+  const shipmentStored = (shipments: Shipment[],resource: string): number => {
+    
+    let total = 0;
+    shipments.forEach(s => {
+      if (s.resource === resource) {
+        total += s.amount
+      }
+    })
+
     return total
   }
 
   const allSettlementsMeeting = (settlements: Settlement[], resource: string): boolean => {
-    
+    let value = true;
+
     settlements.forEach(s => {
       if (s[getBackendKey(resource)] < s[getBackendKey(resource)+'_cr']) 
-        return false })
+        {
+          value = false
+        }
+      })
 
-    return true
+    return value
   }
 
 export function NationalResourceFlowTable() {
-  const { facilities, facilityTypes, settlements, nation } = useGameData();
+  const { facilities, facilityTypes, settlements, nation, shipments } = useGameData();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,6 +154,16 @@ export function NationalResourceFlowTable() {
         if (r !== 'Treasury') {
           const backendKey = getBackendKey(r);
           totals.stockpiles[r] += (Number(f[backendKey]) || 0); 
+        }
+      });
+    });
+
+    shipments.forEach(s => {
+      DISPLAY_RESOURCES.forEach(r => { 
+        if (r !== 'Treasury') {
+          if (s.resource === r) {
+            totals.stockpiles[r] += (Number(s.amount) || 0);
+          }
         }
       });
     });
@@ -200,13 +228,7 @@ export function NationalResourceFlowTable() {
       <style>{`
         .info-wrap { position: relative; cursor: help; display: flex; align-items: center; }
         .info-wrap:hover .tooltip { visibility: visible; opacity: 1; }
-        .menu-btn:hover { background: #333 !important; }
-        .menu-item:hover:not(.disabled) { background: #3d3d3d !important; color: #fff !important; }
-        .menu-item.disabled { cursor: not-allowed; opacity: 0.5; }
         .search-input::placeholder { color: #555; }
-        .unit-row { cursor: pointer; transition: background 0.2s; }
-        .unit-row:hover { background: #1a1a1a; }
-        .unit-row.selected { background: #1a237e !important; }
       `}</style>
       
       <div style={s.header}>
@@ -215,18 +237,18 @@ export function NationalResourceFlowTable() {
           <div className="info-icon">
               ?
               <div className="tooltip" style={{right: '30px'}}>
-                <p>
-                  This is a summary of the flow of resources across your nation. Check this table to see if you are on track to meet your <span style={{color: negativeTextColor}}>Consumption Rates,</span> and hover over numbers for in depth explanations.
-                </p>
+                <div>
+                  This table summarizes the flow of resources across your nation. Check here to see if you are on track to meet your <span style={{color: negativeTextColor}}>Consumption Rates,</span> and hover over numbers for in depth explanations.
+                </div>
                 <p style={{color: stableTextColor}}>
                   Stockpile: how much of this resource you have stored across all facilities and settlements.
                 </p>
                 <p style={{color: negativeTextColor}}>
                   Consumption: how much of this resource is required by all of your settlements each cycle (10 intervals). Every settlement has its own consumption rate.
                 </p>
-                <p style={{color: additiveTextColor}}>
+                <div style={{color: additiveTextColor}}>
                   Production: how much of this resource you produce every cycle. (Note that for some resources, this only counts your raw production, and you still have to refine that resource to meet consumption rates).
-                </p>
+                </div>
               </div>
           </div>
         </div>
@@ -262,7 +284,15 @@ export function NationalResourceFlowTable() {
                         <StockpileFeedbackIcon resource={r} stockpileAmount={finalStockpileValue} consumptionAmount={finalConsumptionValue} /> 
                       </div>
                     </td>
-                    <td style={s.td}><span style={{ color: negativeTextColor }}>-{finalConsumptionValue.toLocaleString()}/c</span></td>
+                    <td style={s.td}>
+                      <span style={{ color: negativeTextColor }}>
+                        { (finalConsumptionValue > 0) ?
+                          <div>-{finalConsumptionValue.toLocaleString()}/c</div>
+                          :
+                          "--"
+                        }
+                      </span>
+                    </td>
                     <td style={s.td}>
                       <div style={{display: 'flex', gap: '5px', alignItems: 'flex-end'}}> 
                         <ProductionFeedbackIcon resource={r} productionAmount={finalProductionValue} consumptionAmount={finalConsumptionValue} /> 
@@ -280,33 +310,86 @@ export function NationalResourceFlowTable() {
 
   function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, consumptionAmount: cA }: { resource: string, stockpileAmount: number, consumptionAmount: number }) {
     const [isHovered, setIsHovered] = useState(false);
+    const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+    const iconRef = useRef<HTMLDivElement>(null);
   
     // Cross-reference: Find the unit where global_id matches the shipment's unit_id
+    const hasCR = cA > 0
     const isMeetingCR = rA >= cA
+    const AllSettlementsMeeting = allSettlementsMeeting(settlements, r);
+    const rawResourceText = <span style={{color: resourceColors[convertToRaw[r] ?? 'white']}}>{convertToRaw[r]}</span>
+    const resourceText = <span style={{color: resourceColors[r]}}>{r}</span>
+
+    const handleMouseEnter = () => {
+      setIsHovered(true);
+      if (iconRef.current) {
+        const rect = iconRef.current.getBoundingClientRect();
+        
+        const estimatedTooltipHeight = 450; 
+        const spaceBelow = window.innerHeight - rect.bottom;
+    
+        if (spaceBelow < estimatedTooltipHeight) {
+          // FLIP UP: Not enough space below, so render it ABOVE the icon
+          setTooltipStyle({
+            position: 'fixed',
+            // Pin the bottom of the tooltip to the top of the icon (plus a 4px gap)
+            bottom: window.innerHeight - rect.top + 4, 
+            left: rect.left,
+            zIndex: 9999,
+          });
+        } else {
+          // RENDER DOWN: Plenty of space, render it BELOW the icon normally
+          setTooltipStyle({
+            position: 'fixed',
+            top: rect.bottom + 4, 
+            left: rect.left,
+            zIndex: 9999,
+          });
+        }
+      }
+    };
   
     return (
       <div 
-        onMouseEnter={() => setIsHovered(true)}
+        ref={iconRef}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px', fontWeight: 'bold'}}>
-          {isMeetingCR ? '✅' : '⚠️'}
+        <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px'}}>
           <span style={{ color: stableTextColor }}> {rA.toLocaleString()} </span>
+          { hasCR ?
+            isMeetingCR ? 
+              AllSettlementsMeeting ? '✅' : '⚠️'
+              : 
+              '⛔️'
+            :
+            ""
+          }
         </div>
   
-        {isHovered && (
-          <div className="resource-feedback-overlay" style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+        {isHovered && hasCR && createPortal (
+          <div 
+            className="resource-feedback-overlay" 
+            style={tooltipStyle}
+          >
 
             <span style={{color: isMeetingCR ? '#44ff44' : '#ff4444'}}>
-              {isMeetingCR ? 'You have enough ' + r + ' to meet your upcoming consumption rates.' : 
-              'You DO NOT have enough ' + r + ' to meet your upcoming consumption rates!'}
+              {isMeetingCR ? 
+                (!AllSettlementsMeeting && isMeetingCR) ?
+                <div style={{color: 'yellow'}}>
+                  ⚠️ One or more of your settlements does not have sufficient {resourceText} to meet its consumption rate, but you have enough total {resourceText}. Create shipments to move {resourceText} into these settlements:
+                </div>
+                :
+                '✅ You have enough ' + r + ' to meet your upcoming consumption rates.' 
+              : 
+              '⛔️ You DO NOT have enough ' + r + ' to meet your upcoming consumption rates!'}
             </span>
         
-
-            <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
-              {r !== 'Treasury' ? 
-                settlements?.map(s => (
-                  <div key={s.global_id}> 
+            <p style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+              {r !== 'Treasury' && 
+                settlements
+                  .map(s => (
+                  <div key={s.global_id} className='storage-pill' style={{fontSize: 'small', fontFamily: 'inherit', gap: '5px'}}> 
                       <div style={{color: stableTextColor}}>{s.name}: </div>
                       {
                         (s[getBackendKey(r)] >= s[getBackendKey(r)+'_cr']) ? 
@@ -316,26 +399,24 @@ export function NationalResourceFlowTable() {
                       }
                   </div>
                 ))
-              : 
-              null}
-           </div>
+                }
+           </p>
 
           {r !== 'Treasury' ?  
-            <p>
-              You have <span style={{fontWeight: 'bold', color: resourceColors[r]}}>{facilityStored(facilities, r).toLocaleString()} {r}</span> not currently in settlements (stored in facilities or on active shipments).
-            </p> 
+            <div>
+              You have <span style={{fontWeight: 'bold', color: resourceColors[r]}}>{facilityStored(facilities,  r).toLocaleString()} { r }</span> stored in facilities and <span style={{fontWeight: 'bold', color: resourceColors[r]}}>{shipmentStored(shipments,  r).toLocaleString()} { r } </span> moving on active shipments.
+            </div> 
            : null}  
 
-            {rA <= cA ? 
-            <div>To meet your consumption rates this cycle, you need to acquire 
-              <span style={{color: additiveTextColor}}> {cA-rA}</span> more <span style={{color: resourceColors[r] ?? 'white'}}>{r} </span>
-                from outside sources, or produce {r !== convertToRaw[r] ? 'and refine' : ''}
-                <span style={{color: additiveTextColor}}> {cA-rA}</span> more <span style={{color: resourceColors[convertToRaw[r] ?? 'white']}}>{convertToRaw[r]}</span> by the end of this cycle.
-            </div>       
-             :
-             ''
-          }   
-          </div>
+            {rA < cA && 
+              <div>  <br />To meet your consumption rates this cycle, acquire <span style={{color: additiveTextColor}}> {cA-rA} </span> more {resourceText} from outside sources <div/>
+              <br />
+              <div style={{textAlign: 'center'}}>OR</div>
+              <p>produce {r !== convertToRaw[r] ? 'and refine' : ''} <span style={{color: additiveTextColor}}> {cA-rA}</span> more {rawResourceText} by the end of this cycle.</p>
+              </div>       
+            }   
+          </div>,
+          document.body
         )}
       </div>
     );
@@ -343,90 +424,113 @@ export function NationalResourceFlowTable() {
 
   function ProductionFeedbackIcon({ resource: r, productionAmount: pA, consumptionAmount: cA }: { resource: string, productionAmount: number, consumptionAmount: number }) {
     const [isHovered, setIsHovered] = useState(false);
+    const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+    const iconRef = useRef<HTMLDivElement>(null);
   
-    // Cross-reference: Find the unit where global_id matches the shipment's unit_id
-    const isMeetingCR = pA >= cA
+    const isMeetingCR = pA >= cA;
+    const hasCR = cA > 0;
+    const rawResourceText = <span style={{color: resourceColors[convertToRaw[r] ?? 'white']}}>{convertToRaw[r]}</span>;
+    const resourceText = <span style={{color: resourceColors[r]}}>{r}</span>;
+  
+    const handleMouseEnter = () => {
+      setIsHovered(true);
+      if (iconRef.current) {
+        const rect = iconRef.current.getBoundingClientRect();
+        
+        const estimatedTooltipHeight = 450; 
+        const spaceBelow = window.innerHeight - rect.bottom;
+    
+        if (spaceBelow < estimatedTooltipHeight) {
+          // FLIP UP: Not enough space below, so render it ABOVE the icon
+          setTooltipStyle({
+            position: 'fixed',
+            // Pin the bottom of the tooltip to the top of the icon (plus a 4px gap)
+            bottom: window.innerHeight - rect.top + 4, 
+            left: rect.left,
+            zIndex: 9999,
+          });
+        } else {
+          // RENDER DOWN: Plenty of space, render it BELOW the icon normally
+          setTooltipStyle({
+            position: 'fixed',
+            top: rect.bottom + 4, 
+            left: rect.left,
+            zIndex: 9999,
+          });
+        }
+      }
+    };
   
     return (
       <div 
-        onMouseEnter={() => setIsHovered(true)}
+        ref={iconRef}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px', fontWeight: 'bold'}}>
-          {isMeetingCR ? '✅' : '⚠️'}
+        <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px'}}>
           <span style={{ color: additiveTextColor }}> +{pA.toLocaleString()}/c</span>
+          {
+            hasCR ?
+            isMeetingCR ? '✅' : '⚠️'
+            :
+            ""
+          }
         </div>
   
-        {isHovered && (
-          <span className="resource-feedback-overlay">
-            {isMeetingCR 
-              ? 
-              <div style={{color: additiveTextColor}}>
-                <div>You produce enough <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]}</span> to meet your <span style={{color: resourceColors[r]}}>{r}</span>  consumption rates each cycle.</div>
-                <br />
-                <div>This means you are self-sufficient in producing <span style={{color: resourceColors[r]}}>{r}</span>; you are not dependent on other nations.</div>
-                {r !== convertToRaw[r] && r !== 'Treasury' ?
-                  <div>
-                    <br />
-                    Note that you must refine your  
-                    <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]}</span>
-                    into 
-                    <span style={{color: resourceColors[r]}}>{r}</span>
-                    and move it into a city before it counts towards your consumption rates.
-                  </div>
-                :
-                  ''
-                }
-                
-              </div>
-              : 
+        {/* RENDER THE PORTAL */}
+        {isHovered && hasCR && createPortal(
+          <div 
+            className="resource-feedback-overlay" 
+            style={tooltipStyle} /* Apply the calculated fixed coordinates here */
+          >
+            {isMeetingCR ? (
               <div>
-                <div style={{color: negativeTextColor}}> You DO NOT produce enough <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]}</span> to meet your <span style={{color: resourceColors[r]}}>{r}</span> consumption rates each cycle.</div>
+                <div style={{color: additiveTextColor}}>✅ You are self-sufficient in <span style={{color: resourceColors[r]}}>{r}.</span></div>
+                <br />
+                <div style={{color: additiveTextColor}}>
+                  This means you produce enough <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]} </span> 
+                  to meet your <span style={{color: resourceColors[r]}}>{r} </span>  
+                  consumption rates without relying on outside sources.
+                </div>
+                {r !== convertToRaw[r] && r !== 'Treasury' ? (
+                  <div style={{color: 'orange'}}>
+                    <br />
+                    ⚠️ Note that you must refine your  
+                    <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}> {convertToRaw[r]} </span>
+                    into 
+                    <span style={{color: resourceColors[r]}}> {r} </span>
+                    and move it into settlements before it counts towards your consumption rates.
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div>
+                <div style={{color: 'yellow'}}> ⚠️ You DO NOT produce enough <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]}</span> to meet your <span style={{color: resourceColors[r]}}>{r}</span> consumption rates each cycle.</div>
                 <p>
-                  <div>
-                  <span style={{color: resourceColors[r]}}>{r}</span> needed each cycle: <span style={{color: negativeTextColor}}>{cA}</span>
+                  <div className='storage-pill' style={{marginBottom: '5px', fontSize: 'small', fontFamily: 'inherit', gap: '5px'}}>
+                  <span style={{color: resourceColors[r]}}>{r}</span> needed per cycle: <span style={{color: negativeTextColor}}>{cA.toLocaleString()}</span>
                   </div>
-                  <div>
-                   <span style={{color: resourceColors[convertToRaw[r]]}}>{convertToRaw[r]}</span> produced each cycle:  <span style={{color: additiveTextColor}}>{pA}</span>
+                  <div className='storage-pill' style={{fontSize: 'small', fontFamily: 'inherit', gap: '5px'}}>
+                   <span style={{color: resourceColors[convertToRaw[r]]}}>{convertToRaw[r]}</span> produced per cycle:  <span style={{color: additiveTextColor}}>{pA.toLocaleString()}</span>
                   </div>
                 </p>
-                <p>To meet your consumption rates consistently, you need to acquire 
-                  <span style={{color: additiveTextColor}}> {cA-pA}</span> more <span style={{color: resourceColors[r] ?? 'white'}}>{r} </span>
-                    from outside sources each cycle, or produce {r !== convertToRaw[r] ? 'and refine ' : ''}
-                    <span style={{color: additiveTextColor}}> {cA-pA}</span> more <span style={{color: resourceColors[convertToRaw[r] ?? 'white']}}>{convertToRaw[r]}</span> each cycle to be self sufficient.
-                </p>
-                <div> Consider building new facilities or trading with other nations. </div>
-              </div>}
-          </span>
+                <div>To meet your consumption rates, you need to acquire <span style={{color: additiveTextColor}}> {(cA-pA).toLocaleString()} </span> more {resourceText} per cycle from outside sources <div/>
+                <div style={{textAlign: 'center'}}>OR</div>
+                <p>Produce {r !== convertToRaw[r] ? 'and refine' : ''} <span style={{color: additiveTextColor}}> {(cA-pA).toLocaleString()}</span> more {rawResourceText} per cycle.</p>
+                </div>  
+                <div style={{color: additiveTextColor}}> Consider building new facilities or trading with other nations. </div>
+              </div>
+            )}
+          </div>,
+          document.body // This is the magic part that breaks it out of the container
         )}
       </div>
     );
   }
 }
 
-function ConsumptionFeedbackTooltip({ resource: r,consumptionAmount: cA }: { resource: string, consumptionAmount: number }) {
-  const [isHovered, setIsHovered] = useState(false);
-
-
-  return (
-    <div 
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px', fontWeight: 'bold'}}>
-        <span style={{ color: additiveTextColor }}> -{cA.toLocaleString()}</span>
-      </div>
-
-      {isHovered && (
-          <p></p>
-      )}
-    </div>
-  );
-}
-
-
 const s: Record<string, React.CSSProperties> = {
-  container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', minWidth: '520px', height: '91vh' },
+  container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', minWidth: '520px', height: '91vh', overflow: 'hidden' },
   header: { display: 'flex', justifyContent: 'left', alignItems: 'center', paddingBottom: '1rem' },
   searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },
   title: { fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' },

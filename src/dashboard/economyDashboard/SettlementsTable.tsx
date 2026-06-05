@@ -1,18 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { Settlement } from '../../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Facility, Settlement, Shipment } from '../../types';
 import { useGameData } from '../../GameContext';
 import { supabase } from '../../supabaseClient';
 import '../../styles/economyStyles.css'; 
-import { resourceColors } from '../../styleConstants';
+import { additiveTextColor, negativeTextColor, resourceColors, stableTextColor } from '../../styleConstants';
+import { createPortal } from 'react-dom';
 
 const formatResourceValue = (value: number): string => {
   return new Intl.NumberFormat('en-US').format(value);
+};
+
+const convertToRaw: Record<string, string> = {
+  'Fuel': 'Oil', 
+  'Copper': 'Copper Ore',
+  'Energy': 'Gas',
+  'Titanium': 'Titanium Ore',
+  'Platinum': 'Platinum Ore',
+  'Gold': 'Gold Ore',
+  'Diamond': 'Diamond Ore',
+  'Steel': 'Iron Ore',
+  'Uranium': 'Uranium Ore',
+  'Aluminum': 'Aluminum Ore',
+
+  // Placeholders
+  'Oxygen': 'Oxygen',
+  'Food': 'Food',
+  'Water': 'Water',
+  'Treasury': 'Treasury'
 };
 
 const SHIPMENT_RESOURCES = [
   'Energy', 'Fuel', 'Water', 'Food', 'Oxygen', 'Steel', 'Aluminum', 
   'Copper', 'Platinum', 'Titanium', 'Gold', 'Diamond', 'Uranium'
 ];
+
+const DISPLAY_RESOURCES = [
+  'Treasury', 'Energy', 'Steel', 'Aluminum', 'Copper', 'Platinum', 
+  'Titanium', 'Gold', 'Diamond', 'Uranium', 'Oxygen', 'Food', 'Water', 'Fuel'
+];
+
+const facilityStored = (facilities: Facility[], resource: string): number => {
+    
+  let total = 0;
+  facilities.forEach(f => {
+    total += f[getBackendKey(resource)]
+  })
+
+  return total
+}
+
+const settlementStored = (settlements: Settlement[], resource: string, settlement: string): number => {
+    
+  let total = 0;
+  settlements.forEach(s => {
+    if (s.name !== settlement) total += Number(s[getBackendKey(resource)]) || 0
+  })
+
+  return total
+}
+
+const shipmentStored = (shipments: Shipment[],resource: string): number => {
+  
+  let total = 0;
+  shipments.forEach(s => {
+    if (s.resource === resource) {
+      total += s.amount
+    }
+  })
+
+  return total
+}
 
 // Helper mapping function to convert UI display names into the new backend keys
 const getBackendKey = (resourceName: string): string => {
@@ -44,8 +101,6 @@ interface ShippingUnit {
   display_name: string;
 }
 
-type ViewMode = 'consumption' | 'reserves';
-
 const getMaxHealth = (settlementType: string): number => {
   switch (settlementType) {
     case 'Capital': return 350;
@@ -62,8 +117,7 @@ const getHealthGradient = (percentage: number): string => {
 };
 
 export function SettlementsTable() {
-  const { settlements, profile, units, unitTypes, shipments } = useGameData();
-  const [viewMode, setViewMode] = useState<ViewMode>('consumption');
+  const { settlements, profile, units, unitTypes, shipments, nation, facilities } = useGameData();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -163,8 +217,15 @@ export function SettlementsTable() {
     }
   };
 
-  // Maps display names directly to prevent typing mapping problems
-  const consumptionMap = [
+
+  const resourceMap = [
+    { key: 'Treasury', label: 'Treasury' }, { key: 'Energy', label: 'Energy' },
+    { key: 'Fuel', label: 'Fuel' }, { key: 'Water', label: 'Water' },
+    { key: 'Food', label: 'Food' }, { key: 'Oxygen', label: 'Oxygen' },
+    { key: 'Steel', label: 'Steel' }, { key: 'Aluminum', label: 'Aluminum' },
+    { key: 'Copper', label: 'Copper' }, { key: 'Platinum', label: 'Platinum' },
+    { key: 'Titanium', label: 'Titanium' }, { key: 'Gold', label: 'Gold' },
+    { key: 'Diamond', label: 'Diamond' }, { key: 'Uranium', label: 'Uranium' },
     { key: 'treasury_cr', label: 'Treasury' }, { key: 'energy_cr', label: 'Energy' },
     { key: 'fuel_cr', label: 'Fuel' }, { key: 'water_cr', label: 'Water' },
     { key: 'food_cr', label: 'Food' }, { key: 'oxygen_cr', label: 'Oxygen' },
@@ -174,28 +235,12 @@ export function SettlementsTable() {
     { key: 'diamond_cr', label: 'Diamond' }, { key: 'uranium_cr', label: 'Uranium' },
   ];
 
-  const reservesMap = [
-    { key: 'Treasury', label: 'Treasury' }, { key: 'Energy', label: 'Energy' },
-    { key: 'Fuel', label: 'Fuel' }, { key: 'Water', label: 'Water' },
-    { key: 'Food', label: 'Food' }, { key: 'Oxygen', label: 'Oxygen' },
-    { key: 'Steel', label: 'Steel' }, { key: 'Aluminum', label: 'Aluminum' },
-    { key: 'Copper', label: 'Copper' }, { key: 'Platinum', label: 'Platinum' },
-    { key: 'Titanium', label: 'Titanium' }, { key: 'Gold', label: 'Gold' },
-    { key: 'Diamond', label: 'Diamond' }, { key: 'Uranium', label: 'Uranium' },
-  ];
-
-  const currentMap = viewMode === 'consumption' ? consumptionMap : reservesMap;
-
   return (
     <section className="summary-container" style={{height: '87vh'}}>
       <header className="tab-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px' }}>
         <h3 className="consumption-header" style={{ margin: 0 }}>
-          Settlement {viewMode === 'consumption' ? 'Consumption' : 'Reserves'}
+          Settlements
         </h3>
-        <div className="toggle-container" style={{ display: 'flex', gap: '5px' }}>
-          <button onClick={() => setViewMode('consumption')} className={`tab-button ${viewMode === 'consumption' ? 'active' : ''}`} style={{ padding: '2px 12px', fontSize: '0.75rem' }}>Consumption</button>
-          <button onClick={() => setViewMode('reserves')} className={`tab-button ${viewMode === 'reserves' ? 'active' : ''}`} style={{ padding: '2px 12px', fontSize: '0.75rem' }}>Reserves</button>
-        </div>
       </header>
       
       {errorMsg && <div className="error-banner">{errorMsg}</div>}
@@ -238,19 +283,19 @@ export function SettlementsTable() {
                 </div>
 
                 <div className="resource-grid">
-                  {currentMap.map((res) => {
-                    // Intelligently lookup key based on whether it is a consumption format or standard asset structure
-                    const targetKey = viewMode === 'consumption' ? res.key : getBackendKey(res.label);
-                    const val = Number(s[targetKey as keyof Settlement]) || 0;
-                    
-                    if (val <= 0) return null;
+
+                  {DISPLAY_RESOURCES.map((res) => {
+                    let reserveVal = ''
+                    let crVal = ''
+                    {
+                      res === 'Treasury' ? 
+                        reserveVal = 'N/A'
+                        : 
+                        reserveVal = s[getBackendKey(res)]?.toLocaleString() || '0'
+                        crVal = s[getBackendKey(res)+'_cr']?.toLocaleString() || '0'
+                    }
                     return (
-                      <div key={res.key} className="resource-item">
-                        <span style={{ color: resourceColors[res.label] || '#bb86fc', fontWeight: 'bold' }}>{res.label}</span>
-                        <span style={{ color: viewMode === 'consumption' ? '#ff4444' : '#4488ff', fontFamily: 'monospace' }}>
-                          {viewMode === 'consumption' ? '-' : ''}{formatResourceValue(val)} 
-                        </span>
-                      </div>
+                      <StockpileFeedbackIcon resource={res} stockpileAmount={Number(reserveVal)} consumptionAmount={Number(crVal)} settlement={s} settlements={settlements} facilities={facilities} shipments={shipments}/>
                     );
                   })}
                 </div>
@@ -365,5 +410,131 @@ export function SettlementsTable() {
         </div>
       )}
     </section>
+  );
+}
+
+function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, settlement: s, settlements: settlements, consumptionAmount: cA, facilities: facilities, shipments: shipments }: { resource: string, stockpileAmount: number, consumptionAmount: number, settlement: Settlement, settlements: Settlement[], facilities: Facility[], shipments: Shipment[] }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const iconRef = useRef<HTMLDivElement>(null);
+
+  // Cross-reference: Find the unit where global_id matches the shipment's unit_id
+  const hasCR = cA > 0
+  const isMeetingCR = rA >= cA
+  const rawResourceText = <span style={{color: resourceColors[convertToRaw[r] ?? 'white']}}>{convertToRaw[r]}</span>
+  const resourceText = <span style={{color: resourceColors[r]}}>{r}</span>
+  const settlementName = <span style={{color: stableTextColor}}>{s.name}</span>
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (iconRef.current) {
+      const rect = iconRef.current.getBoundingClientRect();
+      
+      const estimatedTooltipHeight = 450; 
+      const spaceBelow = window.innerHeight - rect.bottom;
+  
+      if (spaceBelow < estimatedTooltipHeight) {
+        // FLIP UP: Not enough space below, so render it ABOVE the icon
+        setTooltipStyle({
+          position: 'fixed',
+          // Pin the bottom of the tooltip to the top of the icon (plus a 4px gap)
+          bottom: window.innerHeight - rect.top + 4, 
+          right: window.innerWidth - rect.right,
+          zIndex: 9999,
+        });
+      } else {
+        // RENDER DOWN: Plenty of space, render it BELOW the icon normally
+        setTooltipStyle({
+          position: 'fixed',
+          top: rect.bottom + 4, 
+          right: window.innerWidth - rect.right,
+          zIndex: 9999,
+        });
+      }
+    }
+  };
+
+  return (
+    <div 
+      ref = {iconRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setIsHovered(false)}
+      key={r} className="settlement-resource" 
+      style={{backgroundColor: rA  > cA ? cA > 0 ? '#042415' : '#222' : cA > 0 ? '#240404' : '#222', border: 'none', height: '15px', alignItems: 'center'}}
+    >
+      <div style={{position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: resourceColors[r] || '#bb86fc', fontWeight: 'bold' }}>
+          {r}:
+          {cA > rA && <div>⛔️</div>}
+          {cA <= rA && cA > 0 && <div>✅</div>}
+        </span>
+
+        <div style={{ display: 'flex', gap: '5px' }}>
+          <span style={{ color: stableTextColor }}>{rA}</span>
+          {
+            cA > 0 && ( 
+              <span>
+                /
+                <span style={{ color: negativeTextColor }}> {cA}</span>
+              </span>
+            )
+          }
+        </div>
+      </div>
+
+      {isHovered && hasCR && createPortal (
+        <div 
+          className="resource-feedback-overlay" 
+          style={tooltipStyle}
+        >
+
+          <span style={{color: isMeetingCR ? '#44ff44' : '#ff4444'}}>
+            {isMeetingCR ? 
+              <span>✅ You have enough {resourceText} in {settlementName} to meet your upcoming consumption rate.</span>
+              : 
+              <span>⛔️ You DO NOT have enough {resourceText} in {settlementName} to meet your upcoming consumption rate!
+              </span>}
+          </span>
+
+        {r !== 'Treasury' && rA < cA ?  
+        <p> 
+          Nationwide, you have:{' '}
+          
+          <p style={{display: 'flex', flexDirection: 'column', gap: '5px'}}>
+          <div>
+            • <span style={{fontWeight: 'bold', color: resourceColors[r]}}>
+            {facilityStored(facilities, r).toLocaleString()} {r}
+            </span>{' '}
+            stored in facilities
+          </div>
+
+          <div>
+            • <span style={{fontWeight: 'bold', color: resourceColors[r]}}>
+              {shipmentStored(shipments, r).toLocaleString()} {r}
+            </span>{' '}
+            moving on active shipments
+          </div>
+
+          <div>
+            • <span style={{fontWeight: 'bold', color: resourceColors[r]}}>
+              {settlementStored(settlements, r, s.name).toLocaleString()} {r}
+            </span>{' '}
+            in other settlements.
+          </div>
+        </p>
+        </p>
+         : null}  
+
+          {rA <= cA ? 
+          <div>To meet your consumption rate, you need to ship <span style={{color: negativeTextColor, fontWeight: 'bold'}}> {cA-rA} </span> more {resourceText} into <span style={{color: stableTextColor}}>{s.name}</span> by the end of this cycle. <div/>
+          </div>       
+           :
+           ''
+        }   
+        </div>,
+        document.body
+      )}
+    </div>
   );
 }

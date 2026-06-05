@@ -7,6 +7,7 @@ import { NationalResourceFlowTable } from './NationalResourceFlowTable';
 import { useState } from 'react';
 import StoreDashboard from '../storeDashboard/StoreDashboard';
 import { WorkersTable } from './WorkerTable';
+import { ShipmentsNew } from './ShipmentsNew';
 
 const TAB_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center', marginBottom: '5px'};
 const TAB_STYLE: React.CSSProperties = { cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', textTransform: 'uppercase', color: '#ffffff', padding: '5px 10px' };
@@ -22,7 +23,7 @@ export default function EconomyDashboard() {
 
       <div style={{width: '70%'}}> 
         <div style={TAB_CONTAINER_STYLE}>
-            {['Facilities', 'Settlements', 'Shipments', 'Factories', 'Workers'].map(panel => (
+            {['Facilities', 'Settlements', 'Shipments', 'Factories', 'Workers', 'Shipments New'].map(panel => (
               <div key={panel} onClick={() => setActivePanel(panel)} style={activePanel === panel ? ACTIVE_TAB_STYLE : TAB_STYLE}>
                 {panel}
               </div>
@@ -34,6 +35,7 @@ export default function EconomyDashboard() {
         {activePanel === 'Shipments' && <ShipmentsTable />}
         {activePanel === 'Factories' && <StoreDashboard />}
         {activePanel === 'Workers' && <WorkersTable />}
+        {activePanel === 'Shipments New' && <ShipmentsNew />}
       </div>
 
     
