@@ -17,7 +17,7 @@ const RESOURCE_MAP: Record<string, string> = {
   PlatinumCost: 'Platinum',
   TitaniumCost: 'Titanium',
   GoldCost: 'Gold',
-  DiamondCost: 'Diamond',
+  DiamondCost: 'Diamond', 
   UraniumCost: 'Uranium'
 };
 
@@ -64,7 +64,7 @@ export function FactoryStore() {
       // proprietary_nation check (ensure types match, usually text/name)
       const isNationAuthorized = !item.proprietary_nation || String(item.proprietary_nation) === String(nation.id);
 
-      return meetLevel && canBePurchased && isNationAuthorized;
+      return meetLevel && canBePurchased && isNationAuthorized && item.unit_type !== 'Worker';
     });
   }, [selectedType, activeFactoryType, unitTypes, facilityTypes, nation]);
 
@@ -91,7 +91,7 @@ export function FactoryStore() {
       const dbKey = resourceName.replace(/\s+/g, '');
       
       const balance = resourceName === 'Treasury' 
-        ? (nation.Treasury || 0) 
+        ? (nation.treasury || 0) 
         : (activeFactory[dbKey] || 0);
         
       if (balance < cost) return false;
@@ -159,6 +159,7 @@ export function FactoryStore() {
                   <div 
                     key={`${name}-${idx}`} 
                     className={`purchase-card ${!canAfford ? 'disabled' : ''}`}
+                    style={{backgroundColor: canAfford ? '#042415'  : '#240404' }}
                     onClick={() => canAfford && setConfirmItem(item)}
                   >
                     <span className="card-name">{name}</span>
@@ -169,8 +170,10 @@ export function FactoryStore() {
                         
                         const resName = RESOURCE_MAP[key];
                         const dbKey = resName.replace(/\s+/g, '');
-                        const balance = resName === 'Treasury' ? nation?.Treasury : activeFactory?.[dbKey];
+                        const balance = resName === 'Treasury' ? nation?.treasury : activeFactory?.[dbKey];
                         const tagColor = resourceColors[resName] || '#000000';
+                        const stock = resName.toLocaleString() == 'Treasury' ? nation?.treasury : activeFactory?.[resName.toLowerCase()] || 0;
+        
 
                         return (
                           <div 
@@ -179,7 +182,9 @@ export function FactoryStore() {
                             style={{ borderLeft: `3px solid ${tagColor}` }}
                           >
                             <span style={{ color: tagColor, fontWeight: 'bold' }}>{resName}</span>
-                            <span> {cost.toLocaleString()}</span>
+                            <span style={{color: stock < cost ? 'red' : 'lime' }}> 
+                              {stock.toLocaleString()} / {cost.toLocaleString()}
+                            </span>
                           </div>
                         );
                       })}

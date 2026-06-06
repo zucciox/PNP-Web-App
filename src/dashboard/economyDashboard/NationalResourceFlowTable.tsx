@@ -377,7 +377,7 @@ export function NationalResourceFlowTable() {
               {isMeetingCR ? 
                 (!AllSettlementsMeeting && isMeetingCR) ?
                 <div style={{color: 'yellow'}}>
-                  ⚠️ One or more of your settlements does not have sufficient {resourceText} to meet its consumption rate, but you have enough total {resourceText}. Create shipments to move {resourceText} into these settlements:
+                  ⚠️ One or more of your settlements does not have enough {resourceText} to meet its consumption rate, but you have enough total {resourceText}. Create shipments to move {resourceText} into these settlements:
                 </div>
                 :
                 '✅ You have enough ' + r + ' to meet your upcoming consumption rates.' 
@@ -489,7 +489,7 @@ export function NationalResourceFlowTable() {
                 <br />
                 <div style={{color: additiveTextColor}}>
                   This means you produce enough <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}>{convertToRaw[r]} </span> 
-                  to meet your <span style={{color: resourceColors[r]}}>{r} </span>  
+                  each cycle to meet your <span style={{color: resourceColors[r]}}>{r} </span>  
                   consumption rates without relying on outside sources.
                 </div>
                 {r !== convertToRaw[r] && r !== 'Treasury' ? (
@@ -534,7 +534,7 @@ const s: Record<string, React.CSSProperties> = {
   header: { display: 'flex', justifyContent: 'left', alignItems: 'center', paddingBottom: '1rem' },
   searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },
   title: { fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' },
-  tableWrap: { overflow: 'visible', width: '100%', overflowX: 'auto', },
+  tableWrap: {borderRadius: '5px 5px 0px 0px', overflow: 'visible', width: '100%', overflowX: 'auto', },
   table: { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', },
   th: { textAlign: 'left', padding: '0.6rem .5rem', fontSize: '0.8rem', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #333' },
   td: {textAlign: 'left', justifyContent: 'left', fontFamily: 'monospace', padding: '0.8rem 0.5rem', borderBottom: '1px solid #222', fontSize: '0.7rem', verticalAlign: 'middle' },

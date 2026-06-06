@@ -172,7 +172,7 @@ export function SettlementsTable() {
     const backendResourceName = getBackendKey(shipmentForm.resource);
 
     const { error } = await supabase.rpc('create_shipment', { 
-      p_resource: backendResourceName,
+      p_resource: shipmentForm.resource,
       p_amount: parseInt(shipmentForm.amount), 
       p_origin_id: activeShipmentSettlement.type_id, 
       p_origin_type: activeShipmentSettlement.settlement_type,
@@ -434,7 +434,6 @@ function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, settlement: s
       const spaceBelow = window.innerHeight - rect.bottom;
   
       if (spaceBelow < estimatedTooltipHeight) {
-        // FLIP UP: Not enough space below, so render it ABOVE the icon
         setTooltipStyle({
           position: 'fixed',
           // Pin the bottom of the tooltip to the top of the icon (plus a 4px gap)
@@ -443,7 +442,6 @@ function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, settlement: s
           zIndex: 9999,
         });
       } else {
-        // RENDER DOWN: Plenty of space, render it BELOW the icon normally
         setTooltipStyle({
           position: 'fixed',
           top: rect.bottom + 4, 

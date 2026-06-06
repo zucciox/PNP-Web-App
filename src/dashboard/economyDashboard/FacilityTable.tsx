@@ -11,21 +11,20 @@ import { useMemo } from 'react';
 const STORAGE_RESOURCES = [
   'Energy', 'Gas', 'Coal', 'Fuel', 'Water', 'Food', 'Oxygen', 'Steel', 
   'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 'Diamond', 
-  'Uranium', 'Oil', 'Methane', 'NaturalGas', 'CopperOre', 'GoldOre', 
-  'IronOre', 'AluminumOre', 'TitaniumOre', 'PlatinumOre', 'UraniumOre'
+  'Uranium', 'Oil', 'Methane', 'Copper Ore', 'Gold Ore', 
+  'Iron Ore', 'Aluminum Ore', 'Titanium Ore', 'Platinum Ore', 'Uranium Ore'
 ];
 
 // Helper mapping function to convert UI display names into the new backend keys
 const getBackendKey = (resourceName: string): string => {
   const compoundWords: Record<string, string> = {
-    NaturalGas: 'natural_gas',
-    CopperOre: 'copper_ore',
-    GoldOre: 'gold_ore',
-    IronOre: 'iron_ore',
-    AluminumOre: 'aluminum_ore',
-    TitaniumOre: 'titanium_ore',
-    PlatinumOre: 'platinum_ore',
-    UraniumOre: 'uranium_ore'
+    'Copper Ore': 'copper_ore',
+    'Gold Ore': 'gold_ore',
+    'Iron Ore': 'iron_ore',
+    'Aluminum Ore': 'aluminum_ore',
+    'Titanium Ore': 'titanium_ore',
+    'Platinum Ore': 'platinum_ore',
+    'Uranium Ore': 'uranium_ore'
   };
 
   if (compoundWords[resourceName]) {
@@ -255,6 +254,7 @@ export function FacilityTable() {
             // Filter dynamic items by mapping to the backend schema property string safely
             const availableInStorage = STORAGE_RESOURCES.filter(res => {
               const backendKey = getBackendKey(res);
+              console.log("Looked for key: ", getBackendKey(res))
               return (Number(facility[backendKey as keyof Facility]) || 0) > 0;
             });
 
@@ -301,7 +301,7 @@ export function FacilityTable() {
                     </div>
 
                     <div className="stored-resources-section">
-                      <h5 className="section-title">In Stockpile</h5>
+                      <h5 className="section-title">Storage</h5>
                       <div className="storage-mini-grid">
                         {availableInStorage.map(res => {
                           const backendKey = getBackendKey(res);
@@ -342,10 +342,7 @@ export function FacilityTable() {
     <div className="summary-container" style={{ paddingLeft: '1rem',  paddingRight: '1rem', height: '87vh'}}>
       {errorMsg && <div className="error-banner">{errorMsg}</div>}
     
-
-      <div className="scroll-area" style={{overflowY: 'auto' }}>
-
-        <div style={{display: 'flex', paddingTop: '20px', width: '100%', alignItems: 'center', justifyContent: 'space-between'}}>
+      <div style={{display: 'flex', paddingTop: '20px', width: '100%', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px'}}>
           <input 
             type="text"
             placeholder="Search name, output, or storage..."
@@ -364,8 +361,10 @@ export function FacilityTable() {
           </div>
         </div>
 
-        {renderGroup("Production Facilities", groups.production)}
+      <div className="scroll-area" style={{overflowY: 'auto' }}>
+
         {renderGroup("Factories", groups.factories)}
+        {renderGroup("Production Facilities", groups.production)}
         {renderGroup("Support & Logistics", groups.other)}
       </div>
 
