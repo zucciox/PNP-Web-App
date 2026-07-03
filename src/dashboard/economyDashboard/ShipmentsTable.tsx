@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shipment } from '../../types'; 
 import { useGameData } from '../../GameContext';
 import '../../styles/economyStyles.css'; 
 import { supabase } from '../../supabaseClient';
 
 export function ShipmentsTable() {
-  const { shipments, units } = useGameData();
+  const { shipments, units, facilityTypes, unitTypes } = useGameData();
   
   const [showDeliver, setShowDeliver] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [completeForm, setCompleteForm] = useState({ shipmentId: '', amount: '', destinationId: '', destinationType: '', destinationNation: ''});
   const selectedShipment = shipments?.find(s => s.shipment_id === parseInt(completeForm.shipmentId));
+
+  const [settlementTypes, setSettlementTypes] = useState<any[]>([]);
+  useEffect(() => {
+    if (!showDeliver) return;
+    supabase.from('settlement_types').select('*').then(({ data }) => setSettlementTypes(data ?? []));
+  }, [showDeliver]);
+
+  const availableForNation = (t: any) => !t.proprietary_nation || t.proprietary_nation === completeForm.destinationNation;
 
   const closeModal = () => {
   setShowDeliver(false);
@@ -117,25 +125,44 @@ export function ShipmentsTable() {
               type="text" 
               maxLength={1} 
               value={completeForm.destinationNation} 
-              onChange={(e) => setCompleteForm({...completeForm, destinationNation: e.target.value.toUpperCase()})} 
+              onChange={(e) => setCompleteForm({...completeForm, destinationNation: e.target.value.toUpperCase(), destinationType: ''})}
               required 
             />
           </div>
 
           {/* BACK TO TEXT INPUT */}
           <div className="input-group">
-            <label>Destination Type</label>
-            <input 
-              type="text" 
-              placeholder="Unit, City, Mine, etc." 
-              value={completeForm.destinationType} 
-              onChange={(e) => setCompleteForm({...completeForm, destinationType: e.target.value})} 
-              required 
-            />
+            <label>Destination Piece Type</label>
+            <select
+              className="modal-select"
+              required
+              disabled={!completeForm.destinationNation}
+              value={completeForm.destinationType}
+              onChange={(e) => setCompleteForm({ ...completeForm, destinationType: e.target.value })}
+            >
+              <option value="" disabled>
+                {completeForm.destinationNation ? 'Select a type…' : 'Choose destination nation first'}
+              </option>
+              <optgroup label="Facilities">
+                {facilityTypes.filter(availableForNation).map((f) => (
+                  <option key={`f-${f.facility_type}`} value={f.facility_type}>{f.facility_type}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Settlements">
+                {settlementTypes.filter(availableForNation).map((s) => (
+                  <option key={`s-${s.settlement_type}`} value={s.settlement_type}>{s.settlement_type}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Units">
+                {unitTypes.filter(availableForNation).map((u) => (
+                  <option key={`u-${u.unit_type}`} value={u.unit_type}>{u.unit_type}</option>
+                ))}
+              </optgroup>
+            </select>
           </div>
 
           <div className="input-group">
-            <label>Target type_id / Unit ID</label>
+            <label>Destination Piece Number (their type_id)</label>
             <input 
               type="number" 
               value={completeForm.destinationId} 
@@ -144,6 +171,7 @@ export function ShipmentsTable() {
             />
           </div>
         </div>
+      
 
         {errorMessage && <p className="error-text">{errorMessage}</p>}
 

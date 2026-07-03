@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGameData } from '../../GameContext';
-import { Facility } from '../../types'; 
+import { Facility, Unit } from '../../types'; 
 import '../../styles/economyStyles.css';
 import { supabase } from '../../supabaseClient';
 import { negativeTextColor, resourceColors } from '../../styleConstants';
@@ -110,11 +110,46 @@ export function FacilityTable() {
     }
   }, [activeShipmentFacility, units, unitTypes]);
 
-  const handleToggle = async (globalId: number) => {
-    setErrorMsg(null);
-    const { error } = await supabase.rpc('toggle_facility', { p_global_id: globalId });
+  const handleToggle = async (facility: Facility) => {
+  setErrorMsg(null);
+
+  if (facility.is_active) {
+    const { error } = await supabase.rpc('toggle_facility', { p_global_id: facility.global_id });
     if (error) setErrorMsg(`Toggle failed: ${error.message}`);
-  };
+    return;
+  }
+
+  const typeInfo = facilityTypes.find(t => t.facility_type === facility.facility_type);
+  const needsWorkers = !!typeInfo?.needs_workers;
+  const currentWorkers = Number(facility.workers_assigned || 0);
+
+  // Non worker facility or facility reactivates that is already staffed
+  if (!needsWorkers || currentWorkers > 0) {
+    const { error } = await supabase.rpc('toggle_facility', { p_global_id: facility.global_id });
+    if (error) setErrorMsg(`Toggle failed: ${error.message}`);
+    return;
+  }
+
+  // Find a free worker of this nation and assign it to the facility
+  const freeWorker = units.find((u: Unit) =>
+    u.unit_type === 'Worker' &&
+    !u.worked_facility &&
+    u.nation_id === facility.owner_nation
+  );
+
+  if (!freeWorker) {
+    setErrorMsg('No free worker available. A facility that requires workers cannot be operational without one.');
+    return;
+  }
+
+  const { error } = await supabase.rpc('reassign_workers', {
+    p_worker_id: freeWorker.type_id,
+    p_nation_id: facility.owner_nation,
+    p_new_facility_type: facility.facility_type,
+    p_new_facility_id: facility.type_id,
+  });
+  if (error) setErrorMsg(`Enable failed: ${error.message}`);
+};
 
   const handleCreateShipment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,7 +354,7 @@ export function FacilityTable() {
                   </div>
 
                   <div className="card-overlay" style={{ flexDirection: 'column', gap: '6px', padding: '10px' }}>
-                    <button onClick={() => handleToggle(facility.global_id)} className={facility.is_active ? 'btn-disable' : 'btn-enable'} style={{ width: '90%' }}>
+                    <button onClick={() => handleToggle(facility)} className={facility.is_active ? 'btn-disable' : 'btn-enable'} style={{ width: '90%' }}>
                       {facility.is_active ? 'Disable' : 'Enable'}
                     </button>
                     <button onClick={() => setActiveShipmentFacility(facility)} className="btn-primary" style={{ width: '90%', fontSize: '0.75rem' }}>
@@ -340,7 +375,14 @@ export function FacilityTable() {
 
   return (
     <div className="summary-container" style={{ paddingLeft: '1rem',  paddingRight: '1rem', height: '87vh'}}>
-      {errorMsg && <div className="error-banner">{errorMsg}</div>}
+      {errorMsg && (
+        <div className="error-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+          <span>{errorMsg}</span>
+          <button onClick={() => setErrorMsg(null)} aria-label="Dismiss" style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1, padding: '0 4px' }}>
+            ×
+          </button>
+        </div>
+      )}
     
       <div style={{display: 'flex', paddingTop: '20px', width: '100%', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px'}}>
           <input 
