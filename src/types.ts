@@ -231,6 +231,7 @@ export interface Nation {
     id: string;
     treasury: number;
     interval_income: number;
+    points: number;
     [key: string]: string | number;
 }
 
@@ -258,4 +259,5 @@ export interface GameFeed {
     interval: number;
     cycle: number;
     id: number;
+    points: number;
 }

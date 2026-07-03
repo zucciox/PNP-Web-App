@@ -139,8 +139,15 @@ function AdminPanelContent() {
   if (!gameState) return null;
 
   return (
-
     <div className="admin-container">
+
+      {error && (
+      <div className="admin-error-banner" style={{ backgroundColor: '#b30000', color: '#fff', padding: '10px', margin: '10px 0', borderRadius: '4px', textAlign: 'center' }}>
+        <strong>Error:</strong> {error}
+        <button onClick={() => setError(null)} style={{ marginLeft: '15px', background: 'transparent', border: '1px solid #fff', color: '#fff', cursor: 'pointer' }}>Dismiss</button>
+      </div>
+    )}
+
       <div className="admin-panel-bar">
         <div className="admin-controls-title">Admin Controls</div>
         <button className="admin-btn" style={{ background: '#2836d4' }} onClick={() => navigate('/dashboard')}>Nation View</button>

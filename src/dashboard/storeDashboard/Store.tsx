@@ -5,27 +5,27 @@ import '../../styles/storeStyles.css';
 import { resourceColors } from '../../styleConstants';
 
 const COST_KEYS = [
-  'TreasuryCost', 'SteelCost', 'AluminumCost', 'CopperCost', 
-  'PlatinumCost', 'TitaniumCost', 'GoldCost', 'DiamondCost', 'UraniumCost'
+  'treasury_cost', 'steel_cost', 'aluminum_cost', 'copper_cost', 
+  'platinum_cost', 'titanium_cost', 'gold_cost', 'diamond_cost', 'uranium_cost'
 ];
 
+// Updated keys to map from underscore case cost keys
 const RESOURCE_MAP: Record<string, string> = {
-  TreasuryCost: 'Treasury',
-  SteelCost: 'Steel',
-  AluminumCost: 'Aluminum',
-  CopperCost: 'Copper',
-  PlatinumCost: 'Platinum',
-  TitaniumCost: 'Titanium',
-  GoldCost: 'Gold',
-  DiamondCost: 'Diamond', 
-  UraniumCost: 'Uranium'
+  treasury_cost: 'Treasury',
+  steel_cost: 'Steel',
+  aluminum_cost: 'Aluminum',
+  copper_cost: 'Copper',
+  platinum_cost: 'Platinum',
+  titanium_cost: 'Titanium',
+  gold_cost: 'Gold',
+  diamond_cost: 'Diamond', 
+  uranium_cost: 'Uranium'
 };
 
 export function FactoryStore() {
   const { facilities, facilityTypes, unitTypes, nation } = useGameData();
   
   const [selectedType, setSelectedType] = useState<'unit' | 'facility'>('unit');
-  // Store as number to match global_id type
   const [selectedFactoryId, setSelectedFactoryId] = useState<number | null>(null);
   const [confirmItem, setConfirmItem] = useState<any>(null);
 
@@ -42,7 +42,6 @@ export function FactoryStore() {
     }
   }, [availableFactories, selectedFactoryId]);
 
-  // Use Number() to ensure comparison parity
   const activeFactory = useMemo(() => {
     return availableFactories.find(f => Number(f.global_id) === Number(selectedFactoryId));
   }, [availableFactories, selectedFactoryId]);
@@ -60,8 +59,6 @@ export function FactoryStore() {
     return source.filter(item => {
       const meetLevel = item.factory_lvl <= activeFactoryType.mfg_level;
       const canBePurchased = isUnit || item.is_purchasable !== false;
-      
-      // proprietary_nation check (ensure types match, usually text/name)
       const isNationAuthorized = !item.proprietary_nation || String(item.proprietary_nation) === String(nation.id);
 
       return meetLevel && canBePurchased && isNationAuthorized && item.unit_type !== 'Worker';
@@ -87,12 +84,11 @@ export function FactoryStore() {
       if (cost === 0) continue;
       
       const resourceName = RESOURCE_MAP[key];
-      // Contract multi-word resource names (e.g., 'Iron Ore' -> 'IronOre')
-      const dbKey = resourceName.replace(/\s+/g, '');
       
+      // Fixed: Checked against consistent lowercase factory keys
       const balance = resourceName === 'Treasury' 
         ? (nation.treasury || 0) 
-        : (activeFactory[dbKey] || 0);
+        : (activeFactory[resourceName.toLowerCase()] || 0);
         
       if (balance < cost) return false;
     }
@@ -169,20 +165,21 @@ export function FactoryStore() {
                         if (!cost) return null;
                         
                         const resName = RESOURCE_MAP[key];
-                        const dbKey = resName.replace(/\s+/g, '');
-                        const balance = resName === 'Treasury' ? nation?.treasury : activeFactory?.[dbKey];
                         const tagColor = resourceColors[resName] || '#000000';
-                        const stock = resName.toLocaleString() == 'Treasury' ? nation?.treasury : activeFactory?.[resName.toLowerCase()] || 0;
+                        
+                        // Fixed: Standardized balance/stock calculations to match checkAffordability logic
+                        const stock = resName === 'Treasury' 
+                          ? (nation?.treasury || 0) 
+                          : (activeFactory?.[resName.toLowerCase()] || 0);
         
-
                         return (
                           <div 
                             key={key} 
-                            className={`cost-tag ${balance < cost ? 'insufficient' : ''}`}
+                            className={`cost-tag ${stock < cost ? 'insufficient' : ''}`}
                             style={{ borderLeft: `3px solid ${tagColor}` }}
                           >
                             <span style={{ color: tagColor, fontWeight: 'bold' }}>{resName}</span>
-                            <span style={{color: stock < cost ? 'red' : 'lime' }}> 
+                            <span style={{ color: stock < cost ? 'red' : 'lime' }}> 
                               {stock.toLocaleString()} / {cost.toLocaleString()}
                             </span>
                           </div>

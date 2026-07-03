@@ -254,7 +254,6 @@ export function FacilityTable() {
             // Filter dynamic items by mapping to the backend schema property string safely
             const availableInStorage = STORAGE_RESOURCES.filter(res => {
               const backendKey = getBackendKey(res);
-              console.log("Looked for key: ", getBackendKey(res))
               return (Number(facility[backendKey as keyof Facility]) || 0) > 0;
             });
 
