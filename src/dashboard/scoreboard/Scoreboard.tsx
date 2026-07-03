@@ -50,7 +50,6 @@ export default function Scoreboard() {
     filteredFeed.forEach(e => { 
       totals[e.event_type] += e.point_value ?? 0;
       totals.grand_total += e.point_value ?? 0;
-      console.log('grand total' + totals.grand_total);
     })
     
     return totals;

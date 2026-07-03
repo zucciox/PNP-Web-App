@@ -60,9 +60,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('factory_orders').select('*').eq('nation_id', id),
       supabase.from('combat_exchanges').select('*').or(`aggressor_nation.eq.${id},victim_nation.eq.${id}`),
       notificationQuery,
-      supabase.from('game_feed').select('*'), // Fetch feed
+      // Fetch only the 100 newest feed events
+      supabase.from('game_feed').select('*').order('created_at', { ascending: false }).limit(999),
       supabase.from('event_types').select('*') // Fetch types
     ]);
+
+    console.log("Feed check:", feed.error, feed.data)
   
     setUnits(u.data || []);
     setFacilities(f.data || []);
