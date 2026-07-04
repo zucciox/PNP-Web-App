@@ -75,9 +75,17 @@ function AdminPanelContent() {
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [detectedRole, setDetectedRole] = useState<string>('Unknown');
+  
+  // Modal Visibility States
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showTreasuryModal, setShowTreasuryModal] = useState(false);
+  
+  // Shared Form Parameters
   const [pieceType, setPieceType] = useState('');
   const [nationId, setNationId] = useState('');
+  const [typeId, setTypeId] = useState('');
+  const [treasuryAmount, setTreasuryAmount] = useState('');
 
   const adminNotifCount = notifications.filter(n => !n.is_resolved && n.is_admin === true).length;
 
@@ -121,6 +129,41 @@ function AdminPanelContent() {
       const { data, error: rpcError } = await supabase.rpc('add_piece', { p_piece_type: pieceType, p_nation_id: nationId });
       if (rpcError) throw new Error(rpcError.message);
       setShowAddModal(false);
+      setPieceType('');
+      setNationId('');
+    } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+  };
+
+  const handleDeletePiece = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!window.confirm(`Are you sure you want to permanently delete this ${pieceType}?`)) return;
+    setLoading(true);
+    try {
+      const { error: rpcError } = await supabase.rpc('delete_piece', { 
+        p_type: pieceType, 
+        p_type_id: parseInt(typeId, 10), 
+        p_nation_id: nationId 
+      });
+      if (rpcError) throw new Error(rpcError.message);
+      setShowDeleteModal(false);
+      setPieceType('');
+      setTypeId('');
+      setNationId('');
+    } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+  };
+
+  const handleAdjustTreasury = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error: rpcError } = await supabase.rpc('adjust_treasury', {
+        p_nation_id: nationId,
+        p_amount: parseInt(treasuryAmount, 10)
+      });
+      if (rpcError) throw new Error(rpcError.message);
+      setShowTreasuryModal(false);
+      setNationId('');
+      setTreasuryAmount('');
     } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   };
 
@@ -142,11 +185,11 @@ function AdminPanelContent() {
     <div className="admin-container">
 
       {error && (
-      <div className="admin-error-banner" style={{ backgroundColor: '#b30000', color: '#fff', padding: '10px', margin: '10px 0', borderRadius: '4px', textAlign: 'center' }}>
-        <strong>Error:</strong> {error}
-        <button onClick={() => setError(null)} style={{ marginLeft: '15px', background: 'transparent', border: '1px solid #fff', color: '#fff', cursor: 'pointer' }}>Dismiss</button>
-      </div>
-    )}
+        <div className="admin-error-banner" style={{ backgroundColor: '#b30000', color: '#fff', padding: '10px', margin: '10px 0', borderRadius: '4px', textAlign: 'center' }}>
+          <strong>Error:</strong> {error}
+          <button onClick={() => setError(null)} style={{ marginLeft: '15px', background: 'transparent', border: '1px solid #fff', color: '#fff', cursor: 'pointer' }}>Dismiss</button>
+        </div>
+      )}
 
       <div className="admin-panel-bar">
         <div className="admin-controls-title">Admin Controls</div>
@@ -157,6 +200,8 @@ function AdminPanelContent() {
         <button className="admin-btn" style={{ background: '#b30000' }} onClick={() => handleQueueAction('restart')}>Restart</button>
         <button className="admin-btn" style={{ background: '#333' }} onClick={handleAdvance}>Advance Interval</button>
         <button className="admin-btn" style={{ background: '#2e4d2e' }} onClick={() => setShowAddModal(true)}>+ Add Piece</button>
+        <button className="admin-btn" style={{ background: '#b30000' }} onClick={() => setShowDeleteModal(true)}>- Delete Piece</button>
+        <button className="admin-btn" style={{ background: '#bda118', color: '#000', fontWeight: 'bold' }} onClick={() => setShowTreasuryModal(true)}>Adjust Treasury</button>
 
         {showAddModal && (
           <div className="admin-modal-overlay">
@@ -166,8 +211,42 @@ function AdminPanelContent() {
               <input value={pieceType} onChange={(e) => setPieceType(e.target.value)} required />
               <span>Nation ID</span>
               <input value={nationId} onChange={(e) => setNationId(e.target.value)} required />
-              <button type="submit" className="admin-btn-modal">Confirm</button>
+              <button type="submit" className="admin-btn-modal" disabled={loading}>Confirm</button>
               <button type="button" onClick={() => setShowAddModal(false)}>Cancel</button>
+            </form>
+          </div>
+        )}
+
+        {showDeleteModal && (
+          <div className="admin-modal-overlay">
+            <form onSubmit={handleDeletePiece} className="admin-modal-form">
+              <h3>Delete Piece</h3>
+              <span>Piece Type (e.g. Worker, Factory)</span>
+              <input value={pieceType} onChange={(e) => setPieceType(e.target.value)} required />
+              <span>Type ID (Integer)</span>
+              <input type="number" value={typeId} onChange={(e) => setTypeId(e.target.value)} required />
+              <span>Nation ID / Owner Nation</span>
+              <input value={nationId} onChange={(e) => setNationId(e.target.value)} required />
+              <button type="submit" className="admin-btn-modal" style={{ background: '#b30000' }} disabled={loading}>
+                {loading ? 'Deleting...' : 'Delete Piece'}
+              </button>
+              <button type="button" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+            </form>
+          </div>
+        )}
+
+        {showTreasuryModal && (
+          <div className="admin-modal-overlay">
+            <form onSubmit={handleAdjustTreasury} className="admin-modal-form">
+              <h3>Adjust Nation Treasury</h3>
+              <span>Nation ID</span>
+              <input value={nationId} onChange={(e) => setNationId(e.target.value)} required />
+              <span>Adjustment Amount (Accepts negative values to deduct)</span>
+              <input type="number" value={treasuryAmount} onChange={(e) => setTreasuryAmount(e.target.value)} placeholder="e.g. 5000 or -2500" required />
+              <button type="submit" className="admin-btn-modal" style={{ background: '#bda118', color: '#000' }} disabled={loading}>
+                {loading ? 'Processing...' : 'Apply Adjustment'}
+              </button>
+              <button type="button" onClick={() => setShowTreasuryModal(false)}>Cancel</button>
             </form>
           </div>
         )}
