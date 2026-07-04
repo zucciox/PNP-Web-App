@@ -3,6 +3,7 @@ import { Shipment } from '../../types';
 import { useGameData } from '../../GameContext';
 import '../../styles/economyStyles.css'; 
 import { supabase } from '../../supabaseClient';
+import { ManagementActions } from './ManagementActions';
 
 export function ShipmentsTable() {
   const { shipments, units, facilityTypes, unitTypes } = useGameData();
@@ -42,7 +43,8 @@ export function ShipmentsTable() {
 
   return (
     <section className="summary-container" style={{height: '87vh'}}>
-      <header
+      <ManagementActions/>
+        <header
         className="consumption-header" style={{ display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
         <h3 className="settlement-title" style={{ margin: 0 }}>Active Shipments</h3>
         <span className="sub-text">{shipments.length} Total</span>

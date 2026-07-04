@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from './supabaseClient';
-// Added GameFeed and EventType to imports
 import { Unit, Facility, Settlement, Shipment, gameStateData, FacilityType, UnitType, Nation, Order, Profile, CombatExchange, Notification, GameFeed, EventType } from './types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -15,8 +14,9 @@ interface GameContextType {
   orders: Order[]; 
   combat: CombatExchange[];
   notifications: Notification[];
-  gameFeed: GameFeed[];    // Added
-  eventTypes: EventType[]; // Added
+  gameFeed: GameFeed[];    
+  eventTypes: EventType[]; 
+  scoreBreakdown: Record<string, number>; // Added tracking type for breakdown
   nation: Nation | null;
   nationId: string | null;
   profile: Profile | null;
@@ -36,8 +36,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]); 
   const [combat, setCombat] = useState<CombatExchange[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [gameFeed, setGameFeed] = useState<GameFeed[]>([]);    // Added state
-  const [eventTypes, setEventTypes] = useState<EventType[]>([]); // Added state
+  const [gameFeed, setGameFeed] = useState<GameFeed[]>([]);    
+  const [eventTypes, setEventTypes] = useState<EventType[]>([]); 
+  const [scoreBreakdown, setScoreBreakdown] = useState<Record<string, number>>({}); // Added state
   const [nation, setNation] = useState<Nation | null>(null);
   const [nationId, setNationId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -48,7 +49,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       ? supabase.from('notifications').select('*')
       : supabase.from('notifications').select('*').eq('receiving_nation', id);
 
-    const [u, f, ft, ut, g, set, ship, n, ord, comb, notifs, feed, et] = await Promise.all([
+    const [u, f, ft, ut, g, set, ship, n, ord, comb, notifs, feed, et, breakdownResult] = await Promise.all([
       supabase.from('units').select('*').eq('nation_id', id),
       supabase.from('facilities').select('*').eq('owner_nation', id),
       supabase.from('facility_types').select('*'),
@@ -60,10 +61,31 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('factory_orders').select('*').eq('nation_id', id),
       supabase.from('combat_exchanges').select('*').or(`aggressor_nation.eq.${id},victim_nation.eq.${id}`),
       notificationQuery,
-      supabase.from('game_feed').select('*'), // Fetch feed
-      supabase.from('event_types').select('*') // Fetch types
+      // Cap at 100 or 999; client only uses this for visual logs stream anyway now
+      supabase.from('game_feed').select('*').order('created_at', { ascending: false }).limit(999),
+      supabase.from('event_types').select('*'), 
+      supabase.rpc('get_nation_score_breakdown', { target_nation_id: id })
     ]);
+
+    console.log("--- RPC DEBUG START ---");
+    console.log("Target Nation ID passed to RPC:", id);
+    console.log("RPC Full Payload Error Object:", breakdownResult.error);
+    console.log("RPC Raw Return Data Array:", breakdownResult.data);
+    console.log("--- RPC DEBUG END ---");
   
+    // Map the RPC row returns into a dynamic key-value lookup map
+    const breakdownObj: Record<string, number> = {};
+    let grandTotal = 0;
+    
+    if (breakdownResult.data) {
+      breakdownResult.data.forEach((row: { event_type: string; total_points: number | string }) => {
+        const points = Number(row.total_points) || 0;
+        breakdownObj[row.event_type] = points;
+        grandTotal += points;
+      });
+    }
+    breakdownObj['grand_total'] = grandTotal;
+
     setUnits(u.data || []);
     setFacilities(f.data || []);
     setFacilityTypes(ft.data || []);
@@ -77,6 +99,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setNotifications(notifs.data || []);
     setGameFeed(feed.data || []);
     setEventTypes(et.data || []);
+    setScoreBreakdown(breakdownObj); // Safely updating scoreboard data via DB
   };
   
   useEffect(() => {
@@ -84,7 +107,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     let isMounted = true;
   
     const init = async () => {
-      // ... (authentication logic remains same)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !isMounted) return;
   
@@ -115,12 +137,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, () => fetchData(id, role))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'combat_exchanges' }, () => fetchData(id, role))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => fetchData(id, role))
-          // Added Realtime for new tables
           .on('postgres_changes', { event: '*', schema: 'public', table: 'game_feed' }, () => fetchData(id, role))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'event_types' }, () => fetchData(id, role))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, (payload) => {
              setProfile(payload.new as Profile);
           })
+          
           channel.subscribe((status, err) => {
             if (status === 'SUBSCRIBED') {
               console.log('%c⚡ Supabase Realtime: Successfully connected!', 'color: #00ff00; font-weight: bold;');
@@ -142,8 +164,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   return (
     <GameContext.Provider value={{ 
         units, facilities, facilityTypes, unitTypes, settlements, shipments, 
-        orders, combat, notifications, gameFeed, eventTypes, nation, nationId, 
-        profile, gameState, loading 
+        orders, combat, notifications, gameFeed, eventTypes, scoreBreakdown, nation, 
+        nationId, profile, gameState, loading 
     }}>
       {children}
     </GameContext.Provider>
@@ -154,5 +176,4 @@ export const useGameData = () => {
   const context = useContext(GameContext);
   if (!context) throw new Error("useGameData must be used within GameProvider");
   return context;
-}; 
-  
+};

@@ -22,7 +22,7 @@ export const resourceColors: Record<string, string> = {
     Steel: '#a89078',        // Bright metallic tan/grey
     
     AluminumOre: '#8e8ea8',  // FIXED: Lifted from dark slate to a soft, readable lavender-grey
-    Aluminum: '#dbcdf0',     // Bright silvery-lilac
+    Aluminum: '#d5b8ff',     // Bright silvery-lilac
     
     CopperOre: '#cd853f',    // FIXED: Brightened from dark earth-brown to a visible peru/tan-brown
     Copper: '#ff7f50',       // Bright shiny coral/copper

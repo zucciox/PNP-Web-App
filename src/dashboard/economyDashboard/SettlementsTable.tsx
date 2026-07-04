@@ -179,7 +179,7 @@ export function SettlementsTable() {
       p_origin_nation: profile.nation_id,
       p_unit_id: parseInt(shipmentForm.unitId),       
       p_unit_type: shipmentForm.unitType,             
-      p_destination: shipmentForm.destination, 
+    p_destination: shipmentForm.destination, 
       p_notes: shipmentForm.notes,
     });
 
@@ -458,7 +458,7 @@ function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, settlement: s
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
       key={r} className="settlement-resource" 
-      style={{backgroundColor: rA  > cA ? cA > 0 ? '#042415' : '#222' : cA > 0 ? '#240404' : '#222', border: 'none', height: '15px', alignItems: 'center'}}
+      style={{backgroundColor: rA  >= cA ? cA > 0 ? '#042415' : '#222' : cA > 0 ? '#240404' : '#222', border: 'none', height: '15px', alignItems: 'center'}}
     >
       <div style={{position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         

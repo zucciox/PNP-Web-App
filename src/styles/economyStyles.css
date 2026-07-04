@@ -309,6 +309,7 @@
 }
 
 .resource-feedback-overlay {
+  transition: all 0.5s ease;
 
   /* SIZING: Keeps it wide enough for text while ignoring narrow parent columns */
   width: 300px;
@@ -692,4 +693,13 @@ input::-webkit-inner-spin-button {
 
 .search-input::placeholder { 
   color: #555; 
+}
+
+.score-pill {
+  font-size: 1rem; 
+  font-weight: bold;
+  border-radius: 10px; 
+  padding: 10px; 
+  border: 1px solid; 
+  border-color: purple;
 }

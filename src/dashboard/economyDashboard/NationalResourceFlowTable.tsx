@@ -112,12 +112,6 @@ export function NationalResourceFlowTable() {
   const [error, setError] = useState<string | null>(null);
 
   const stats = useMemo(() => {
-    // 🔍 DEBUG PRINTS
-  console.group('🧱 Resource Flow Hook Recalculating!');
-  console.log('Current Nation Data:', nation);
-  console.log('Total Settlements Count:', settlements?.length);
-  console.log('Total Facilities Count:', facilities?.length);
-  console.groupEnd();
 
     const totals = {
       stockpiles: {} as Record<string, number>,
@@ -193,7 +187,7 @@ export function NationalResourceFlowTable() {
         }
         else if (matchedRawRes) {
           totals.rawProduction[matchedRawRes] += Number(typeDef.output_amount_interval)
-          console.log("Found raw resource producer:", typeDef.facility_type, " which produces this much " + typeDef.output_type + ": " + typeDef.output_amount_interval)
+          //console.log("Found raw resource producer:", typeDef.facility_type, " which produces this much " + typeDef.output_type + ": " + typeDef.output_amount_interval)
           //totals.rawProduction[matchedRawRes] += typeDef.is_variable_output ?  : Number(typeDef.output_amount_interval)
         }
       }
@@ -218,8 +212,8 @@ export function NationalResourceFlowTable() {
       totals.consumption['Fuel'] += (Number(s.fuel_cr) || 0);
     });
 
-    console.log("Raw Production Data:", totals.rawProduction);
-    console.log("Final Treasury:", totals.stockpiles['Treasury']);
+    //console.log("Raw Production Data:", totals.rawProduction);
+    //console.log("Final Treasury:", totals.stockpiles['Treasury']);
     return totals;
   }, [facilities, facilityTypes, settlements, nation]);
 

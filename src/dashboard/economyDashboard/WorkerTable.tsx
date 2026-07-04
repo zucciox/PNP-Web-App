@@ -16,8 +16,7 @@ export function WorkersTable() {
   const [modalError, setModalError] = useState<string | null>(null);
 
   /**
-   * Look up the facility name from the Facilities table
-   * Format: <facility_type> #<type_id>
+   * Look up facility name from Facilities table
    */
   const getFacilityDisplay = (workedFacilityId: number) => {
     if (!workedFacilityId) return "Unassigned";
