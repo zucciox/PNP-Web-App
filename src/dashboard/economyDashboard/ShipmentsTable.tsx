@@ -3,28 +3,60 @@ import { Shipment } from '../../types';
 import { useGameData } from '../../GameContext';
 import '../../styles/economyStyles.css'; 
 import { supabase } from '../../supabaseClient';
-import { ManagementActions } from './ManagementActions';
+
+interface ShippingUnit {
+  id: number;          // global_id
+  unit_type: string;
+  type_id: number;
+  display_name: string;
+}
 
 export function ShipmentsTable() {
-  const { shipments, units, facilityTypes, unitTypes } = useGameData();
+  const { shipments, units, facilityTypes, unitTypes, profile } = useGameData();
   
-  const [showDeliver, setShowDeliver] = useState(false);
+  const [activeModal, setActiveModal] = useState<null | 'delivery' | 'payment' | 'transfer'>(null);
+  const [transferForm, setTransferForm] = useState({ shipmentId: '', amount: '', unitGlobalId: '' });
+  const [availableUnits, setAvailableUnits] = useState<ShippingUnit[]>([]);
+  const transferSourceShipment = shipments?.find(s => s.shipment_id === parseInt(transferForm.shipmentId));
+  const [payNationInput, setPayNationInput] = useState('');
+  const [payAmountInput, setPayAmountInput] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [completeForm, setCompleteForm] = useState({ shipmentId: '', amount: '', destinationId: '', destinationType: '', destinationNation: ''});
   const selectedShipment = shipments?.find(s => s.shipment_id === parseInt(completeForm.shipmentId));
 
   const [settlementTypes, setSettlementTypes] = useState<any[]>([]);
   useEffect(() => {
-    if (!showDeliver) return;
-    supabase.from('settlement_types').select('*').then(({ data }) => setSettlementTypes(data ?? []));
-  }, [showDeliver]);
+    if (activeModal !== 'delivery') return;
+  supabase.from('settlement_types').select('*').then(({ data }) => setSettlementTypes(data ?? []));
+  }, [activeModal]);
+
+  useEffect(() => {
+    if (activeModal !== 'transfer' || !units || !unitTypes) return;
+    const validUnits = units.filter((u: any) => {
+      const typeData = unitTypes.find(t => t.unit_type === u.unit_type);
+      return !!u.is_active && !!typeData?.is_shipment_enabled;
+    });
+    setAvailableUnits(
+      validUnits
+        .filter((u: any) => u.global_id !== transferSourceShipment?.unit_id)
+        .map((u: any) => ({
+          id: u.global_id,
+          unit_type: u.unit_type,
+          type_id: u.type_id,
+          display_name: `${u.unit_type} #${u.type_id}`,
+        }))
+    );
+  }, [activeModal, units, unitTypes, transferForm.shipmentId]);
 
   const availableForNation = (t: any) => !t.proprietary_nation || t.proprietary_nation === completeForm.destinationNation;
 
   const closeModal = () => {
-  setShowDeliver(false);
+  setActiveModal(null);
   setErrorMessage('');
   setCompleteForm({ shipmentId: '', amount: '', destinationId: '', destinationType: '', destinationNation: '' });
+  setPayNationInput('');
+  setPayAmountInput('');
+  setTransferForm({ shipmentId: '', amount: '', unitGlobalId: '' });
   };
 
   const handleCompleteShipment = async (e: React.FormEvent) => {
@@ -41,15 +73,56 @@ export function ShipmentsTable() {
     else closeModal();
   };
 
+  const handlePayNation = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErrorMessage('');
+  const { error } = await supabase.rpc('pay_nation', {
+    receiving_nation: payNationInput,
+    amount: parseInt(payAmountInput)
+  });
+
+  if (error) setErrorMessage(error.message);
+  else closeModal();
+};
+
+const handleTransfer = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErrorMessage('');
+  if (!profile?.nation_id) {
+    setErrorMessage('Error: Nation ID not found.');
+    return;
+  }
+  const targetUnit = availableUnits.find(u => u.id === parseInt(transferForm.unitGlobalId));
+  if (!targetUnit) {
+    setErrorMessage('Select a destination unit.');
+    return;
+  }
+  const { error } = await supabase.rpc('complete_shipment', {
+    p_shipment_id: parseInt(transferForm.shipmentId),
+    p_amount: parseInt(transferForm.amount),
+    p_destination_id: targetUnit.type_id,      // target unit's type_id
+    p_destination_type: targetUnit.unit_type,
+    p_destination_nation: profile.nation_id,   // same nation => internal transfer
+  });
+  if (error) setErrorMessage(error.message);
+  else closeModal();
+};
+
   return (
     <section className="summary-container" style={{height: '87vh'}}>
-      <ManagementActions/>
         <header
         className="consumption-header" style={{ display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
         <h3 className="settlement-title" style={{ margin: 0 }}>Active Shipments</h3>
         <span className="sub-text">{shipments.length} Total</span>
-        <button className="btn-primary" onClick={() => setShowDeliver(true)}>
-          Deliver International Shipment
+        <button className="btn-primary" onClick={() => setActiveModal('transfer')}>
+          Transfer Units
+        </button>
+        <button className="btn-primary" onClick={() => setActiveModal('delivery')}>
+          Deliver Internationally
+        </button>
+
+        <button className="btn-primary" onClick={() => setActiveModal('payment')}>
+          Send Payment
         </button>
       </header>
 
@@ -59,7 +132,98 @@ export function ShipmentsTable() {
         ))}
       </div>
       
-      {showDeliver && (
+      {activeModal === 'transfer' && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-large">
+            <h4>Transfer to Unit</h4>
+            <p className="sub-text">Move cargo from an active shipment onto another of your units.</p>
+
+            <form onSubmit={handleTransfer}>
+              <div className="form-grid">
+
+                {/* SHIPMENT SELECTION */}
+                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                  <label>Select Incoming Shipment</label>
+                  <select
+                    required
+                    className="modal-select"
+                    value={transferForm.shipmentId}
+                    onChange={(e) => {
+                      const ship = shipments?.find(s => s.shipment_id === parseInt(e.target.value));
+                      setTransferForm({
+                        shipmentId: e.target.value,
+                        amount: ship ? ship.amount.toString() : '',
+                        unitGlobalId: '',
+                      });
+                    }}
+                  >
+                    <option value="" disabled>Select a shipment to transfer...</option>
+                    {shipments && shipments.length > 0 ? (
+                      shipments.map((s) => (
+                        <option key={s.shipment_id} value={s.shipment_id}>
+                          ID: {s.shipment_id} — {s.resource} ({s.amount})
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No active shipments found</option>
+                    )}
+                  </select>
+                </div>
+
+                {/* SOURCE INFO */}
+                {transferSourceShipment && (
+                  <div className="info-box" style={{ gridColumn: 'span 2', background: '#222', padding: '10px', borderRadius: '4px', border: '1px solid #444', marginBottom: '10px' }}>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#aaa' }}>
+                      <strong>Cargo:</strong> {transferSourceShipment.amount}x {transferSourceShipment.resource} <br />
+                      <strong>Currently on:</strong> {transferSourceShipment.unit_type} #{units?.find(u => u.global_id === transferSourceShipment.unit_id)?.type_id || 'Unknown ID'}
+                    </p>
+                  </div>
+                )}
+
+                {/* AMOUNT */}
+                <div className="input-group">
+                  <label>Amount to Transfer</label>
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    max={transferSourceShipment?.amount}
+                    value={transferForm.amount}
+                    onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })}
+                    required
+                  />
+                </div>
+
+                {/* DESTINATION UNIT */}
+                <div className="input-group">
+                  <label>Transfer To Unit</label>
+                  <select
+                    required
+                    className="modal-select"
+                    value={transferForm.unitGlobalId}
+                    onChange={(e) => setTransferForm({ ...transferForm, unitGlobalId: e.target.value })}
+                  >
+                    <option value="" disabled>Select destination unit...</option>
+                    {availableUnits.map((u) => (
+                      <option key={u.id} value={u.id}>{u.display_name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {errorMessage && <p className="error-text">{errorMessage}</p>}
+
+              <div className="modal-actions" style={{ marginTop: '15px' }}>
+                <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" disabled={!transferSourceShipment || !transferForm.unitGlobalId}>
+                  Finalize Transfer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {activeModal === 'delivery' && (
   <div className="modal-overlay">
     <div className="modal-content modal-large">
       <h4>Deliver International Shipment</h4>
@@ -145,6 +309,13 @@ export function ShipmentsTable() {
               <option value="" disabled>
                 {completeForm.destinationNation ? 'Select a type…' : 'Choose destination nation first'}
               </option>
+              <optgroup label="Units">
+                {unitTypes
+                  .filter((u) => availableForNation(u) && u.is_shipment_enabled === true)
+                  .map((u) => (
+                  <option key={`u-${u.unit_type}`} value={u.unit_type}>{u.unit_type}</option>
+                ))}
+              </optgroup>
               <optgroup label="Facilities">
                 {facilityTypes.filter(availableForNation).map((f) => (
                   <option key={`f-${f.facility_type}`} value={f.facility_type}>{f.facility_type}</option>
@@ -153,11 +324,6 @@ export function ShipmentsTable() {
               <optgroup label="Settlements">
                 {settlementTypes.filter(availableForNation).map((s) => (
                   <option key={`s-${s.settlement_type}`} value={s.settlement_type}>{s.settlement_type}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Units">
-                {unitTypes.filter(availableForNation).map((u) => (
-                  <option key={`u-${u.unit_type}`} value={u.unit_type}>{u.unit_type}</option>
                 ))}
               </optgroup>
             </select>
@@ -180,6 +346,47 @@ export function ShipmentsTable() {
         <div className="modal-actions" style={{ marginTop: '15px' }}>
           <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
           <button type="submit" className="btn-primary">Finalize Delivery</button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+{activeModal === 'payment' && (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <h4>Send Payment</h4>
+      <form onSubmit={handlePayNation}>
+        <div className="input-group">
+          <label>Nation (A-Z)</label>
+          <input
+            type="text"
+            maxLength={1}
+            value={payNationInput}
+            onChange={(e) => setPayNationInput(e.target.value.toUpperCase())}
+            required
+          />
+        </div>
+
+        <div className="input-group">
+          <label>Amount</label>
+          <input
+            type="number"
+            value={payAmountInput}
+            onChange={(e) => setPayAmountInput(e.target.value)}
+            required
+          />
+        </div>
+
+        {errorMessage && <p className="error-text">{errorMessage}</p>}
+
+        <div className="modal-actions">
+          <button type="button" onClick={closeModal} className="btn-secondary">
+            Cancel
+          </button>
+          <button type="submit" className="btn-primary">
+            Confirm
+          </button>
         </div>
       </form>
     </div>
