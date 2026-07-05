@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from './supabaseClient';
-import { Unit, Facility, Settlement, Shipment, gameStateData, FacilityType, UnitType, Nation, Order, Profile, CombatExchange, Notification, GameFeed, EventType } from './types';
+import { Unit, Facility, Settlement, Shipment, gameStateData, FacilityType, UnitType, Nation, Order, Profile, CombatExchange, Notification, GameFeed, EventType, ScoreObject } from './types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface GameContextType {
@@ -17,6 +17,7 @@ interface GameContextType {
   gameFeed: GameFeed[];    
   eventTypes: EventType[]; 
   scoreBreakdown: Record<string, number>; // Added tracking type for breakdown
+  nationScores: ScoreObject[];
   nation: Nation | null;
   nationId: string | null;
   profile: Profile | null;
@@ -43,13 +44,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [nationId, setNationId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [nationScores, setNationScores] = useState<ScoreObject[]>([]); 
 
   const fetchData = async (id: string, role: string) => {
     const notificationQuery = role === 'Admin' 
       ? supabase.from('notifications').select('*')
       : supabase.from('notifications').select('*').eq('receiving_nation', id);
 
-    const [u, f, ft, ut, g, set, ship, n, ord, comb, notifs, feed, et, breakdownResult] = await Promise.all([
+    const [u, f, ft, ut, g, set, ship, n, ord, comb, notifs, feed, et, breakdownResult, nationScores] = await Promise.all([
       supabase.from('units').select('*').eq('nation_id', id),
       supabase.from('facilities').select('*').eq('owner_nation', id),
       supabase.from('facility_types').select('*'),
@@ -61,18 +63,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('factory_orders').select('*').eq('nation_id', id),
       supabase.from('combat_exchanges').select('*').or(`aggressor_nation.eq.${id},victim_nation.eq.${id}`),
       notificationQuery,
-      // Cap at 100 or 999; client only uses this for visual logs stream anyway now
       supabase.from('game_feed').select('*').order('created_at', { ascending: false }).limit(999),
       supabase.from('event_types').select('*'), 
-      supabase.rpc('get_nation_score_breakdown', { target_nation_id: id })
+      supabase.rpc('get_nation_score_breakdown', { target_nation_id: id }),
+      supabase.from('nation_scores').select('*')
     ]);
 
-    console.log("--- RPC DEBUG START ---");
-    console.log("Target Nation ID passed to RPC:", id);
-    console.log("RPC Full Payload Error Object:", breakdownResult.error);
-    console.log("RPC Raw Return Data Array:", breakdownResult.data);
-    console.log("--- RPC DEBUG END ---");
-  
     // Map the RPC row returns into a dynamic key-value lookup map
     const breakdownObj: Record<string, number> = {};
     let grandTotal = 0;
@@ -99,7 +95,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setNotifications(notifs.data || []);
     setGameFeed(feed.data || []);
     setEventTypes(et.data || []);
-    setScoreBreakdown(breakdownObj); // Safely updating scoreboard data via DB
+    setScoreBreakdown(breakdownObj);
+    setNationScores(nationScores.data || []);
   };
   
   useEffect(() => {
@@ -164,7 +161,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   return (
     <GameContext.Provider value={{ 
         units, facilities, facilityTypes, unitTypes, settlements, shipments, 
-        orders, combat, notifications, gameFeed, eventTypes, scoreBreakdown, nation, 
+        orders, combat, notifications, gameFeed, eventTypes, scoreBreakdown, nationScores, nation, 
         nationId, profile, gameState, loading 
     }}>
       {children}

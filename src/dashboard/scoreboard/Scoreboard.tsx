@@ -2,7 +2,7 @@ import React from 'react';
 import { useGameData } from '../../GameContext';
 import '../../styles/economyStyles.css'; 
 import { EventType, GameFeed } from '../../types';
-import { additiveTextColor, negativeTextColor } from '../../styleConstants';
+import { additiveTextColor, nationColors, negativeTextColor } from '../../styleConstants';
 
 const eventNatName: Record<string, string> = {
   'internal_shipment': 'Internal Shipments',
@@ -19,6 +19,7 @@ const eventNatName: Record<string, string> = {
   'industrial_index': 'Industrial Index',
   'population_index': 'Population Index',
   'resource_refined': 'Resources Refined',
+  'admin_decision': 'Admin Decisions',
 };
 
 export default function Scoreboard() {
@@ -35,11 +36,10 @@ export default function Scoreboard() {
         
         <div style={{paddingTop: '10px', paddingLeft: '20px'}}>
           {eventTypes.map((event: EventType) => {
-              // Direct dynamic lookup by event type key
+
               const score = scoreBreakdown[event.event_type] || 0;
               const displayName = eventNatName[event.event_type] || event.event_type;
               
-              // Set conditional styles cleanly using the breakdown numbers
               const textColor = score > 0 
                 ? additiveTextColor 
                 : (score < 0 ? negativeTextColor : 'white');
@@ -53,11 +53,11 @@ export default function Scoreboard() {
         </div>
       </div>
       <GameFeedView/>
+      <Leaderboard/>
     </section>
   );
 }
 
-// Left intact exactly as requested
 function GameFeedView() {
     const { gameFeed, nation } = useGameData();
     const filtered = gameFeed
@@ -91,4 +91,32 @@ function GameFeedView() {
         </div>
       </div>
     );
+}
+
+function Leaderboard() {
+  const { nationScores } = useGameData();
+  const filtered = nationScores
+    .sort((a, b) => b.total_points - a.total_points)
+    .filter(n => (n.total_points != 0))
+
+  return (
+    <div className="admin-notification-container" style={{minHeight: '90vh', backgroundColor: '#111'}}>
+      <div className="admin-notification-header">
+        <span className="admin-notification-title">Leaderboard</span>
+      </div>
+      <div className="admin-notification-body">
+        {filtered.length === 0 ? (
+          <div className="admin-notification-empty">No scores found</div>
+        ) : (
+          filtered.map((n, index) => (
+            <div key={n.nation} style={{display: 'flex', flexDirection: 'row', gap: '5px', alignItems: 'center'}} className="admin-notification-item">
+              <span style={{width: '15px', textAlign: 'center', fontWeight: 'bold', border: '1px solid', backgroundColor: (index + 1) == 1 ? 'darkgoldenrod' : (index + 1) == 2 ? 'silver' : (index + 1) == 3 ? 'brown' : 'darkslategray', borderRadius: '20px', padding: '5px'}}>{index + 1}</span>
+              <span style={{color: nationColors[n.nation], fontWeight: 'bold'}}>Nation {n.nation}</span>
+              <span>{n.total_points} Points</span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
 }

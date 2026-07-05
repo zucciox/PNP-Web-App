@@ -232,7 +232,8 @@ export interface Nation {
     treasury: number;
     interval_income: number;
     points: number;
-    [key: string]: string | number;
+    is_active: boolean;
+    [key: string]: string | number | boolean;
 }
 
 
@@ -248,6 +249,11 @@ export interface Order {
 export interface EventType {
     point_value: number;
     event_type: string;
+}
+
+export interface ScoreObject {
+    total_points: number;
+    nation: string;
 }
 
 export interface GameFeed {

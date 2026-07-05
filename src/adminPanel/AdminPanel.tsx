@@ -59,7 +59,12 @@ function GameFeedView() {
           filtered.map(n => (
             <div key={n.id} style={{display: 'block'}} className="admin-notification-item">
               <div className="admin-notification-item-body">{n.body}</div>
-              <div>Interval: {n.interval} | Cycle: {n.cycle}</div>
+              <span>Interval: {n.interval} | Cycle: {n.cycle} | </span>
+              <span style={{color: n.point_value > 0 ? 'green' : 'red'}}>
+                  {' Points: '} 
+                  {(n.point_value) > 0 && '+'} 
+                  {(n.point_value)}
+              </span>
             </div>
           ))
         )}
@@ -80,11 +85,14 @@ function AdminPanelContent() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showTreasuryModal, setShowTreasuryModal] = useState(false);
+  const [showPointsModal, setShowPointsModal] = useState(false);
   
   // Shared Form Parameters
   const [pieceType, setPieceType] = useState('');
   const [nationId, setNationId] = useState('');
   const [typeId, setTypeId] = useState('');
+  const [pointAmount, setPointAmount] = useState('');
+  const [customPointMessage, setCustomPointMessage] = useState('');
   const [treasuryAmount, setTreasuryAmount] = useState('');
 
   const adminNotifCount = notifications.filter(n => !n.is_resolved && n.is_admin === true).length;
@@ -167,6 +175,25 @@ function AdminPanelContent() {
     } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   };
 
+  const handleAdjustPoints = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error: rpcError } = await supabase.rpc('add_game_event', { 
+        p_event_type: 'admin_decision',
+        p_body: 'An admin awarded ' + pointAmount + ' points to nation ' + nationId + '. Reason: "' + customPointMessage + '"',
+        p_custom_pv: true,
+        p_point_value: pointAmount,
+        p_nation: nationId
+      });
+      if (rpcError) throw new Error(rpcError.message);
+      setShowPointsModal(false);
+      setPointAmount('');
+      setNationId('');
+      setCustomPointMessage('');
+    } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+  };
+
   if (isAdmin === null) return <div className="admin-loading">Verifying Admin Credentials...</div>; 
 
   if (isAdmin === false) {
@@ -202,6 +229,7 @@ function AdminPanelContent() {
         <button className="admin-btn" style={{ background: '#2e4d2e' }} onClick={() => setShowAddModal(true)}>+ Add Piece</button>
         <button className="admin-btn" style={{ background: '#b30000' }} onClick={() => setShowDeleteModal(true)}>- Delete Piece</button>
         <button className="admin-btn" style={{ background: '#bda118', color: '#000', fontWeight: 'bold' }} onClick={() => setShowTreasuryModal(true)}>Adjust Treasury</button>
+        <button className="admin-btn" style={{ background: '#38d989', color: '#000', fontWeight: 'bold' }} onClick={() => setShowPointsModal(true)}>Adjust Points</button>
 
         {showAddModal && (
           <div className="admin-modal-overlay">
@@ -250,6 +278,24 @@ function AdminPanelContent() {
             </form>
           </div>
         )}
+
+        {showPointsModal && (
+          <div className="admin-modal-overlay">
+            <form onSubmit={handleAdjustPoints} className="admin-modal-form">
+              <h3>Adjust Nation Points</h3>
+              <span>Nation ID</span>
+              <input value={nationId} onChange={(e) => setNationId(e.target.value)} required />
+              <span>Adjustment Amount (Accepts negative values to deduct)</span>
+              <input type="number" value={pointAmount} onChange={(e) => setPointAmount(e.target.value)} placeholder="e.g. 5 or -3" required />
+              <span>Message</span>
+              <input type="text" value={customPointMessage} onChange={(e) => setCustomPointMessage(e.target.value)} placeholder="e.g: 'Ongoing oil crisis'" required />
+              <button type="submit" className="admin-btn-modal" style={{ background: '#38d989', color: '#000' }} disabled={loading}>
+                {loading ? 'Processing...' : 'Apply Adjustment'}
+              </button>
+              <button type="button" onClick={() => setShowPointsModal(false)}>Cancel</button>
+            </form>
+          </div>
+        )}  
       </div>
       <AdminNotificationView/>
       <GameFeedView/>

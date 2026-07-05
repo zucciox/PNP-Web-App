@@ -41,6 +41,35 @@ export const resourceColors: Record<string, string> = {
     NaturalGas: '#4db6ac'    // Soft teal
 }
 
+export const nationColors: Record<string, string> = {
+    A: '#0099db', // Cyan / Light Blue
+    B: '#cca100', // Amber / Dark Yellow
+    C: '#7a2d48', // Maroon / Burgundy
+    D: '#2bb32b', // Bright Green
+    E: '#2659c2', // Medium Blue
+    F: '#6a32a8', // Purple
+    G: '#cc5a00', // Orange
+    H: '#703b00', // Brown
+    I: '#5dade2', // Soft Sky Blue
+    J: '#27ae60', // Emerald / Teal Green
+    K: '#2c2c2c', // Off-White / Light Gray -> Flipped to Dark Gray for dark mode
+    L: '#bfae00', // Yellow
+    M: '#7f8c8d', // Light Gray
+    N: '#008a3b', // Darker Green
+    O: '#34491e', // Olive / Forest Green
+    P: '#2463d1', // Royal Blue
+    Q: '#cc1111', // Red
+    R: '#1a1a1a', // White -> Flipped to Near-Black for dark mode
+    S: '#d972ff', // Lavender / Light Violet
+    T: '#e66a22', // Light Orange / Coral
+    U: '#99b324', // Lime Green
+    V: '#8e44ad', // Violet / Plum
+    W: '#555555', // Charcoal Gray
+    X: '#00a3cc', // Turquoise
+    Y: '#cc1c1c', // Crimson Red
+    Z: '#cca400', // Gold / Mustard Yellow
+  };
+
 export const stableTextColor: string = '#5690f5';
 export const additiveTextColor: string = '#44ff44';
 export const negativeTextColor: string = '#ff4444';
