@@ -165,7 +165,7 @@ export function ManagementActions() {
   const handlePayNation = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.rpc('pay_nation', { 
-      nation: payNationInput, 
+      receiving_nation: payNationInput, 
       amount: parseInt(payAmountInput)
     });
     if (error) setErrorMessage(error.message);
