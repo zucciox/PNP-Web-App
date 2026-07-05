@@ -309,6 +309,13 @@ const handleTransfer = async (e: React.FormEvent) => {
               <option value="" disabled>
                 {completeForm.destinationNation ? 'Select a type…' : 'Choose destination nation first'}
               </option>
+              <optgroup label="Units">
+                {unitTypes
+                  .filter((u) => availableForNation(u) && u.is_shipment_enabled === true)
+                  .map((u) => (
+                  <option key={`u-${u.unit_type}`} value={u.unit_type}>{u.unit_type}</option>
+                ))}
+              </optgroup>
               <optgroup label="Facilities">
                 {facilityTypes.filter(availableForNation).map((f) => (
                   <option key={`f-${f.facility_type}`} value={f.facility_type}>{f.facility_type}</option>
@@ -317,13 +324,6 @@ const handleTransfer = async (e: React.FormEvent) => {
               <optgroup label="Settlements">
                 {settlementTypes.filter(availableForNation).map((s) => (
                   <option key={`s-${s.settlement_type}`} value={s.settlement_type}>{s.settlement_type}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Units">
-                {unitTypes
-                  .filter((u) => availableForNation(u) && u.is_shipment_enabled === true)
-                  .map((u) => (
-                  <option key={`u-${u.unit_type}`} value={u.unit_type}>{u.unit_type}</option>
                 ))}
               </optgroup>
             </select>
