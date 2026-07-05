@@ -1,23 +1,47 @@
 /* src/styles/storeStyles.css */
 .store-container {
-    background: #121212;
-    color: #e0e0e0;
-    padding: 1.5rem;
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    display: 'flex-grow';
-  }
+  background: #121212;
+  color: #e0e0e0;
+  padding: 1.5rem;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
   
-  .store-header {
+  /* Force browser to include padding/borders in height math */
+  box-sizing: border-box; 
+  
+  /* Fix: Switch to explicit Grid layout */
+  display: grid;
+  grid-template-rows: auto 1fr; /* Header takes what it needs, body gets EXACTLY the rest */
+  
+  max-height: 100%;
+  overflow: hidden; /* Absolutely no outer spilling allowed */
+
+  height: calc(100vh - 60px);
+}
+
+.store-container *, 
+.store-container *::before, 
+.store-container *::after {
+    box-sizing: border-box;
+}
+
+.store-header {
     display: flex;
     align-items: center;
     gap: 10px;
     font-size: 1.25rem;
     font-weight: bold;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem; /* Reduced slightly to save vertical space */
     border-bottom: 1px solid #333;
     padding-bottom: 1rem;
-  }
+}
+
+.store-body {
+    /* Grid handles the height limits now, so we just toggle scroll */
+    overflow-y: auto;
+    padding-right: 6px;
+    padding-bottom: 2rem; /* Clean buffer at the absolute bottom */
+}
   
   .store-select {
     background: #1e1e1e;
@@ -27,6 +51,8 @@
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
+    height: 25px;
+    font-size: medium;
   }
   
   .store-row-group {
@@ -130,7 +156,7 @@
 .sidebar-variant {
   width: 300px;
   height: 100%;
-  border-left: 1px solid #333;
+  border: 1px solid #333;
   overflow-y: auto;
 }
 

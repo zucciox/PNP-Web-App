@@ -136,6 +136,12 @@ export function FactoryStore() {
             </option>
           ))}
         </select>
+        <div className="info-icon">
+            ?
+            <div className="tooltip" style={{left: '-20px'}}>
+              The top nations across all planets in the game.
+            </div>
+        </div>
       </header>
 
       <div className="store-body">

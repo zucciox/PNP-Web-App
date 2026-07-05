@@ -56,17 +56,20 @@ function GameFeedView() {
         {filtered.length === 0 ? (
           <div className="admin-notification-empty">No game events</div>
         ) : (
-          filtered.map(n => (
-            <div key={n.id} style={{display: 'block'}} className="admin-notification-item">
-              <div className="admin-notification-item-body">{n.body}</div>
-              <span>Interval: {n.interval} | Cycle: {n.cycle} | </span>
-              <span style={{color: n.point_value > 0 ? 'green' : 'red'}}>
-                  {' Points: '} 
-                  {(n.point_value) > 0 && '+'} 
-                  {(n.point_value)}
-              </span>
-            </div>
-          ))
+          filtered.map(n => {
+            const isPositive = n.point_value > 0;
+            return (
+              <div key={n.id} className="admin-notification-item display-block">
+                <div className="admin-notification-item-body">{n.body}</div>
+                <span>Interval: {n.interval} | Cycle: {n.cycle} | </span>
+                <span className={isPositive ? "points-positive" : "points-negative"}>
+                    {' Points: '} 
+                    {isPositive && '+'} 
+                    {n.point_value}
+                </span>
+              </div>
+            );
+          })
         )}
       </div>
     </div>
@@ -86,6 +89,7 @@ function AdminPanelContent() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showTreasuryModal, setShowTreasuryModal] = useState(false);
   const [showPointsModal, setShowPointsModal] = useState(false);
+  const [showHealthModal, setShowHealthModal] = useState(false);
   
   // Shared Form Parameters
   const [pieceType, setPieceType] = useState('');
@@ -94,8 +98,12 @@ function AdminPanelContent() {
   const [pointAmount, setPointAmount] = useState('');
   const [customPointMessage, setCustomPointMessage] = useState('');
   const [treasuryAmount, setTreasuryAmount] = useState('');
+  const [healthAmount, setHealthAmount] = useState('');
+  const [destinationId, setDestinationId] = useState('');
 
   const adminNotifCount = notifications.filter(n => !n.is_resolved && n.is_admin === true).length;
+
+  const [timerString, setTimerString] = useState<string>('00:00');
 
   useEffect(() => {
     const checkAdminRole = async () => {
@@ -109,7 +117,34 @@ function AdminPanelContent() {
       } catch { setIsAdmin(false); }
     };
     checkAdminRole();
-  }, []);
+
+    if (!gameState?.next_interval_time) return;
+    
+    const calculateTime = () => {
+      const target = new Date(gameState.next_interval_time).getTime();
+      const now = Date.now();
+      const diff = target - now;
+      
+      if (isNaN(target) || diff <= 0) {
+        setTimerString('00:00');
+        return;
+      }
+      
+      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+      setTimerString(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, [gameState?.next_interval_time]);
+
+  // Determine status display logic
+  const isQueuedToPause = gameState?.is_active && gameState.queue_action === 'pause';
+  const statusText = isQueuedToPause 
+    ? "GAME WILL PAUSE AT THE END OF THIS INTERVAL" 
+    : (gameState?.is_active ? 'ACTIVE' : 'PAUSED');
 
   const handleQueueAction = async (action: 'pause' | 'resume' | 'restart') => {
     if (!gameState) return;
@@ -194,6 +229,25 @@ function AdminPanelContent() {
     } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   };
 
+  const handleAdjustHealth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error: rpcError } = await supabase.rpc('adjust_piece_health', {
+        p_amount: parseInt(healthAmount, 10) > 0 ? parseInt(healthAmount, 10) : 1,
+        p_destination_id: parseInt(destinationId, 10),
+        p_destination_type: pieceType,
+        p_destination_nation: nationId
+      });
+      if (rpcError) throw new Error(rpcError.message);
+      setShowHealthModal(false);
+      setHealthAmount('');
+      setDestinationId('');
+      setPieceType('');
+      setNationId('');
+    } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+  };
+
   if (isAdmin === null) return <div className="admin-loading">Verifying Admin Credentials...</div>; 
 
   if (isAdmin === false) {
@@ -209,12 +263,12 @@ function AdminPanelContent() {
   if (!gameState) return null;
 
   return (
-    <div className="admin-container">
+    <div className="admin-panel-layout-root">
 
       {error && (
-        <div className="admin-error-banner" style={{ backgroundColor: '#b30000', color: '#fff', padding: '10px', margin: '10px 0', borderRadius: '4px', textAlign: 'center' }}>
+        <div className="admin-error-banner-global">
           <strong>Error:</strong> {error}
-          <button onClick={() => setError(null)} style={{ marginLeft: '15px', background: 'transparent', border: '1px solid #fff', color: '#fff', cursor: 'pointer' }}>Dismiss</button>
+          <button onClick={() => setError(null)} className="admin-error-dismiss-btn">Dismiss</button>
         </div>
       )}
 
@@ -230,6 +284,7 @@ function AdminPanelContent() {
         <button className="admin-btn" style={{ background: '#b30000' }} onClick={() => setShowDeleteModal(true)}>- Delete Piece</button>
         <button className="admin-btn" style={{ background: '#bda118', color: '#000', fontWeight: 'bold' }} onClick={() => setShowTreasuryModal(true)}>Adjust Treasury</button>
         <button className="admin-btn" style={{ background: '#38d989', color: '#000', fontWeight: 'bold' }} onClick={() => setShowPointsModal(true)}>Adjust Points</button>
+        <button className="admin-btn" style={{ background: '#d93838', color: '#fff', fontWeight: 'bold' }} onClick={() => setShowHealthModal(true)}>Adjust Health</button>
 
         {showAddModal && (
           <div className="admin-modal-overlay">
@@ -296,9 +351,58 @@ function AdminPanelContent() {
             </form>
           </div>
         )}  
+
+        {showHealthModal && (
+          <div className="admin-modal-overlay">
+            <form onSubmit={handleAdjustHealth} className="admin-modal-form">
+              <h3>Adjust Piece Health</h3>
+              <span>Piece Type</span>
+              <input value={pieceType} onChange={(e) => setPieceType(e.target.value)} placeholder="Tank, Troops, etc" required />
+              <span>Type ID (Integer)</span>
+              <input type="number" value={destinationId} onChange={(e) => setDestinationId(e.target.value)} placeholder="Type ID" required />
+              <span>Nation ID</span>
+              <input value={nationId} onChange={(e) => setNationId(e.target.value)} placeholder="A-Z" required />
+              <span>New Health Value (Overwites)</span>
+              <input type="number" value={healthAmount} onChange={(e) => setHealthAmount(e.target.value)} placeholder="e.g. 20 or 3" required />
+              <button type="submit" className="admin-btn-modal" style={{ background: '#d93838', color: '#fff' }} disabled={loading}>
+                {loading ? 'Processing...' : 'Apply Adjustment'}
+              </button>
+              <button type="button" onClick={() => setShowHealthModal(false)}>Cancel</button>
+            </form>
+          </div>
+        )}
       </div>
-      <AdminNotificationView/>
-      <GameFeedView/>
+      
+      <AdminNotificationView />
+      <GameFeedView />
+      
+      <div className="admin-status-grid-container">
+        <div className="admin-timer-section">
+          <div className="admin-timer-label">TIME UNTIL NEXT INTERVAL</div>
+          <div className={`admin-timer-value ${timerString === '00:00' ? 'timer-zero' : 'timer-running'}`}>
+            {timerString}
+          </div>
+        </div>
+
+        <div className="admin-big-card">
+          <span className="admin-card-label">STATUS</span>
+          <span className={`admin-card-value status-text ${
+            isQueuedToPause ? 'status-gold-warning' : (gameState.is_active ? 'status-green-active' : 'status-red-paused')
+          }`}>
+            {statusText}
+          </span>
+        </div>
+
+        <div className="admin-big-card">
+          <span className="admin-card-label">CURRENT CYCLE</span>
+          <span className="admin-card-value standard-value">{gameState.cycle}</span>
+        </div>
+
+        <div className="admin-big-card">
+          <span className="admin-card-label">INTERVAL</span>
+          <span className="admin-card-value standard-value">#{gameState.interval}</span>
+        </div>
+      </div>
     </div>
   );
 }

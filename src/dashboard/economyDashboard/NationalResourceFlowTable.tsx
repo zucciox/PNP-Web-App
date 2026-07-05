@@ -516,7 +516,7 @@ export function NationalResourceFlowTable() {
               </div>
             )}
           </div>,
-          document.body // This is the magic part that breaks it out of the container
+          document.body
         )}
       </div>
     );
