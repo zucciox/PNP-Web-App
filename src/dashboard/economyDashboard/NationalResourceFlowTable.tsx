@@ -28,7 +28,7 @@ import { negativeTextColor } from '../../styleConstants';
     // Explicit mappings for special cases
     const explicitMappings: Record<string, string> = {
       NaturalGas: 'natural_gas',
-      Gas: 'natural_gas', // Maps "Gas" from RAW_RESOURCES to "natural_gas"
+      Gas: 'natural_gas',
       Oil: 'oil',
       CopperOre: 'copper_ore',
       GoldOre: 'gold_ore',
@@ -522,7 +522,7 @@ function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, consumptionAm
                     <span style={{color: resourceColors[convertToRaw[r]] ?? 'white'}}> {convertToRaw[r]} </span>
                     into 
                     <span style={{color: resourceColors[r]}}> {r} </span>
-                    and move it into settlements before it counts towards your consumption rates.
+                    and move it into settlements before it counts towards consumption rates.
                   </div>
                 ) : null}
               </div>
