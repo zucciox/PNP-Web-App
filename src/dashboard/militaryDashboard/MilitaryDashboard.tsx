@@ -23,7 +23,7 @@ export default function MilitaryDashboard() {
   const {facilities, settlements, units, shipments } = useGameData();
 
   return (
-    <div className="container" style={{ backgroundColor: '#121212', minHeight: '100vh', color: 'white' }}>
+    <div className="container" style={{ backgroundColor: '#121212', minHeight: '100vh', color: 'white', padding: '10px' }}>
       <main style={DASHBOARD_CONTAINER}>
 
         {units ? ( <ActiveUnitsTable />  ) : (

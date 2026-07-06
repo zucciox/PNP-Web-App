@@ -253,7 +253,8 @@ export interface EventType {
 
 export interface ScoreObject {
     total_points: number;
-    nation: string;
+    id: string;
+    isactive: boolean;
 }
 
 export interface GameFeed {

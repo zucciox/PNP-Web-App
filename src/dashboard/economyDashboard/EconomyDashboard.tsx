@@ -23,7 +23,7 @@ export default function EconomyDashboard() {
 
       <div style={{width: '70%'}}> 
         <div style={TAB_CONTAINER_STYLE}>
-            {['Facilities', 'Settlements', 'Shipments', 'Factories', 'Workers', 'Shipments New'].map(panel => (
+            {['Facilities', 'Settlements', 'Shipments', 'Workers'].map(panel => (
               <div key={panel} onClick={() => setActivePanel(panel)} style={activePanel === panel ? ACTIVE_TAB_STYLE : TAB_STYLE}>
                 {panel}
               </div>
@@ -33,9 +33,7 @@ export default function EconomyDashboard() {
         {activePanel === 'Facilities' && <FacilityTable />}
         {activePanel === 'Settlements' && <SettlementsTable />}
         {activePanel === 'Shipments' && <ShipmentsTable />}
-        {activePanel === 'Factories' && <StoreDashboard />}
         {activePanel === 'Workers' && <WorkersTable />}
-        {activePanel === 'Shipments New' && <ShipmentsNew />}
       </div>
 
     

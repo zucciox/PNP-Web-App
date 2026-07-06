@@ -22,15 +22,15 @@ const eventNatName: Record<string, string> = {
   'admin_decision': 'Admin Decisions',
 };
 
-export default function Scoreboard() {
-  // Pulling scoreBreakdown straight from context instead of local reduce loops
+export default function NationPanel() {
+
   const { eventTypes, scoreBreakdown } = useGameData();
   const { nation } = useGameData();
   const grandTotal = scoreBreakdown['grand_total'] || 0;
 
   return (
     <section className='dashboard-root'>
-      <div className="admin-notification-container" style={{minHeight: '90vh', backgroundColor: '#111', zIndex: '600'}}>
+      <div style={{minHeight: '90vh', backgroundColor: '#111', zIndex: '600', width: '250px', height: '85vh'}} className="admin-notification-container">
         <div className="admin-notification-header">
           <span className="admin-notification-title">Nation {nation?.id || '?'} Points</span>
           <div className="info-icon">
@@ -69,7 +69,7 @@ export default function Scoreboard() {
                     </tr>
                     <tr>
                       <td>Settlement Lost</td>
-                      <td>Loss of towns / cities / capitals</td>
+                      <td>Loss of towns / cities / capital</td>
                       <td className="neg-val">-10 / -20 / -30</td>
                     </tr>
                     <tr>
@@ -104,12 +104,12 @@ export default function Scoreboard() {
                     </tr>
                     <tr>
                       <td>Industrial Index</td>
-                      <td>Sum total of all active factory tiers</td>
+                      <td>Sum of all active factory tiers. Awarded each cycle.</td>
                       <td className="pos-val">+ Factory Tiers</td>
                     </tr>
                     <tr>
                       <td>Population Index</td>
-                      <td>Total worker pool evaluation</td>
+                      <td>Total number of workers. Awarded each cycle.</td>
                       <td className="pos-val">+ Workers / 2</td>
                     </tr>
                     <tr>
@@ -119,7 +119,7 @@ export default function Scoreboard() {
                     </tr>
                     <tr>
                       <td>Admin Decision</td>
-                      <td>Discretionary adjustments by game master</td>
+                      <td>Discretionary adjustments by admin</td>
                       <td className="neutral-val">Variable</td>
                     </tr>
                   </tbody>
@@ -147,7 +147,6 @@ export default function Scoreboard() {
         </div>
       </div>
       <GameFeedView/>
-      <Leaderboard/>
     </section>
   );
 }
@@ -159,7 +158,7 @@ function GameFeedView() {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   
     return (
-      <div className="admin-notification-container" style={{minHeight: '90vh', backgroundColor: '#111', zIndex: '501'}}>
+      <div className="admin-notification-container" style={{minHeight: '90vh', backgroundColor: '#111', zIndex: '501', height: '85vh'}}>
         <div className="admin-notification-header">
           <span className="admin-notification-title">Nation {nation?.id} Game Feed ({filtered.length} events)</span>
           <div className="info-icon">
@@ -193,37 +192,4 @@ function GameFeedView() {
     );
 }
 
-function Leaderboard() {
-  const { nationScores, nation } = useGameData();
-  const filtered = nationScores
-    .sort((a, b) => b.total_points - a.total_points)
-    .filter(n => (n.total_points != 0))
-
-  return (
-    <div className="admin-notification-container" style={{minHeight: '90vh', backgroundColor: '#111'}}>
-      <div className="admin-notification-header">
-        <span className="admin-notification-title">Leaderboard</span>
-        <div className="info-icon">
-            ?
-            <div className="tooltip" style={{left: '-20px'}}>
-              The top nations across all planets in the game.
-            </div>
-        </div>
-      </div>
-      <div className="admin-notification-body">
-        {filtered.length === 0 ? (
-          <div className="admin-notification-empty">No scores found</div>
-        ) : (
-          filtered.map((n, index) => (
-            <div key={n.nation} style={{display: 'flex', flexDirection: 'row', gap: '5px', alignItems: 'center', borderColor: n.nation == nation?.id && 'green' || '', backgroundColor: n.nation == nation?.id && 'darkgreen' || ''}} className="admin-notification-item">
-              <span style={{width: '15px', textAlign: 'center', fontWeight: 'bold', border: '1px solid', backgroundColor: (index + 1) == 1 ? 'darkgoldenrod' : (index + 1) == 2 ? 'silver' : (index + 1) == 3 ? 'brown' : 'darkslategray', borderRadius: '20px', padding: '5px'}}>{index + 1}</span>
-              <span style={{color: nationColors[n.nation], fontWeight: 'bold'}}>Nation {n.nation}</span>
-              <span> {n.total_points} Points</span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
 

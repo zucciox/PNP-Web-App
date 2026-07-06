@@ -302,8 +302,37 @@ export function NationalResourceFlowTable() {
     </section>
   );
 
-  function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, consumptionAmount: cA }: { resource: string, stockpileAmount: number, consumptionAmount: number }) {
+}
+
+const s: Record<string, React.CSSProperties> = {
+  container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', minWidth: '520px', height: '91vh', overflow: 'hidden' },
+  header: { display: 'flex', justifyContent: 'left', alignItems: 'center', paddingBottom: '1rem' },
+  searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },
+  title: { fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' },
+  tableWrap: {borderRadius: '5px 5px 0px 0px', overflow: 'visible', width: '100%', overflowX: 'auto', },
+  table: { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', },
+  th: { textAlign: 'left', padding: '0.6rem .5rem', fontSize: '0.8rem', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #333' },
+  td: {textAlign: 'left', justifyContent: 'left', fontFamily: 'monospace', padding: '0.8rem 0.5rem', borderBottom: '1px solid #222', fontSize: '0.7rem', verticalAlign: 'middle' },
+  badge: { backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', padding: '3px 8px', fontWeight: 600, fontSize: '0.8rem' },
+  barBg: { height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' },
+  barFill: { height: '100%', transition: 'width .3s' },
+  statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#bbb', margin: '2px 0' },
+  empty: { padding: '2rem', color: '#555', textAlign: 'left' },
+  actionBtn: { background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px' },
+  popover: { position: 'absolute', right: 0, top: '100%', marginTop: '5px', backgroundColor: '#1e1e1e', border: '1px solid #444', borderRadius: '4px', zIndex: 110, width: '150px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' },
+  menuItem: { padding: '10px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#bbb' },
+  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 },
+  modalContent: { background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #444', width: '320px' },
+  input: { width: '100%', padding: '12px', marginTop: '12px', background: '#121212', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box', outline: 'none' },
+  error: { color: '#ff5252', fontSize: '0.75rem', marginTop: '12px', background: 'rgba(255,82,82,0.1)', padding: '8px', borderRadius: '4px' },
+  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' },
+  cancelBtn: { background: 'transparent', border: 'none', color: '#777', cursor: 'pointer' },
+  confirmBtn: { background: '#4caf50', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }
+};
+
+function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, consumptionAmount: cA }: { resource: string, stockpileAmount: number, consumptionAmount: number }) {
     const [isHovered, setIsHovered] = useState(false);
+    const { facilities, settlements, shipments} = useGameData();
     const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
     const iconRef = useRef<HTMLDivElement>(null);
   
@@ -350,7 +379,7 @@ export function NationalResourceFlowTable() {
         onMouseLeave={() => setIsHovered(false)}
       >
         <div style={{display: 'flex', alignItems: 'flex-end', gap: '5px'}}>
-          <span style={{ color: stableTextColor }}> {rA.toLocaleString()} </span>
+          <span> {rA.toLocaleString()} </span>
           { hasCR ?
             isMeetingCR ? 
               AllSettlementsMeeting ? '✅' : '⚠️'
@@ -521,30 +550,3 @@ export function NationalResourceFlowTable() {
       </div>
     );
   }
-}
-
-const s: Record<string, React.CSSProperties> = {
-  container: { backgroundColor: '#121212', color: '#e0e0e0', padding: '1.25rem', borderRadius: '8px', border: '1px solid #333', minWidth: '520px', height: '91vh', overflow: 'hidden' },
-  header: { display: 'flex', justifyContent: 'left', alignItems: 'center', paddingBottom: '1rem' },
-  searchField: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', padding: '6px 12px', color: '#fff', fontSize: '0.8rem', outline: 'none', width: '180px' },
-  title: { fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' },
-  tableWrap: {borderRadius: '5px 5px 0px 0px', overflow: 'visible', width: '100%', overflowX: 'auto', },
-  table: { width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', },
-  th: { textAlign: 'left', padding: '0.6rem .5rem', fontSize: '0.8rem', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #333' },
-  td: {textAlign: 'left', justifyContent: 'left', fontFamily: 'monospace', padding: '0.8rem 0.5rem', borderBottom: '1px solid #222', fontSize: '0.7rem', verticalAlign: 'middle' },
-  badge: { backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', padding: '3px 8px', fontWeight: 600, fontSize: '0.8rem' },
-  barBg: { height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' },
-  barFill: { height: '100%', transition: 'width .3s' },
-  statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#bbb', margin: '2px 0' },
-  empty: { padding: '2rem', color: '#555', textAlign: 'left' },
-  actionBtn: { background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px' },
-  popover: { position: 'absolute', right: 0, top: '100%', marginTop: '5px', backgroundColor: '#1e1e1e', border: '1px solid #444', borderRadius: '4px', zIndex: 110, width: '150px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' },
-  menuItem: { padding: '10px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#bbb' },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 },
-  modalContent: { background: '#1e1e1e', padding: '24px', borderRadius: '8px', border: '1px solid #444', width: '320px' },
-  input: { width: '100%', padding: '12px', marginTop: '12px', background: '#121212', border: '1px solid #444', color: '#fff', borderRadius: '4px', boxSizing: 'border-box', outline: 'none' },
-  error: { color: '#ff5252', fontSize: '0.75rem', marginTop: '12px', background: 'rgba(255,82,82,0.1)', padding: '8px', borderRadius: '4px' },
-  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' },
-  cancelBtn: { background: 'transparent', border: 'none', color: '#777', cursor: 'pointer' },
-  confirmBtn: { background: '#4caf50', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }
-};

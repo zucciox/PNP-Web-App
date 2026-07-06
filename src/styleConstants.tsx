@@ -42,33 +42,33 @@ export const resourceColors: Record<string, string> = {
 }
 
 export const nationColors: Record<string, string> = {
-    A: '#0099db', // Cyan / Light Blue
-    B: '#cca100', // Amber / Dark Yellow
-    C: '#7a2d48', // Maroon / Burgundy
-    D: '#2bb32b', // Bright Green
-    E: '#2659c2', // Medium Blue
-    F: '#6a32a8', // Purple
-    G: '#cc5a00', // Orange
-    H: '#703b00', // Brown
-    I: '#5dade2', // Soft Sky Blue
-    J: '#27ae60', // Emerald / Teal Green
-    K: '#2c2c2c', // Off-White / Light Gray -> Flipped to Dark Gray for dark mode
-    L: '#bfae00', // Yellow
-    M: '#7f8c8d', // Light Gray
-    N: '#008a3b', // Darker Green
-    O: '#34491e', // Olive / Forest Green
-    P: '#2463d1', // Royal Blue
-    Q: '#cc1111', // Red
-    R: '#1a1a1a', // White -> Flipped to Near-Black for dark mode
-    S: '#d972ff', // Lavender / Light Violet
-    T: '#e66a22', // Light Orange / Coral
-    U: '#99b324', // Lime Green
-    V: '#8e44ad', // Violet / Plum
-    W: '#555555', // Charcoal Gray
-    X: '#00a3cc', // Turquoise
-    Y: '#cc1c1c', // Crimson Red
-    Z: '#cca400', // Gold / Mustard Yellow
-  };
+  A: '#00bfff', // Cyan / Light Blue (Slightly boosted for vibrancy)
+  B: '#ffcc00', // Amber / Bright Yellow (Brightened)
+  C: '#e65c84', // Maroon / Burgundy -> Lifted to a vibrant mauve/rose
+  D: '#2bb32b', // Bright Green (Kept, already high contrast)
+  E: '#4a82f0', // Medium Blue (Lifted from dark blue to neon/sky variant)
+  F: '#a866ff', // Purple (Lightened to a vivid lavender-purple)
+  G: '#ff7a14', // Orange (Saturated and brightened)
+  H: '#b36b19', // Brown -> Lifted to a warm, readable copper/tan
+  I: '#5dade2', // Soft Sky Blue (Kept, excellent for dark mode)
+  J: '#2ecc71', // Emerald / Teal Green (Brightened slightly)
+  K: '#e0e0e0', // Light Gray (Flipped back to light for dark mode contrast)
+  L: '#f1c40f', // Yellow (Boosted for crisp visibility)
+  M: '#bdc3c7', // Light Gray (Kept, good mid-light tone)
+  N: '#1abc9c', // Darker Green -> Shifted to a bright Teal/Mint for contrast
+  O: '#87a96b', // Olive / Forest Green -> Lifted to a visible sage/light olive
+  P: '#4382f6', // Royal Blue (Brightened so it doesn't bleed into the black)
+  Q: '#ff4d4d', // Red (Brightened to a neon pastel red so it doesn't look muddy)
+  R: '#ffffff', // White (Flipped back to pure white for stark dark mode contrast)
+  S: '#d972ff', // Lavender / Light Violet (Kept, already great)
+  T: '#ff8442', // Light Orange / Coral (Slightly brightened)
+  U: '#bfff00', // Lime Green (Slightly boosted)
+  V: '#bb6fd9', // Violet / Plum (Lightened)
+  W: '#95a5a6', // Charcoal Gray -> Lifted to a readable cool gray
+  X: '#00d2ff', // Turquoise (Brightened)
+  Y: '#ff3333', // Crimson Red (Lifted to vivid crimson)
+  Z: '#f3cf2a', // Gold / Mustard Yellow (Brightened)
+};
 
 export const stableTextColor: string = '#5690f5';
 export const additiveTextColor: string = '#44ff44';

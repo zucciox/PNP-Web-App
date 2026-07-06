@@ -285,17 +285,30 @@ export function SettlementsTable() {
                 <div className="resource-grid">
 
                   {DISPLAY_RESOURCES.map((res) => {
-                    let reserveVal = ''
-                    let crVal = ''
-                    {
-                      res === 'Treasury' ? 
-                        reserveVal = 'N/A'
-                        : 
-                        reserveVal = s[getBackendKey(res)]?.toLocaleString() || '0'
-                        crVal = s[getBackendKey(res)+'_cr']?.toLocaleString() || '0'
+                    const backendKey = getBackendKey(res);
+
+                    // 1. Keep them as pure numbers for the calculations down the chain
+                    let reserveVal: number = 0;
+                    let crVal: number = Number(s[`${backendKey}_cr` as keyof Settlement]) || 0;
+
+                    if (res === 'Treasury') {
+                      // Treat Treasury as 0 or map specific logic if it doesn't experience consumption
+                      reserveVal = Number(s[backendKey as keyof Settlement]) || 0; 
+                    } else {
+                      reserveVal = Number(s[backendKey as keyof Settlement]) || 0;
                     }
+
                     return (
-                      <StockpileFeedbackIcon resource={res} stockpileAmount={Number(reserveVal)} consumptionAmount={Number(crVal)} settlement={s} settlements={settlements} facilities={facilities} shipments={shipments}/>
+                      <StockpileFeedbackIcon 
+                        key={res}
+                        resource={res} 
+                        stockpileAmount={reserveVal} 
+                        consumptionAmount={crVal} 
+                        settlement={s} 
+                        settlements={settlements} 
+                        facilities={facilities} 
+                        shipments={shipments}
+                      />
                     );
                   })}
                 </div>
@@ -469,7 +482,7 @@ function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, settlement: s
         </span>
 
         <div style={{ display: 'flex', gap: '5px' }}>
-          <span style={{ color: stableTextColor }}>{rA}</span>
+          <span>{rA}</span>
           {
             cA > 0 && ( 
               <span>

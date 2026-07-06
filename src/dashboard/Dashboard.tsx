@@ -7,7 +7,7 @@ import MilitaryDashboard from './militaryDashboard/MilitaryDashboard';
 import StoreDashboard from './storeDashboard/StoreDashboard';
 import WorldDashboard from './worldDashboard/WorldDashboard';
 import CombatAlert from './CombatAlert'; 
-import Scoreboard from './scoreboard/Scoreboard';
+import NationPanel from './scoreboard/NationPanel';
 
 
 
@@ -93,7 +93,7 @@ function DashboardContent() {
         </div>
 
         <div style={TAB_CONTAINER_STYLE}>
-          {['Scoreboard', 'World', 'Economy', 'Military', 'Store'].map(tab => (
+          {['World', 'Nation', 'Economy', 'Military', 'Store'].map(tab => (
             <div key={tab} onClick={() => setactivePanel(tab)} style={activePanel === tab ? ACTIVE_TAB_STYLE : TAB_STYLE}>
               {tab}
             </div>
@@ -128,7 +128,7 @@ function DashboardContent() {
         {activePanel === 'Military' && <MilitaryDashboard />}
         {activePanel === 'Store' && <StoreDashboard />}
         {activePanel === 'World' && <WorldDashboard />}
-        {activePanel === 'Scoreboard' && <Scoreboard />}
+        {activePanel === 'Nation' && <NationPanel />}
       </main>
     </div>
   );

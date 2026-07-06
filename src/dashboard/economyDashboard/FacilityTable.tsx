@@ -302,7 +302,7 @@ export function FacilityTable() {
                   className={`facility-card ${!facility.is_active ? 'inactive-facility' : ''}`}
                 >
                   <div className="facility-card-header">
-                    <span style={{color: resourceColors[typeInfo?.output_type || '']}}>{facility.facility_type} {facility.is_active ? '' : <span style={{color: 'red'}}>(INACTIVE)</span>}</span>
+                    <span style={{color: resourceColors[typeInfo?.output_type || '']}}>{facility.facility_type} {facility.is_active ? '' : <span style={{color: 'darkred'}}>(INACTIVE)</span>}</span>
                     <span className="settlement-id">#{facility.type_id}</span>
                   </div>
 
@@ -344,7 +344,7 @@ export function FacilityTable() {
                             <div key={res} className="storage-pill">
                               <span style={{ color: resourceColors[res], marginRight: '4px' }}>●</span>
                               <span className="res-label">{res}:</span> 
-                              <span className="res-value" style={{ color: stableTextColor}}>{value.toLocaleString()}</span>
+                              <span className="res-value">{value.toLocaleString()}</span>
                             </div>
                           );
                         })}
@@ -397,10 +397,29 @@ export function FacilityTable() {
               <div className="tooltip" style={{right: '30px'}}>
                 <p>Facilities are the backbone of your economy, responsible for producing and refining 
                   the resources that support your settlements and allow for manufacturing.</p>
-                <p></p>
-              </div>
+                <div>Factories are the only facilities capable of manufacturing. Different factory tiers also allow you to refine exclusive resources:</div>
+                <div style={{paddingLeft: '10px', paddingTop: '10px', paddingBottom: '10px', display: 'flex', gap: '5px', flexDirection: 'column'}}>
+                    <div>• Tier I: <span style={{ color: resourceColors.Copper }}>Copper</span> & <span style={{ color: resourceColors.Gold }}>Gold</span></div>
+                    <div>• Tier II: <span style={{ color: resourceColors.Coal }}>Iron</span> & <span style={{ color: resourceColors.Diamond }}>Diamonds</span></div>
+                    <div>• Tier III: <span style={{ color: resourceColors.Aluminum }}>Aluminum</span> & <span style={{ color: resourceColors.Titanium }}>Titanium</span></div>
+                    <div>• Tier IV: <span style={{ color: resourceColors.Platinum }}>Platinum</span> & <span style={{ color: resourceColors.Uranium }}>Uranium</span></div>
+                </div>
+                <div>
+                  Resources not refined at factories include:
+                  <div style={{paddingLeft: '10px', paddingTop: '10px', paddingBottom: '10px', display: 'flex', gap: '5px', flexDirection: 'column'}}>
+                    <div>• <span style={{ color: resourceColors.Oil }}> Oil: </span> refined at Oil Refineries</div>
+                    <div>• <span style={{ color: resourceColors.Gas }}> Gas: </span> refined into Methane at Natural Gas Refineries</div>
+                  </div>
+                </div>
+                <div>And finally, some resources are used to generate energy:
+                  <div style={{paddingLeft: '10px', paddingTop: '10px', display: 'flex', gap: '5px', flexDirection: 'column'}}>
+                    <div>• <span style={{ color: resourceColors.Methane }}> Methane: </span> used by Natural Gas Power Plant</div>
+                    <div>• <span style={{ color: resourceColors.Uranium }}> Uranium: </span> used by Nuclear Power Plant</div>
+                  </div>
+                </div>
           </div>
-        </div>
+      </div>
+    </div>
 
       <div className="scroll-area" style={{overflowY: 'auto' }}>
 

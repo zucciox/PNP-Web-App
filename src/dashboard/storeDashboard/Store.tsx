@@ -138,8 +138,23 @@ export function FactoryStore() {
         </select>
         <div className="info-icon">
             ?
-            <div className="tooltip" style={{left: '-20px'}}>
-              The top nations across all planets in the game.
+            <div className="tooltip" style={{left: '-20px', display: 'flex', flexDirection: 'column', gap: '10px'}}>
+              <div>
+                Manufacturing is a critical aspect of your nation's economy. Factories are the only facilities 
+                that can manufacture - if this screen is empty, you need to build or enable a factory.
+              </div>
+              <div>
+                Switch between units and facilities, and which factory you're using, with the dropdowns at the top of the screen.
+              </div>
+              <div>
+                Pieces you can manufacture are green, while those you don't have enough resources for are red.
+              </div>
+              <div>
+                The build time, in intervals, is displayed in the upper right of each piece card.
+              </div>
+              <div>
+                If your factory is destroyed or disabled, active orders will no longer progress.
+              </div>
             </div>
         </div>
       </header>
@@ -164,7 +179,10 @@ export function FactoryStore() {
                     style={{backgroundColor: canAfford ? '#042415'  : '#240404' }}
                     onClick={() => canAfford && setConfirmItem(item)}
                   >
-                    <span className="card-name">{name}</span>
+                    <span className="card-name" style={{display: 'flex', justifyContent: 'space-between'}}>
+                      <div> {name} </div>
+                      <div style={{fontSize: '.7rem', border: '1px solid', borderRadius: '7px', paddingInline: '5px', fontWeight: 'normal', marginLeft: '10px', textAlign: 'center'}}> {item.build_time} intervals </div>
+                    </span>
                     <div className="cost-container">
                       {COST_KEYS.map(key => {
                         const cost = item[key];

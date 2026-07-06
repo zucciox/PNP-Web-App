@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GameProvider, useGameData } from '../GameContext';
 import { supabase } from '../supabaseClient';
-import WorldDashboard from '../dashboard/worldDashboard/WorldDashboard';
 import '../styles/adminStyles.css';
 
 function AdminNotificationView() {
@@ -90,6 +89,7 @@ function AdminPanelContent() {
   const [showTreasuryModal, setShowTreasuryModal] = useState(false);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
+  const [showResourceModal, setShowResourceModal] = useState(false);
   
   // Shared Form Parameters
   const [pieceType, setPieceType] = useState('');
@@ -101,9 +101,32 @@ function AdminPanelContent() {
   const [healthAmount, setHealthAmount] = useState('');
   const [destinationId, setDestinationId] = useState('');
 
+  // Resource Adjuster Form States
+  const [resourceAmount, setResourceAmount] = useState('');
+  const [resourceType, setResourceType] = useState('');
+
   const adminNotifCount = notifications.filter(n => !n.is_resolved && n.is_admin === true).length;
 
   const [timerString, setTimerString] = useState<string>('00:00');
+
+  const getBackendKey = (resourceName: string): string => {
+    const compoundWords: Record<string, string> = {
+      'Copper Ore': 'copper_ore',
+      'Gold Ore': 'gold_ore',
+      'Iron Ore': 'iron_ore',
+      'Aluminum Ore': 'aluminum_ore',
+      'Titanium Ore': 'titanium_ore',
+      'Platinum Ore': 'platinum_ore',
+      'Uranium Ore': 'uranium_ore'
+    };
+
+    if (compoundWords[resourceName]) {
+      return compoundWords[resourceName];
+    }
+
+    // Single word columns are now lowercase
+    return resourceName.toLowerCase();
+  };
 
   useEffect(() => {
     const checkAdminRole = async () => {
@@ -248,6 +271,27 @@ function AdminPanelContent() {
     } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   };
 
+  const handleAdjustResources = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error: rpcError } = await supabase.rpc('adjust_resources', {
+        p_amount: parseInt(resourceAmount, 10),
+        p_resource: getBackendKey(resourceType),
+        p_destination_id: parseInt(destinationId, 10),
+        p_destination_type: pieceType,
+        p_destination_nation: nationId
+      });
+      if (rpcError) throw new Error(rpcError.message);
+      setShowResourceModal(false);
+      setResourceAmount('');
+      setResourceType('');
+      setDestinationId('');
+      setPieceType('');
+      setNationId('');
+    } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+  };
+
   if (isAdmin === null) return <div className="admin-loading">Verifying Admin Credentials...</div>; 
 
   if (isAdmin === false) {
@@ -285,15 +329,16 @@ function AdminPanelContent() {
         <button className="admin-btn" style={{ background: '#bda118', color: '#000', fontWeight: 'bold' }} onClick={() => setShowTreasuryModal(true)}>Adjust Treasury</button>
         <button className="admin-btn" style={{ background: '#38d989', color: '#000', fontWeight: 'bold' }} onClick={() => setShowPointsModal(true)}>Adjust Points</button>
         <button className="admin-btn" style={{ background: '#d93838', color: '#fff', fontWeight: 'bold' }} onClick={() => setShowHealthModal(true)}>Adjust Health</button>
+        <button className="admin-btn" style={{ background: '#ff7700', color: '#fff', fontWeight: 'bold' }} onClick={() => setShowResourceModal(true)}>Adjust Resources</button>
 
         {showAddModal && (
           <div className="admin-modal-overlay">
             <form onSubmit={handleAddPiece} className="admin-modal-form">
               <h3>Add Piece</h3>
               <span>Piece Type</span>
-              <input value={pieceType} onChange={(e) => setPieceType(e.target.value)} required />
+              <input value={pieceType} onChange={(e) => setPieceType(e.target.value)}  placeholder="Tank, Troops, etc." required />
               <span>Nation ID</span>
-              <input value={nationId} onChange={(e) => setNationId(e.target.value)} required />
+              <input value={nationId} onChange={(e) => setNationId(e.target.value)}  placeholder="A-Z" required />
               <button type="submit" className="admin-btn-modal" disabled={loading}>Confirm</button>
               <button type="button" onClick={() => setShowAddModal(false)}>Cancel</button>
             </form>
@@ -323,7 +368,7 @@ function AdminPanelContent() {
             <form onSubmit={handleAdjustTreasury} className="admin-modal-form">
               <h3>Adjust Nation Treasury</h3>
               <span>Nation ID</span>
-              <input value={nationId} onChange={(e) => setNationId(e.target.value)} required />
+              <input value={nationId} onChange={(e) => setNationId(e.target.value)}  placeholder="A-Z" required />
               <span>Adjustment Amount (Accepts negative values to deduct)</span>
               <input type="number" value={treasuryAmount} onChange={(e) => setTreasuryAmount(e.target.value)} placeholder="e.g. 5000 or -2500" required />
               <button type="submit" className="admin-btn-modal" style={{ background: '#bda118', color: '#000' }} disabled={loading}>
@@ -339,7 +384,7 @@ function AdminPanelContent() {
             <form onSubmit={handleAdjustPoints} className="admin-modal-form">
               <h3>Adjust Nation Points</h3>
               <span>Nation ID</span>
-              <input value={nationId} onChange={(e) => setNationId(e.target.value)} required />
+              <input value={nationId} onChange={(e) => setNationId(e.target.value)}  placeholder="A-Z" required />
               <span>Adjustment Amount (Accepts negative values to deduct)</span>
               <input type="number" value={pointAmount} onChange={(e) => setPointAmount(e.target.value)} placeholder="e.g. 5 or -3" required />
               <span>Message</span>
@@ -368,6 +413,28 @@ function AdminPanelContent() {
                 {loading ? 'Processing...' : 'Apply Adjustment'}
               </button>
               <button type="button" onClick={() => setShowHealthModal(false)}>Cancel</button>
+            </form>
+          </div>
+        )}
+
+        {showResourceModal && (
+          <div className="admin-modal-overlay">
+            <form onSubmit={handleAdjustResources} className="admin-modal-form">
+              <h3>Adjust Destination Resources</h3>
+              <span>Target Type</span>
+              <input value={pieceType} onChange={(e) => setPieceType(e.target.value)} placeholder="e.g., Settlement, Facility" required />
+              <span>Target Type ID (Integer)</span>
+              <input type="number" value={destinationId} onChange={(e) => setDestinationId(e.target.value)} placeholder="e.g., 4" required />
+              <span>Owner Nation ID</span>
+              <input value={nationId} onChange={(e) => setNationId(e.target.value)} placeholder="A-Z" required />
+              <span>Resource Name</span>
+              <input value={resourceType} onChange={(e) => setResourceType(e.target.value)} placeholder="e.g., wood, iron" required />
+              <span>New Value (Overwrite)</span>
+              <input type="number" value={resourceAmount} onChange={(e) => setResourceAmount(e.target.value)} placeholder="e.g., 500" required />
+              <button type="submit" className="admin-btn-modal" style={{ background: '#ff7700', color: '#fff' }} disabled={loading}>
+                {loading ? 'Processing...' : 'Apply Adjustment'}
+              </button>
+              <button type="button" onClick={() => setShowResourceModal(false)}>Cancel</button>
             </form>
           </div>
         )}
