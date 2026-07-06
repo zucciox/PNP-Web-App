@@ -35,11 +35,11 @@ export function OperatingCostsTable() {
 
   return ( 
     <div> 
-      <div style={{display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center'}}>
+      <div style={{display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'space-between'}}>
         <h3>Operating Costs</h3> 
         <div className="info-icon">
                 ?
-                <div className="tooltip" style={{right: '30px'}}>
+                <div className="tooltip-top" style={{right: '30px'}}>
                   <p>
                     You pay Operating Costs from your Treasury <span style={{color: 'AccentColor'}}>each interval. </span>
                      Facilities and Units make up your total Operating Costs.
