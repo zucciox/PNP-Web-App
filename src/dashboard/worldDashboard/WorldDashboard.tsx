@@ -46,7 +46,7 @@ export default function WorldDashboard() {
 
   return (
     <div style={{ display: 'flex', gap: '24px', padding: '20px', minHeight: '95vh', boxSizing: 'border-box', backgroundColor: '#121212', color: '#fff' }}>
-      <div style={{ width: '350px', height: '90vh' }}>
+      <div style={{ width: '350px', height: '91vh' }}>
         <Leaderboard />
       </div>
 
@@ -96,7 +96,7 @@ function Leaderboard() {
     .filter(n => n.isactive)
 
   return (
-    <div className="admin-notification-container" style={{maxHeight: '90vh', backgroundColor: '#111'}}>
+    <div className="admin-notification-container" style={{height: '90vh', backgroundColor: '#111'}}>
       <div className="admin-notification-header">
         <span className="admin-notification-title">Leaderboard</span>
         <div className="info-icon">
