@@ -43,7 +43,7 @@ export const resourceColors: Record<string, string> = {
 
 export const nationColors: Record<string, string> = {
   A: '#00bfff', // Cyan / Light Blue (Slightly boosted for vibrancy)
-  B: '#ffcc00', // Amber / Bright Yellow (Brightened)
+  B: '#bdc3c7', // Amber / Bright Yellow (Brightened)
   C: '#e65c84', // Maroon / Burgundy -> Lifted to a vibrant mauve/rose
   D: '#2bb32b', // Bright Green (Kept, already high contrast)
   E: '#4a82f0', // Medium Blue (Lifted from dark blue to neon/sky variant)
