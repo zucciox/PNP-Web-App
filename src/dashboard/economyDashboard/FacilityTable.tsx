@@ -81,8 +81,7 @@ export function FacilityTable() {
   const [shipmentForm, setShipmentForm] = useState({
     resource: '',
     amount: '',
-    unitId: '',
-    unitType: '',
+    unitGlobalId: '',
     destination: '',
     notes: ''
   });
@@ -156,6 +155,13 @@ export function FacilityTable() {
     if (!profile?.nation_id || !activeShipmentFacility) return;
 
     setLoading(true);
+      
+    const selectedUnit = availableUnits.find(u => u.id === parseInt(shipmentForm.unitGlobalId));
+      if (!selectedUnit) {
+        setErrorMsg('Please select a shipping unit');
+        setLoading(false);
+        return;
+      }
     
 
     const { error } = await supabase.rpc('create_shipment', { 
@@ -163,9 +169,9 @@ export function FacilityTable() {
       p_amount: parseInt(shipmentForm.amount), 
       p_origin_id: activeShipmentFacility.type_id, 
       p_origin_type: activeShipmentFacility.facility_type,
-      p_origin_nation: profile.nation_id,
-      p_unit_id: parseInt(shipmentForm.unitId),       
-      p_unit_type: shipmentForm.unitType,             
+      p_origin_nation: profile.nation_id, 
+      p_unit_id: selectedUnit.type_id,
+      p_unit_type: selectedUnit.unit_type,            
       p_destination: shipmentForm.destination, 
       p_notes: shipmentForm.notes,
     });
@@ -175,7 +181,7 @@ export function FacilityTable() {
       setLoading(false);
     } else {
       setActiveShipmentFacility(null);
-      setShipmentForm({ resource: '', amount: '', unitId: '', unitType: '', destination: '', notes: '' });
+      setShipmentForm({ resource: '', amount: '', unitGlobalId: '', destination: '', notes: '' });
       setLoading(false);
     }
   };
@@ -443,11 +449,8 @@ export function FacilityTable() {
                   <label>Shipping Unit</label>
                   <select 
                     required className="modal-select"
-                    value={shipmentForm.unitId}
-                    onChange={(e) => {
-                        const selectedUnit = availableUnits.find(u => u.id === parseInt(e.target.value));
-                        if (selectedUnit) setShipmentForm({...shipmentForm, unitId: selectedUnit.type_id.toString(), unitType: selectedUnit.unit_type});
-                    }}
+                    value={shipmentForm.unitGlobalId}
+                    onChange={(e) => setShipmentForm({...shipmentForm, unitGlobalId: e.target.value})}
                   >
                     <option value="" disabled>Select Unit...</option>
                     {availableUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.display_name}</option>)}
