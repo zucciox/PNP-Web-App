@@ -76,7 +76,7 @@ function GameFeedView() {
 }
 
 function AdminPanelContent() {
-  const { gameState, notifications } = useGameData(); 
+  const { gameState, notifications, unitTypes, facilityTypes } = useGameData(); 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +93,7 @@ function AdminPanelContent() {
   
   // Shared Form Parameters
   const [pieceType, setPieceType] = useState('');
+  const [numPieces, setNumPieces] = useState('1');
   const [nationId, setNationId] = useState('');
   const [typeId, setTypeId] = useState('');
   const [pointAmount, setPointAmount] = useState('');
@@ -192,12 +193,16 @@ function AdminPanelContent() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data, error: rpcError } = await supabase.rpc('add_piece', { p_piece_type: pieceType, p_nation_id: nationId });
+      const count = parseInt(numPieces, 10);
+      if (isNaN(count) || count < 1) throw new Error('Number of pieces must be at least 1');
+      const { data, error: rpcError } = await supabase.rpc('add_piece', { p_piece_type: pieceType, p_num_pieces: count, p_nation_id: nationId });
       if (rpcError) throw new Error(rpcError.message);
       setShowAddModal(false);
       setPieceType('');
+      setNumPieces('');
       setNationId('');
     } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+    setNumPieces('1');
   };
 
   const handleDeletePiece = async (e: React.FormEvent) => {
@@ -336,7 +341,17 @@ function AdminPanelContent() {
             <form onSubmit={handleAddPiece} className="admin-modal-form">
               <h3>Add Piece</h3>
               <span>Piece Type</span>
-              <input value={pieceType} onChange={(e) => setPieceType(e.target.value)}  placeholder="Tank, Troops, etc." required />
+              <select value={pieceType} onChange={(e) => setPieceType(e.target.value)} required>
+                <option value="" disabled>Select a piece type</option>
+                <optgroup label="Units">
+                  {unitTypes.map((u) => ( <option key={`unit-${u.unit_type}`} value={u.unit_type}>{u.unit_type}</option>))}
+                </optgroup>
+                <optgroup label="Facilities">
+                  {facilityTypes.map((f) => ( <option key={`fac-${f.facility_type}`} value={f.facility_type}>{f.facility_type}</option>))}
+                </optgroup>
+              </select>
+              <span>Number of Pieces</span>
+              <input type="number" min="1" value={numPieces} onChange={(e) => setNumPieces(e.target.value)}  placeholder="1,2,3..." required />
               <span>Nation ID</span>
               <input value={nationId} onChange={(e) => setNationId(e.target.value)}  placeholder="A-Z" required />
               <button type="submit" className="admin-btn-modal" disabled={loading}>Confirm</button>

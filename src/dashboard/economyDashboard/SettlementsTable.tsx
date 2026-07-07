@@ -130,8 +130,7 @@ export function SettlementsTable() {
   const [shipmentForm, setShipmentForm] = useState({
     resource: '',
     amount: '',
-    unitId: '',
-    unitType: '',
+    unitGlobalId: '',
     destination: '',
     notes: ''
   });
@@ -170,6 +169,13 @@ export function SettlementsTable() {
 
     // Convert selection parameter to backend naming schema format
     const backendResourceName = getBackendKey(shipmentForm.resource);
+    
+    const selectedUnit = availableUnits.find(u => u.id === parseInt(shipmentForm.unitGlobalId));
+    if (!selectedUnit) {
+      setErrorMsg('Please select a shipping unit');
+      setLoading(false);
+      return;
+    }
 
     const { error } = await supabase.rpc('create_shipment', { 
       p_resource: shipmentForm.resource,
@@ -177,9 +183,9 @@ export function SettlementsTable() {
       p_origin_id: activeShipmentSettlement.type_id, 
       p_origin_type: activeShipmentSettlement.settlement_type,
       p_origin_nation: profile.nation_id,
-      p_unit_id: parseInt(shipmentForm.unitId),       
-      p_unit_type: shipmentForm.unitType,             
-    p_destination: shipmentForm.destination, 
+      p_unit_id: selectedUnit.type_id,
+      p_unit_type: selectedUnit.unit_type,            
+      p_destination: shipmentForm.destination, 
       p_notes: shipmentForm.notes,
     });
 
@@ -188,7 +194,7 @@ export function SettlementsTable() {
       setLoading(false);
     } else {
       setActiveShipmentSettlement(null);
-      setShipmentForm({ resource: '', amount: '', unitId: '', unitType: '', destination: '', notes: '' });
+      setShipmentForm({ resource: '', amount: '', unitGlobalId: '', destination: '', notes: '' });
       setLoading(false);
     }
   };
@@ -349,10 +355,8 @@ export function SettlementsTable() {
                 </div>
                 <div className="input-group" style={{ gridColumn: 'span 2' }}>
                   <label>Shipping Unit</label>
-                  <select required className="modal-select" value={shipmentForm.unitId} onChange={(e) => {
-                        const selectedUnit = availableUnits.find(u => u.id === parseInt(e.target.value));
-                        if (selectedUnit) setShipmentForm({...shipmentForm, unitId: selectedUnit.type_id.toString(), unitType: selectedUnit.unit_type});
-                    }}>
+                  <select required className="modal-select" value={shipmentForm.unitGlobalId} onChange={(e) => {
+                        setShipmentForm({...shipmentForm, unitGlobalId: e.target.value})}}>
                     <option value="" disabled>Select Unit...</option>
                     {availableUnits.map((u) => <option key={u.id} value={u.id}>{u.display_name}</option>)}
                   </select>
