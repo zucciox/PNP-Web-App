@@ -18,7 +18,7 @@ const DASHBOARD_CONTAINER: React.CSSProperties = {
 
 // Wrapper for the Store to make it take up more space
 const STORE_SECTION: React.CSSProperties = {
-  flex: 3, // Takes up 3 parts of the available space
+  flex: 4, // Takes up 3 parts of the available space
   minWidth: '600px', // Prevents it from getting too squashed
 };
 
@@ -34,7 +34,7 @@ export default function StoreDashboard() {
   const { } = useGameData();
 
   return (
-    <div className="summary-container" style={{ backgroundColor: '#121212', height: '87vh', color: 'white', }}>
+    <div className="summary-container" style={{ backgroundColor: '#121212', height: '100vh', color: 'white', }}>
       <main style={DASHBOARD_CONTAINER}>
         <div style={STORE_SECTION}>
           <FactoryStore />

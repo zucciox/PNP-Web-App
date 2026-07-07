@@ -482,12 +482,12 @@ function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, settlement: s
         </span>
 
         <div style={{ display: 'flex', gap: '5px' }}>
-          <span>{rA}</span>
+          <span>{rA.toLocaleString()}</span>
           {
             cA > 0 && ( 
               <span>
                 /
-                <span style={{ color: negativeTextColor }}> {cA}</span>
+                <span style={{ color: negativeTextColor }}> {cA.toLocaleString()}</span>
               </span>
             )
           }
@@ -538,7 +538,7 @@ function StockpileFeedbackIcon({ resource: r, stockpileAmount: rA, settlement: s
          : null}  
 
           {rA <= cA ? 
-          <div>To meet your consumption rate, you need to ship <span style={{color: negativeTextColor, fontWeight: 'bold'}}> {cA-rA} </span> more {resourceText} into <span style={{color: stableTextColor}}>{s.name}</span> by the end of this cycle. <div/>
+          <div>To meet your consumption rate, you need to ship <span style={{color: negativeTextColor, fontWeight: 'bold'}}> {(cA-rA).toLocaleString()} </span> more {resourceText} into <span style={{color: stableTextColor}}>{s.name}</span> by the end of this cycle. <div/>
           </div>       
            :
            ''

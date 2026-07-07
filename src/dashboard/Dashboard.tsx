@@ -21,7 +21,7 @@ const NATION_CARD_STYLE: React.CSSProperties = { borderRadius: '15px', backgroun
 const TAB_CONTAINER_STYLE: React.CSSProperties = { display: 'flex', gap: '30px', alignItems: 'center', marginRight: '40px', marginTop: '5px' };
 const TAB_STYLE: React.CSSProperties = { cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', textTransform: 'uppercase', color: '#ffffff', padding: '5px 10px' };
 const ACTIVE_TAB_STYLE: React.CSSProperties = { ...TAB_STYLE, backgroundColor: '#333333', borderRadius: '10px' };
-const DASHBOARD_CONTAINER: React.CSSProperties = { width: '100%', padding: '0px', boxSizing: 'border-box' };
+const DASHBOARD_CONTAINER: React.CSSProperties = { width: '100%', padding: '0px', boxSizing: 'border-box', height: '100%' };
 const ADMIN_BTN_STYLE: React.CSSProperties = { backgroundColor: '#d97706', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' };
 const SELECT_STYLE: React.CSSProperties = { backgroundColor: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px', padding: '2px 5px', fontSize: '14px', marginLeft: '10px' };
 
