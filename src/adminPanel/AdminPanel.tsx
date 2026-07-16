@@ -118,7 +118,8 @@ function AdminPanelContent() {
       'Aluminum Ore': 'aluminum_ore',
       'Titanium Ore': 'titanium_ore',
       'Platinum Ore': 'platinum_ore',
-      'Uranium Ore': 'uranium_ore'
+      'Uranium Ore': 'uranium_ore',
+      'Diamond Ore': 'diamond_ore'
     };
 
     if (compoundWords[resourceName]) {

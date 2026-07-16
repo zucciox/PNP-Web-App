@@ -12,7 +12,7 @@ const STORAGE_RESOURCES = [
   'Energy', 'Gas', 'Coal', 'Fuel', 'Water', 'Food', 'Oxygen', 'Steel', 
   'Aluminum', 'Copper', 'Platinum', 'Titanium', 'Gold', 'Diamond', 
   'Uranium', 'Oil', 'Methane', 'Copper Ore', 'Gold Ore', 
-  'Iron Ore', 'Aluminum Ore', 'Titanium Ore', 'Platinum Ore', 'Uranium Ore'
+  'Iron Ore', 'Aluminum Ore', 'Titanium Ore', 'Platinum Ore', 'Uranium Ore', 'Diamond Ore'
 ];
 
 // Helper mapping function to convert UI display names into the new backend keys
@@ -24,7 +24,8 @@ const getBackendKey = (resourceName: string): string => {
     'Aluminum Ore': 'aluminum_ore',
     'Titanium Ore': 'titanium_ore',
     'Platinum Ore': 'platinum_ore',
-    'Uranium Ore': 'uranium_ore'
+    'Uranium Ore': 'uranium_ore',
+    'Diamond Ore': 'diamond_ore'
   };
 
   if (compoundWords[resourceName]) {
