@@ -51,6 +51,14 @@ export const LoginPage = () => {
     });
 
     if (supabaseError) {
+      console.error('SUPABASE AUTH ERROR:', {
+        message: supabaseError.message,
+        status: supabaseError.status,
+        code: supabaseError.code,
+        name: supabaseError.name,
+        details: supabaseError
+      });
+
       setError(getErrorMessage(supabaseError));
       setLoading(false);
     } else {
